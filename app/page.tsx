@@ -1,7 +1,7 @@
-import { fetchCars } from "@utils";
-import { HomeProps } from "@types";
+import { prisma } from "@/lib/prisma";
 import { fuels, yearsOfProduction } from "@constants";
 import { CarCard, ShowMore, SearchBar, CustomFilter, Hero } from "@components";
+import { getOrCreateUser } from "@/lib/sync-user";
 
 export default async function Home({
   searchParams,
@@ -9,15 +9,35 @@ export default async function Home({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const params = await searchParams;
-  const allCars = await fetchCars({
-    manufacturer: (params.manufacturer as string) || "",
-    year: Number(params.year) || 2022,
-    fuel: (params.fuel as string) || "",
-    limit: Number(params.limit) || 10,
-    model: (params.model as string) || "",
+
+  const manufacturer = (params.manufacturer as string) || "";
+  const year = params.year ? Number(params.year) : undefined;
+  const fuel = (params.fuel as string) || "";
+  const limit = Number(params.limit) || 10;
+  const model = (params.model as string) || "";
+
+  const where: any = {};
+  if (manufacturer)
+    where.make = { contains: manufacturer, mode: "insensitive" };
+  if (year) where.year = year;
+  if (fuel) where.fuel_type = { equals: fuel, mode: "insensitive" };
+  if (model) where.model = { contains: model, mode: "insensitive" };
+
+  const allCarsRaw = await prisma.car.findMany({
+    where,
+    take: limit,
   });
 
-  const isDataEmpty = !Array.isArray(allCars) || allCars.length < 1 || !allCars;
+  // Convert Decimal and Date to plain types for client components
+  const allCars = allCarsRaw.map((car) => ({
+    ...car,
+    pricePerDay: Number(car.pricePerDay),
+    createdAt: car.createdAt.toISOString(),
+  }));
+
+  await getOrCreateUser();
+
+  const isDataEmpty = !Array.isArray(allCars) || allCars.length < 1;
 
   return (
     <main className="overflow-hidden">
@@ -42,17 +62,11 @@ export default async function Home({
           <section>
             <div className="home__cars-wrapper">
               {allCars?.map((car) => (
-                <CarCard
-                  key={`${car.make}-${car.model}-${car.year}`}
-                  car={car}
-                />
+                <CarCard key={car.id} car={car as any} />
               ))}
             </div>
 
-            <ShowMore
-              pageNumber={(Number(params.limit) || 10) / 10}
-              isNext={(Number(params.limit) || 10) > allCars.length}
-            />
+            <ShowMore pageNumber={limit / 10} isNext={limit > allCars.length} />
           </section>
         ) : (
           <div className="home__error-container">

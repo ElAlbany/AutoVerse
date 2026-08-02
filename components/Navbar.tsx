@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useAuth, SignInButton, UserButton } from "@clerk/nextjs";
+import { useAuth, SignInButton } from "@clerk/nextjs";
 
 const Navbar = () => {
   const { isSignedIn } = useAuth();
@@ -20,15 +20,22 @@ const Navbar = () => {
           />
         </Link>
 
-        {!isSignedIn ? (
-          <SignInButton mode="modal">
-            <button className="text-white rounded-full bg-primary-blue min-w-[130px] px-4 py-2 transition-all duration-300 ease-in-out hover:translate-y-0.5 hover:shadow-lg active:translate-y-1">
-              Sign in
-            </button>
-          </SignInButton>
-        ) : (
-          <UserButton />
-        )}
+        <div className="flex items-center gap-4">
+          {isSignedIn ? (
+            <Link
+              href="/profile"
+              className="text-gray-700 hover:text-primary-blue font-medium text-sm transition-colors px-4 py-2 rounded-full hover:bg-gray-50"
+            >
+              My Profile
+            </Link>
+          ) : (
+            <SignInButton mode="modal">
+              <button className="text-white rounded-full bg-primary-blue min-w-[130px] px-4 py-2 transition-all duration-300 ease-in-out hover:translate-y-0.5 hover:shadow-lg active:translate-y-1">
+                Sign in
+              </button>
+            </SignInButton>
+          )}
+        </div>
       </nav>
     </header>
   );

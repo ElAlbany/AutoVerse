@@ -23,28 +23,36 @@ model User {
 }
 
 model Car {
-  id            String   @id @default(uuid())
-  make          String
-  model         String
-  year          Int
-  pricePerDay   Decimal  @db.Decimal(10, 2)
-  fuelType      String
-  transmission  String
-  capacity      Int
-  images        String[]
-  description   String?
-  available     Boolean  @default(true)
-  featured      Boolean  @default(false)
+  id              String   @id @default(uuid())
+  make            String
+  model           String
+  year            Int
+  pricePerDay     Decimal  @db.Decimal(10, 2)
+  fuel_type       String
+  transmission    String
+  drive           String
+  city_mpg        Int
+  class           String
+  combination_mpg Int
+  cylinders       Int
+  displacement    Float
+  highway_mpg     Int
+  images          String[]
+  description     String?
+  available       Boolean  @default(true)
+  featured        Boolean  @default(false)
   
-  orders        Order[]
-  createdAt     DateTime @default(now())
+  orders          Order[]
+  reviews   Review[]
+  createdAt       DateTime @default(now())
   
   @@index([make])
-  @@index([fuelType])
+  @@index([fuel_type])
   @@index([year])
   @@index([available])
 }
 
+// Update your existing Order model to this (or replace it):
 model Order {
   id          String      @id @default(uuid())
   userId      String
@@ -53,30 +61,28 @@ model Order {
   endDate     DateTime
   totalPrice  Decimal     @db.Decimal(10, 2)
   status      OrderStatus @default(PENDING)
-  paymentId   String?
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
-
-  user        User        @relation(fields: [userId], references: [id])
-  car         Car         @relation(fields: [carId], references: [id])
-
-  @@index([userId, status])
-  @@index([createdAt])
+  
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  car         Car         @relation(fields: [carId], references: [id], onDelete: Cascade)
+  review      Review?
 }
 
+// Add this new Review model
 model Review {
   id        String   @id @default(uuid())
+  orderId   String   @unique
   userId    String
   carId     String
-  rating    Int      @db.SmallInt
+  rating    Int
   comment   String?
   createdAt DateTime @default(now())
-
-  user      User     @relation(fields: [userId], references: [id])
-
-  @@unique([userId, carId])
+  
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  car       Car      @relation(fields: [carId], references: [id], onDelete: Cascade)
 }
-
 enum OrderStatus {
   PENDING
   CONFIRMED

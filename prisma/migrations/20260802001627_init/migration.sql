@@ -22,9 +22,15 @@ CREATE TABLE "Car" (
     "model" TEXT NOT NULL,
     "year" INTEGER NOT NULL,
     "pricePerDay" DECIMAL(10,2) NOT NULL,
-    "fuelType" TEXT NOT NULL,
+    "fuel_type" TEXT NOT NULL,
     "transmission" TEXT NOT NULL,
-    "capacity" INTEGER NOT NULL,
+    "drive" TEXT NOT NULL,
+    "city_mpg" INTEGER NOT NULL,
+    "class" TEXT NOT NULL,
+    "combination_mpg" INTEGER NOT NULL,
+    "cylinders" INTEGER NOT NULL,
+    "displacement" DOUBLE PRECISION NOT NULL,
+    "highway_mpg" INTEGER NOT NULL,
     "images" TEXT[],
     "description" TEXT,
     "available" BOOLEAN NOT NULL DEFAULT true,
@@ -72,7 +78,7 @@ CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 CREATE INDEX "Car_make_idx" ON "Car"("make");
 
 -- CreateIndex
-CREATE INDEX "Car_fuelType_idx" ON "Car"("fuelType");
+CREATE INDEX "Car_fuel_type_idx" ON "Car"("fuel_type");
 
 -- CreateIndex
 CREATE INDEX "Car_year_idx" ON "Car"("year");

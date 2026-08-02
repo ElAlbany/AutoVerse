@@ -2,22 +2,30 @@
 
 import { useState } from "react";
 import Image from "next/image";
-
+import { useAuth } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 import { calculateCarRent, generateCarImageUrl } from "@utils";
 import { CarProps } from "@types";
 import CustomButton from "./CustomButton";
-import CarDetails from "./CarDetails";
 
 interface CarCardProps {
   car: CarProps;
 }
 
 const CarCard = ({ car }: CarCardProps) => {
-  const { city_mpg, year, make, model, transmission, drive } = car;
-
-  const [isOpen, setIsOpen] = useState(false);
+  const { city_mpg, year, make, model, transmission, drive, id } = car;
+  const { isSignedIn } = useAuth();
+  const router = useRouter();
 
   const carRent = calculateCarRent(city_mpg, year);
+
+  const handleRent = () => {
+    if (!isSignedIn) {
+      router.push("/sign-in");
+    } else if (id) {
+      router.push(`/rent?carId=${id}`);
+    }
+  };
 
   return (
     <div className="car-card group">
@@ -40,10 +48,10 @@ const CarCard = ({ car }: CarCardProps) => {
       <div className="relative w-full h-40 my-3 object-contain">
         <Image
           src={generateCarImageUrl(car)}
-          alt="car model"
+          alt={`${make} ${model}`}
           fill
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
           priority
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
           className="object-contain"
         />
       </div>
@@ -71,22 +79,22 @@ const CarCard = ({ car }: CarCardProps) => {
           </div>
         </div>
 
-        <div className="car-card__btn-container">
+        <div className="car-card__btn-container flex gap-2 w-full">
           <CustomButton
             title="View More"
-            containerStyles="w-full py-[16px] rounded-full bg-primary-blue"
+            containerStyles="flex-1 py-[16px] rounded-full bg-primary-blue hover:bg-blue-700 transition-all duration-300 ease-in-out hover:translate-y-0.5 hover:shadow-lg active:translate-y-1"
             textStyles="text-white text-[14px] leading-[17px] font-bold"
             rightIcon="/right-arrow.svg"
-            handleClick={() => setIsOpen(true)}
+            handleClick={() => id && router.push(`/car-details/${id}`)}
+          />
+          <CustomButton
+            title="Rent"
+            containerStyles="flex-1 py-[16px] rounded-full bg-green-600 hover:bg-green-700 transition-all duration-300 ease-in-out hover:translate-y-0.5 hover:shadow-lg active:translate-y-1"
+            textStyles="text-white text-[14px] leading-[17px] font-bold"
+            handleClick={handleRent}
           />
         </div>
       </div>
-
-      <CarDetails
-        isOpen={isOpen}
-        closeModal={() => setIsOpen(false)}
-        car={car}
-      />
     </div>
   );
 };
