@@ -18,6 +18,7 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  role      String   @default("USER") // USER or ADMIN
   orders    Order[]
   reviews   Review[]
 }
