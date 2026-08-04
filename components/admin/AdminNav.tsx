@@ -7,6 +7,8 @@ const navItems = [
   { href: "/admin", label: "Dashboard", icon: "📊" },
   { href: "/admin/orders", label: "Orders", icon: "📋" },
   { href: "/admin/cars", label: "Cars", icon: "🚗" },
+  { href: "/admin/users", label: "Users", icon: "👥" },
+  { href: "/profile", label: "My Profile", icon: "👤" },
 ];
 
 export default function AdminNav() {
@@ -15,11 +17,9 @@ export default function AdminNav() {
   return (
     <nav className="flex flex-col gap-2">
       {navItems.map((item) => {
-        // Check if current pathname starts with the item's href
-        // For /admin, exact match only to avoid matching all /admin/* routes
         const isActive =
-          item.href === "/admin"
-            ? pathname === "/admin"
+          item.href === "/admin" || item.href === "/profile"
+            ? pathname === item.href
             : pathname.startsWith(item.href);
 
         return (

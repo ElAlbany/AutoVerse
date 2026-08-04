@@ -90,7 +90,8 @@ export default async function RentPage({
             <div className="bg-blue-50 rounded-3xl p-6 border border-blue-100">
               <h3 className="font-bold text-blue-900 mb-2">Rental Policy</h3>
               <ul className="text-sm text-blue-800 space-y-2">
-                <li>• Free cancellation before pick-up date</li>
+                <li>• Free cancellation before 48 hours from pick-up date</li>
+                <li>• Refund only before 48 hours from pick-up date</li>
                 <li>• Full insurance included</li>
                 <li>• 24/7 roadside assistance</li>
                 <li>• Mileage limit: 300 miles/day</li>

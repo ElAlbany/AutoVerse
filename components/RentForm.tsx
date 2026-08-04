@@ -8,6 +8,7 @@ export default function RentForm({ car }: { car: any }) {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const router = useRouter();
 
   const pricePerDay = Number(car.pricePerDay);
@@ -23,11 +24,23 @@ export default function RentForm({ car }: { car: any }) {
       : 0;
   const totalPrice = days * pricePerDay;
 
+  // Last-minute = within 2 days of pick-up → no cancellation
+  const isLastMinute = (() => {
+    if (!startDate) return false;
+    const now = new Date();
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+    const cutoff = new Date(start);
+    cutoff.setDate(cutoff.getDate() - 2);
+    return now >= cutoff;
+  })();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!startDate || !endDate) return;
 
     setLoading(true);
+    setError("");
     try {
       await createOrder(
         car.id,
@@ -36,8 +49,8 @@ export default function RentForm({ car }: { car: any }) {
         totalPrice,
       );
       router.push("/profile/orders");
-    } catch (err) {
-      alert("Booking failed. Try again.");
+    } catch (err: any) {
+      setError(err.message || "Booking failed. Try again.");
     } finally {
       setLoading(false);
     }
@@ -45,6 +58,12 @@ export default function RentForm({ car }: { car: any }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
+          {error}
+        </div>
+      )}
+
       <div className="grid md:grid-cols-2 gap-6">
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -96,6 +115,38 @@ export default function RentForm({ car }: { car: any }) {
             <span className="text-3xl font-bold text-primary-blue">
               ${totalPrice}
             </span>
+          </div>
+        </div>
+      )}
+
+      {/* Cancellation Policy Warning */}
+      {isLastMinute && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex gap-3">
+          <span className="text-red-500 text-xl">⚠️</span>
+          <div>
+            <p className="text-sm font-bold text-red-800">
+              No Cancellation or Refund
+            </p>
+            <p className="text-xs text-red-700 mt-0.5">
+              Your pick-up date is within 2 days. By confirming, you acknowledge
+              that this booking <strong>cannot be cancelled</strong> and is{" "}
+              <strong>non-refundable</strong>.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {!isLastMinute && startDate && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex gap-3">
+          <span className="text-amber-500 text-xl">ℹ️</span>
+          <div>
+            <p className="text-sm font-bold text-amber-800">
+              Cancellation Policy
+            </p>
+            <p className="text-xs text-amber-700 mt-0.5">
+              You can cancel this order for a full refund up to{" "}
+              <strong>2 days before</strong> the pick-up date.
+            </p>
           </div>
         </div>
       )}

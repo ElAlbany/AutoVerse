@@ -1,28 +1,57 @@
 "use client";
 
 import { useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { cancelOrder } from "@/app/actions/order";
 
-export default function OrderCancelButton({ orderId }: { orderId: string }) {
-  const [isPending, startTransition] = useTransition();
-  const router = useRouter();
+export default function OrderCancelButton({
+  orderId,
+  startDate,
+  status,
+}: {
+  orderId: string;
+  startDate: string;
+  status: string;
+}) {
+  const [pending, startTransition] = useTransition();
 
-  const handleCancel = () => {
+  const canCancel = (() => {
+    if (status === "CANCELLED" || status === "COMPLETED") return false;
+    const now = new Date();
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
+    const cutoff = new Date(start);
+    cutoff.setDate(cutoff.getDate() - 2);
+    return now < cutoff;
+  })();
+
+  const handleClick = () => {
+    if (!canCancel) return;
     if (!confirm("Are you sure you want to cancel this order?")) return;
+
     startTransition(async () => {
-      await cancelOrder(orderId);
-      router.refresh();
+      const result = await cancelOrder(orderId);
+      if (!result.success) {
+        alert(result.message);
+      }
     });
   };
 
   return (
     <button
-      onClick={handleCancel}
-      disabled={isPending}
-      className="px-5 py-2.5 rounded-full bg-red-50 text-red-600 text-sm font-semibold hover:bg-red-100 transition-colors disabled:opacity-50"
+      onClick={handleClick}
+      disabled={pending || !canCancel}
+      title={
+        canCancel
+          ? "Cancel order"
+          : "Cancellation unavailable (within 2 days of start date)"
+      }
+      className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+        canCancel
+          ? "text-red-600 bg-red-50 hover:bg-red-100"
+          : "text-gray-400 bg-gray-100 cursor-not-allowed"
+      } disabled:opacity-50`}
     >
-      {isPending ? "Cancelling..." : "Cancel Order"}
+      {pending ? "Cancelling..." : "Cancel"}
     </button>
   );
 }

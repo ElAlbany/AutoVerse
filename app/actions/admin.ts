@@ -4,6 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { sendOrderStatusEmail } from "@/lib/email";
 
 async function checkAdmin() {
   const { userId } = await auth();
@@ -17,7 +18,15 @@ async function checkAdmin() {
   return user;
 }
 
-/* ─────────────── Existing: Order Status ─────────────── */
+/* ─────────────── Order Status ─────────────── */
+
+const VALID_TRANSITIONS: Record<string, string[]> = {
+  PENDING: ["CONFIRMED", "CANCELLED"],
+  CONFIRMED: ["ACTIVE", "CANCELLED"],
+  ACTIVE: ["COMPLETED", "CANCELLED"],
+  COMPLETED: ["CANCELLED"],
+  CANCELLED: [],
+};
 
 export async function updateOrderStatus(orderId: string, status: string) {
   await checkAdmin();
@@ -31,16 +40,48 @@ export async function updateOrderStatus(orderId: string, status: string) {
   ];
   if (!validStatuses.includes(status)) throw new Error("Invalid status");
 
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: { user: true, car: true },
+  });
+
+  if (!order) throw new Error("Order not found");
+
+  const allowed = VALID_TRANSITIONS[order.status] || [];
+  if (status !== order.status && !allowed.includes(status)) {
+    throw new Error(`Cannot change status from ${order.status} to ${status}`);
+  }
+
   await prisma.order.update({
     where: { id: orderId },
     data: { status: status as any },
   });
 
+  const subjects: Record<string, string> = {
+    CONFIRMED: "Order Confirmed - Ready for Pickup",
+    ACTIVE: "Rental Started - Enjoy Your Ride",
+    COMPLETED: "Rental Completed - Thank You",
+    CANCELLED: "Order Cancelled",
+  };
+
+  if (subjects[status]) {
+    await sendOrderStatusEmail({
+      to: order.user.email,
+      subject: subjects[status],
+      orderId: order.id,
+      carName: `${order.car.year} ${order.car.make} ${order.car.model}`,
+      status,
+      startDate: order.startDate.toISOString(),
+      endDate: order.endDate.toISOString(),
+      totalPrice: Number(order.totalPrice),
+    });
+  }
+
   revalidatePath("/admin/orders");
   revalidatePath("/profile/orders");
 }
 
-/* ─────────────── Helpers ─────────────── */
+/* ─────────────── Car Images Helper ─────────────── */
 
 function generateCarImages(make: string, model: string, year: number) {
   const angles = ["01", "05", "09", "13", "29"];
@@ -191,7 +232,7 @@ export async function deleteCar(id: string) {
   revalidatePath("/");
 }
 
-/* ─────────────── Toggle Available / Featured ─────────────── */
+/* ─────────────── Toggle Car Status ─────────────── */
 
 export async function toggleCarStatus(
   id: string,
@@ -209,4 +250,45 @@ export async function toggleCarStatus(
   revalidatePath("/admin/cars");
   revalidatePath("/");
   revalidatePath(`/car-details/${id}`);
+}
+
+/* ─────────────── User Management ─────────────── */
+
+export async function updateUserRole(userId: string, role: string) {
+  await checkAdmin();
+
+  const validRoles = ["USER", "ADMIN"];
+  if (!validRoles.includes(role)) throw new Error("Invalid role");
+
+  const { userId: currentClerkId } = await auth();
+  const currentUser = await prisma.user.findUnique({
+    where: { clerkId: currentClerkId! },
+  });
+  if (currentUser?.id === userId && role !== "ADMIN") {
+    throw new Error("You cannot demote yourself");
+  }
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { role },
+  });
+
+  revalidatePath("/admin/users");
+}
+
+export async function deleteUser(userId: string) {
+  await checkAdmin();
+
+  const { userId: currentClerkId } = await auth();
+  const currentUser = await prisma.user.findUnique({
+    where: { clerkId: currentClerkId! },
+  });
+  if (currentUser?.id === userId) {
+    throw new Error("You cannot delete your own account");
+  }
+
+  await prisma.user.delete({ where: { id: userId } });
+
+  revalidatePath("/admin/users");
+  revalidatePath("/admin");
 }

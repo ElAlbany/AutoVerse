@@ -58,13 +58,18 @@ export default async function CarDetailsPage({
         <div className="max-w-7xl mx-auto px-6 py-16 lg:py-20 relative z-10">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-6">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
                 <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-semibold border border-white/30">
                   {car.year}
                 </span>
                 <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-semibold border border-white/30 capitalize">
                   {car.class}
                 </span>
+                {!car.available && (
+                  <span className="px-3 py-1 bg-red-500/80 backdrop-blur-sm rounded-full text-xs font-semibold border border-red-400/30">
+                    Unavailable
+                  </span>
+                )}
               </div>
               <h1 className="text-5xl lg:text-6xl font-bold capitalize leading-tight">
                 {car.make} <br />
@@ -224,15 +229,26 @@ export default async function CarDetailsPage({
                 </span>
               </div>
 
-              <Link
-                href={`/rent?carId=${car.id}`}
-                className="block w-full py-4 rounded-full bg-primary-blue text-white font-bold text-center transition-all duration-300 hover:bg-blue-700 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0"
-              >
-                Rent This Car
-              </Link>
+              {car.available ? (
+                <Link
+                  href={`/rent?carId=${car.id}`}
+                  className="block w-full py-4 rounded-full bg-primary-blue text-white font-bold text-center transition-all duration-300 hover:bg-blue-700 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0"
+                >
+                  Rent This Car
+                </Link>
+              ) : (
+                <button
+                  disabled
+                  className="block w-full py-4 rounded-full bg-gray-200 text-gray-400 font-bold text-center cursor-not-allowed"
+                >
+                  Currently Unavailable
+                </button>
+              )}
 
               <p className="text-center text-xs text-gray-400 mt-4">
-                Instant confirmation available
+                {car.available
+                  ? "Instant confirmation available"
+                  : "This car is not available for rent"}
               </p>
             </div>
           </div>

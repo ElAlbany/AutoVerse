@@ -46,13 +46,36 @@ export default async function AdminOrdersPage({
     orderBy: { createdAt: "desc" },
   });
 
+  // Explicitly serialize every field — no spreading raw Prisma objects
   const serializedOrders = orders.map((o) => ({
-    ...o,
-    totalPrice: Number(o.totalPrice),
+    id: o.id,
+    userId: o.userId,
+    carId: o.carId,
     startDate: o.startDate.toISOString(),
     endDate: o.endDate.toISOString(),
+    totalPrice: Number(o.totalPrice),
+    status: o.status,
     createdAt: o.createdAt.toISOString(),
-    car: { ...o.car, pricePerDay: Number(o.car.pricePerDay) },
+    updatedAt: o.updatedAt.toISOString(),
+    user: {
+      id: o.user.id,
+      firstName: o.user.firstName,
+      lastName: o.user.lastName,
+      email: o.user.email,
+      phone: o.user.phone,
+    },
+    car: {
+      id: o.car.id,
+      make: o.car.make,
+      model: o.car.model,
+      year: o.car.year,
+      pricePerDay: Number(o.car.pricePerDay),
+      images: o.car.images,
+      fuel_type: o.car.fuel_type,
+      transmission: o.car.transmission,
+      drive: o.car.drive,
+      class: o.car.class,
+    },
   }));
 
   return (

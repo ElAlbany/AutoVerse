@@ -96,7 +96,13 @@ export default async function OrderDetailPage({
           >
             ← Back to Orders
           </Link>
-          {isActive && <OrderCancelButton orderId={order.id} />}
+          {isActive && (
+            <OrderCancelButton
+              orderId={order.id}
+              startDate={order.startDate}
+              status={order.status}
+            />
+          )}
         </div>
       </div>
 

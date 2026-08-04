@@ -1,13 +1,15 @@
 import { getUserOrders } from "@/app/actions/order";
 import OrderList from "@/components/OrderList";
 
+type Order = Awaited<ReturnType<typeof getUserOrders>>[number];
+
 export default async function OrdersPage() {
   const orders = await getUserOrders();
 
-  const currentOrders = orders.filter((o) =>
+  const currentOrders = orders.filter((o: Order) =>
     ["PENDING", "CONFIRMED", "ACTIVE"].includes(o.status),
   );
-  const historyOrders = orders.filter((o) =>
+  const historyOrders = orders.filter((o: Order) =>
     ["COMPLETED", "CANCELLED"].includes(o.status),
   );
 

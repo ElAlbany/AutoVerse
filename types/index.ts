@@ -14,6 +14,8 @@ export interface CarProps {
   model: string;
   transmission: string;
   year: number;
+  available: boolean;
+  featured: boolean;
 }
 
 export interface FilterProps {

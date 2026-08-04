@@ -13,7 +13,17 @@ interface CarCardProps {
 }
 
 const CarCard = ({ car }: CarCardProps) => {
-  const { city_mpg, year, make, model, transmission, drive, id } = car;
+  const {
+    city_mpg,
+    year,
+    make,
+    model,
+    transmission,
+    drive,
+    id,
+    available,
+    featured,
+  } = car;
   const { isSignedIn } = useAuth();
   const router = useRouter();
 
@@ -28,7 +38,23 @@ const CarCard = ({ car }: CarCardProps) => {
   };
 
   return (
-    <div className="car-card group">
+    <div
+      className={`car-card group relative ${featured ? "ring-2 ring-amber-400 ring-offset-2" : ""}`}
+    >
+      {/* Featured Badge */}
+      {featured && (
+        <div className="absolute -top-3 left-4 z-20 bg-gradient-to-r from-amber-400 to-yellow-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md flex items-center gap-1">
+          <span>⭐</span> Featured
+        </div>
+      )}
+
+      {/* Unavailable Badge */}
+      {!available && (
+        <div className="absolute bottom-2 right-2 z-10 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-lg">
+          Unavailable
+        </div>
+      )}
+
       <div className="car-card__content">
         <h2 className="car-card__content-title">
           {make} {model}
@@ -87,12 +113,21 @@ const CarCard = ({ car }: CarCardProps) => {
             rightIcon="/right-arrow.svg"
             handleClick={() => id && router.push(`/car-details/${id}`)}
           />
-          <CustomButton
-            title="Rent"
-            containerStyles="flex-1 py-[16px] rounded-full bg-green-600 hover:bg-green-700 transition-all duration-300 ease-in-out hover:translate-y-0.5 hover:shadow-lg active:translate-y-1"
-            textStyles="text-white text-[14px] leading-[17px] font-bold"
-            handleClick={handleRent}
-          />
+          {available ? (
+            <CustomButton
+              title="Rent"
+              containerStyles="flex-1 py-[16px] rounded-full bg-green-600 hover:bg-green-700 transition-all duration-300 ease-in-out hover:translate-y-0.5 hover:shadow-lg active:translate-y-1"
+              textStyles="text-white text-[14px] leading-[17px] font-bold"
+              handleClick={handleRent}
+            />
+          ) : (
+            <button
+              disabled
+              className="flex-1 py-[16px] rounded-full bg-gray-300 text-gray-500 text-[14px] leading-[17px] font-bold cursor-not-allowed"
+            >
+              Unavailable
+            </button>
+          )}
         </div>
       </div>
     </div>
