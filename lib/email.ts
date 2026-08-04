@@ -1,6 +1,18 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazy initialization — only create Resend when needed
+let resend: Resend | null = null;
+
+function getResend() {
+  if (!resend) {
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      return null;
+    }
+    resend = new Resend(apiKey);
+  }
+  return resend;
+}
 
 export async function sendOrderStatusEmail({
   to,
@@ -21,7 +33,9 @@ export async function sendOrderStatusEmail({
   endDate: string;
   totalPrice: number;
 }) {
-  if (!process.env.RESEND_API_KEY) {
+  const resendInstance = getResend();
+
+  if (!resendInstance) {
     console.warn("RESEND_API_KEY not set — skipping email");
     return;
   }
@@ -35,7 +49,7 @@ export async function sendOrderStatusEmail({
   };
 
   try {
-    await resend.emails.send({
+    await resendInstance.emails.send({
       from: "CarHub <onboarding@resend.dev>",
       to,
       subject,
