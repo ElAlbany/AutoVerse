@@ -2,16 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getOrderById } from "@/app/actions/order";
-import { cancelOrder } from "@/app/actions/order";
 import OrderCancelButton from "@/components/OrderCancelButton";
-
-const statusColors: Record<string, string> = {
-  PENDING: "bg-amber-100 text-amber-700 border-amber-200",
-  CONFIRMED: "bg-blue-100 text-blue-700 border-blue-200",
-  ACTIVE: "bg-emerald-100 text-emerald-700 border-emerald-200",
-  COMPLETED: "bg-slate-100 text-slate-700 border-slate-200",
-  CANCELLED: "bg-red-100 text-red-700 border-red-200",
-};
+import StatusBadge from "@/components/StatusBadge";
 
 export default async function OrderDetailPage({
   params,
@@ -70,29 +62,27 @@ export default async function OrderDetailPage({
   );
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-slide-up">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-3xl font-bold text-gray-900">Order Details</h1>
-            <span
-              className={`px-3 py-1 rounded-full text-xs font-semibold border ${
-                statusColors[order.status]
-              }`}
-            >
-              {order.status}
-            </span>
+          <div className="flex items-center gap-3 mb-2 flex-wrap">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+              Order Details
+            </h1>
+            <StatusBadge status={order.status} />
           </div>
-          <p className="text-gray-500 text-sm">
+          <p className="text-gray-500 dark:text-gray-400 text-sm">
             Order ID:{" "}
-            <span className="font-mono text-gray-700">{order.id}</span>
+            <span className="font-mono text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-white/5 px-2 py-0.5 rounded text-xs">
+              {order.id.slice(0, 8)}...
+            </span>
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-3 flex-wrap">
           <Link
             href="/profile/orders"
-            className="px-5 py-2.5 rounded-full bg-gray-100 text-gray-700 text-sm font-semibold hover:bg-gray-200 transition-colors"
+            className="px-5 py-2.5 rounded-full bg-gray-100 dark:bg-white/5 text-gray-700 dark:text-gray-300 text-sm font-semibold hover:bg-gray-200 dark:hover:bg-white/10 transition-all duration-300 border border-gray-200 dark:border-white/10"
           >
             ← Back to Orders
           </Link>
@@ -106,13 +96,13 @@ export default async function OrderDetailPage({
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-8">
+      <div className="grid lg:grid-cols-3 gap-6 lg:gap-8">
         {/* Left: Car & Timeline */}
         <div className="lg:col-span-2 space-y-6">
           {/* Car Card */}
-          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
+          <div className="bg-white dark:bg-dark-card rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-dark-border transition-all duration-500 hover:shadow-lg">
             <div className="flex flex-col md:flex-row gap-6">
-              <div className="relative w-full md:w-64 h-44 bg-gray-50 rounded-2xl overflow-hidden flex-shrink-0">
+              <div className="relative w-full md:w-64 h-44 bg-gray-50 dark:bg-white/5 rounded-2xl overflow-hidden flex-shrink-0">
                 <Image
                   src={carImage}
                   alt={`${order.car.make} ${order.car.model}`}
@@ -121,15 +111,15 @@ export default async function OrderDetailPage({
                 />
               </div>
               <div className="flex-1 flex flex-col justify-center">
-                <h2 className="text-2xl font-bold text-gray-900 capitalize">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 capitalize">
                   {order.car.year} {order.car.make} {order.car.model}
                 </h2>
-                <p className="text-gray-500 mt-1 capitalize">
+                <p className="text-gray-500 dark:text-gray-400 mt-1 capitalize">
                   {order.car.class} •{" "}
                   {order.car.transmission === "a" ? "Automatic" : "Manual"} •{" "}
                   {order.car.drive.toUpperCase()}
                 </p>
-                <div className="flex flex-wrap gap-4 mt-4">
+                <div className="flex flex-wrap gap-2 mt-4">
                   <SpecBadge icon="⛽" label={order.car.fuel_type} />
                   <SpecBadge icon="🛞" label={`${order.car.city_mpg} MPG`} />
                   <SpecBadge icon="⚙️" label={`${order.car.cylinders} Cyl`} />
@@ -137,7 +127,7 @@ export default async function OrderDetailPage({
                 </div>
                 <Link
                   href={`/car-details/${order.car.id}`}
-                  className="mt-4 text-primary-blue text-sm font-semibold hover:underline w-fit"
+                  className="mt-4 text-primary-blue dark:text-accent-cyan text-sm font-semibold hover:underline w-fit transition-all"
                 >
                   View Car Page →
                 </Link>
@@ -146,29 +136,47 @@ export default async function OrderDetailPage({
           </div>
 
           {/* Timeline */}
-          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-            <h3 className="text-lg font-bold text-gray-900 mb-6">
+          <div className="bg-white dark:bg-dark-card rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-dark-border">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-6">
               Rental Timeline
             </h3>
             <div className="relative">
-              <div className="absolute left-3.5 top-2 bottom-2 w-0.5 bg-gray-100" />
+              <div className="absolute left-[15px] top-2 bottom-2 w-0.5 bg-gray-100 dark:bg-dark-border" />
               <div className="space-y-6">
                 {timeline.map((step, i) => (
                   <div key={i} className="relative flex items-start gap-4">
                     <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 z-10 border-2 ${
+                      className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 z-10 border-2 transition-all duration-500 ${
                         step.done
-                          ? "bg-primary-blue border-primary-blue text-white"
-                          : "bg-white border-gray-200 text-gray-300"
+                          ? "bg-gradient-to-br from-primary-blue to-accent-cyan border-primary-blue text-white shadow-lg shadow-primary-blue/25"
+                          : "bg-white dark:bg-dark-card border-gray-200 dark:border-dark-border text-gray-300 dark:text-gray-600"
                       }`}
                     >
-                      {step.done ? "✓" : i + 1}
+                      {step.done ? (
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={3}
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                      ) : (
+                        <span className="text-xs font-bold">{i + 1}</span>
+                      )}
                     </div>
                     <div>
-                      <p className="font-semibold text-gray-900">
+                      <p className="font-semibold text-gray-900 dark:text-gray-100">
                         {step.label}
                       </p>
-                      <p className="text-sm text-gray-500">{step.date}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {step.date}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -179,44 +187,48 @@ export default async function OrderDetailPage({
 
         {/* Right: Receipt */}
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 sticky top-28">
-            <h3 className="text-lg font-bold text-gray-900 mb-6">
+          <div className="bg-white dark:bg-dark-card rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-dark-border lg:sticky lg:top-28 transition-all duration-500 hover:shadow-lg">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-6">
               Payment Summary
             </h3>
 
             <div className="space-y-4 text-sm">
-              <div className="flex justify-between text-gray-600">
+              <div className="flex justify-between text-gray-600 dark:text-gray-400">
                 <span>Daily Rate</span>
-                <span className="font-medium">${order.car.pricePerDay}</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100">
+                  ${order.car.pricePerDay}
+                </span>
               </div>
-              <div className="flex justify-between text-gray-600">
+              <div className="flex justify-between text-gray-600 dark:text-gray-400">
                 <span>Rental Days</span>
-                <span className="font-medium">{days} days</span>
+                <span className="font-medium text-gray-900 dark:text-gray-100">
+                  {days} days
+                </span>
               </div>
-              <div className="flex justify-between text-gray-600">
+              <div className="flex justify-between text-gray-600 dark:text-gray-400">
                 <span>Pick-up</span>
-                <span className="font-medium">
+                <span className="font-medium text-gray-900 dark:text-gray-100">
                   {new Date(order.startDate).toLocaleDateString()}
                 </span>
               </div>
-              <div className="flex justify-between text-gray-600">
+              <div className="flex justify-between text-gray-600 dark:text-gray-400">
                 <span>Return</span>
-                <span className="font-medium">
+                <span className="font-medium text-gray-900 dark:text-gray-100">
                   {new Date(order.endDate).toLocaleDateString()}
                 </span>
               </div>
-              <div className="border-t border-gray-100 pt-4 flex justify-between items-center">
-                <span className="text-gray-900 font-bold text-base">
+              <div className="border-t border-gray-100 dark:border-dark-border pt-4 flex justify-between items-center">
+                <span className="text-gray-900 dark:text-gray-100 font-bold text-base">
                   Total Paid
                 </span>
-                <span className="text-2xl font-bold text-primary-blue">
+                <span className="text-2xl font-bold text-gradient">
                   ${order.totalPrice}
                 </span>
               </div>
             </div>
 
             {order.status === "COMPLETED" && (
-              <button className="w-full mt-6 py-3 rounded-full bg-primary-blue text-white font-bold hover:bg-blue-700 transition-colors">
+              <button className="w-full mt-6 py-3 rounded-full bg-gradient-to-r from-primary-blue to-accent-cyan text-white font-bold hover:shadow-lg hover:shadow-primary-blue/30 transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0">
                 Write a Review
               </button>
             )}
@@ -229,7 +241,7 @@ export default async function OrderDetailPage({
 
 function SpecBadge({ icon, label }: { icon: string; label: string }) {
   return (
-    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 rounded-full text-sm text-gray-600">
+    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 dark:bg-white/5 rounded-full text-sm text-gray-600 dark:text-gray-400 border border-gray-100 dark:border-white/5">
       <span>{icon}</span>
       <span className="capitalize">{label}</span>
     </div>

@@ -67,7 +67,7 @@ export default function CarForm({ action, initialData, mode }: CarFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-xl text-sm transition-colors duration-500">
           {error}
         </div>
       )}
@@ -79,7 +79,7 @@ export default function CarForm({ action, initialData, mode }: CarFormProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Make */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">
+          <label className="text-sm font-medium text-gray-700 dark:text-dark-text">
             Make <span className="text-red-500">*</span>
           </label>
           <select
@@ -87,7 +87,7 @@ export default function CarForm({ action, initialData, mode }: CarFormProps) {
             required
             value={make}
             onChange={(e) => handleMakeChange(e.target.value)}
-            className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue"
+            className="w-full rounded-xl border border-gray-200 dark:border-dark-border px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue dark:bg-dark-surface dark:text-dark-text transition-colors duration-500"
           >
             <option value="">Select make</option>
             {CAR_MAKES.map((m) => (
@@ -100,7 +100,7 @@ export default function CarForm({ action, initialData, mode }: CarFormProps) {
 
         {/* Model */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">
+          <label className="text-sm font-medium text-gray-700 dark:text-dark-text">
             Model <span className="text-red-500">*</span>
           </label>
           <select
@@ -109,7 +109,7 @@ export default function CarForm({ action, initialData, mode }: CarFormProps) {
             value={selectedModel}
             onChange={(e) => setSelectedModel(e.target.value)}
             disabled={!make}
-            className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue disabled:bg-gray-50 disabled:text-gray-400"
+            className="w-full rounded-xl border border-gray-200 dark:border-dark-border px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue disabled:bg-gray-50 dark:disabled:bg-dark-surface disabled:text-gray-400 dark:disabled:text-dark-muted dark:bg-dark-surface dark:text-dark-text transition-colors duration-500"
           >
             <option value="">
               {make ? "Select model" : "Select make first"}
@@ -124,14 +124,14 @@ export default function CarForm({ action, initialData, mode }: CarFormProps) {
 
         {/* Year */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">
+          <label className="text-sm font-medium text-gray-700 dark:text-dark-text">
             Year <span className="text-red-500">*</span>
           </label>
           <select
             name="year"
             required
             defaultValue={initialData?.year || ""}
-            className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue"
+            className="w-full rounded-xl border border-gray-200 dark:border-dark-border px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue dark:bg-dark-surface dark:text-dark-text transition-colors duration-500"
           >
             <option value="">Select year</option>
             {YEARS.map((y) => (
@@ -144,7 +144,7 @@ export default function CarForm({ action, initialData, mode }: CarFormProps) {
 
         {/* Price per day */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">
+          <label className="text-sm font-medium text-gray-700 dark:text-dark-text">
             Price per Day ($) <span className="text-red-500">*</span>
           </label>
           <input
@@ -154,17 +154,19 @@ export default function CarForm({ action, initialData, mode }: CarFormProps) {
             min="1"
             required
             defaultValue={initialData?.pricePerDay || ""}
-            className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue"
+            className="w-full rounded-xl border border-gray-200 dark:border-dark-border px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue dark:bg-dark-surface dark:text-dark-text transition-colors duration-500"
           />
         </div>
 
         {/* Class */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">Class</label>
+          <label className="text-sm font-medium text-gray-700 dark:text-dark-text">
+            Class
+          </label>
           <select
             name="class"
             defaultValue={initialData?.class || ""}
-            className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue"
+            className="w-full rounded-xl border border-gray-200 dark:border-dark-border px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue dark:bg-dark-surface dark:text-dark-text transition-colors duration-500"
           >
             <option value="">Select class</option>
             {CAR_CLASSES.map((c) => (
@@ -177,11 +179,13 @@ export default function CarForm({ action, initialData, mode }: CarFormProps) {
 
         {/* Fuel Type */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">Fuel Type</label>
+          <label className="text-sm font-medium text-gray-700 dark:text-dark-text">
+            Fuel Type
+          </label>
           <select
             name="fuel_type"
             defaultValue={initialData?.fuel_type || ""}
-            className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue"
+            className="w-full rounded-xl border border-gray-200 dark:border-dark-border px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue dark:bg-dark-surface dark:text-dark-text transition-colors duration-500"
           >
             <option value="">Select fuel type</option>
             {FUEL_TYPES.map((f) => (
@@ -194,11 +198,13 @@ export default function CarForm({ action, initialData, mode }: CarFormProps) {
 
         {/* Drive */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">Drive</label>
+          <label className="text-sm font-medium text-gray-700 dark:text-dark-text">
+            Drive
+          </label>
           <select
             name="drive"
             defaultValue={initialData?.drive || ""}
-            className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue"
+            className="w-full rounded-xl border border-gray-200 dark:border-dark-border px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue dark:bg-dark-surface dark:text-dark-text transition-colors duration-500"
           >
             <option value="">Select drive type</option>
             {DRIVE_TYPES.map((d) => (
@@ -211,13 +217,13 @@ export default function CarForm({ action, initialData, mode }: CarFormProps) {
 
         {/* Transmission */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">
+          <label className="text-sm font-medium text-gray-700 dark:text-dark-text">
             Transmission
           </label>
           <select
             name="transmission"
             defaultValue={initialData?.transmission || ""}
-            className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue"
+            className="w-full rounded-xl border border-gray-200 dark:border-dark-border px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue dark:bg-dark-surface dark:text-dark-text transition-colors duration-500"
           >
             <option value="">Select transmission</option>
             {TRANSMISSION_TYPES.map((t) => (
@@ -230,19 +236,21 @@ export default function CarForm({ action, initialData, mode }: CarFormProps) {
 
         {/* City MPG */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">City MPG</label>
+          <label className="text-sm font-medium text-gray-700 dark:text-dark-text">
+            City MPG
+          </label>
           <input
             type="number"
             name="city_mpg"
             min="0"
             defaultValue={initialData?.city_mpg || ""}
-            className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue"
+            className="w-full rounded-xl border border-gray-200 dark:border-dark-border px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue dark:bg-dark-surface dark:text-dark-text transition-colors duration-500"
           />
         </div>
 
         {/* Highway MPG */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">
+          <label className="text-sm font-medium text-gray-700 dark:text-dark-text">
             Highway MPG
           </label>
           <input
@@ -250,13 +258,13 @@ export default function CarForm({ action, initialData, mode }: CarFormProps) {
             name="highway_mpg"
             min="0"
             defaultValue={initialData?.highway_mpg || ""}
-            className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue"
+            className="w-full rounded-xl border border-gray-200 dark:border-dark-border px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue dark:bg-dark-surface dark:text-dark-text transition-colors duration-500"
           />
         </div>
 
         {/* Combined MPG */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">
+          <label className="text-sm font-medium text-gray-700 dark:text-dark-text">
             Combined MPG
           </label>
           <input
@@ -264,25 +272,27 @@ export default function CarForm({ action, initialData, mode }: CarFormProps) {
             name="combination_mpg"
             min="0"
             defaultValue={initialData?.combination_mpg || ""}
-            className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue"
+            className="w-full rounded-xl border border-gray-200 dark:border-dark-border px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue dark:bg-dark-surface dark:text-dark-text transition-colors duration-500"
           />
         </div>
 
         {/* Cylinders */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">Cylinders</label>
+          <label className="text-sm font-medium text-gray-700 dark:text-dark-text">
+            Cylinders
+          </label>
           <input
             type="number"
             name="cylinders"
             min="0"
             defaultValue={initialData?.cylinders || ""}
-            className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue"
+            className="w-full rounded-xl border border-gray-200 dark:border-dark-border px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue dark:bg-dark-surface dark:text-dark-text transition-colors duration-500"
           />
         </div>
 
         {/* Displacement */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">
+          <label className="text-sm font-medium text-gray-700 dark:text-dark-text">
             Displacement (L)
           </label>
           <input
@@ -291,19 +301,21 @@ export default function CarForm({ action, initialData, mode }: CarFormProps) {
             step="0.1"
             min="0"
             defaultValue={initialData?.displacement || ""}
-            className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue"
+            className="w-full rounded-xl border border-gray-200 dark:border-dark-border px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue dark:bg-dark-surface dark:text-dark-text transition-colors duration-500"
           />
         </div>
       </div>
 
       {/* Description */}
       <div className="space-y-2">
-        <label className="text-sm font-medium text-gray-700">Description</label>
+        <label className="text-sm font-medium text-gray-700 dark:text-dark-text">
+          Description
+        </label>
         <textarea
           name="description"
           rows={3}
           defaultValue={initialData?.description || ""}
-          className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue resize-none"
+          className="w-full rounded-xl border border-gray-200 dark:border-dark-border px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue resize-none dark:bg-dark-surface dark:text-dark-text transition-colors duration-500"
           placeholder="Brief description of the car..."
         />
       </div>
@@ -318,9 +330,9 @@ export default function CarForm({ action, initialData, mode }: CarFormProps) {
               defaultChecked={initialData?.available ?? true}
               className="sr-only peer"
             />
-            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-blue/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-blue"></div>
+            <div className="w-11 h-6 bg-gray-200 dark:bg-dark-border peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-blue/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-blue transition-colors duration-500"></div>
           </div>
-          <span className="text-sm font-medium text-gray-700">
+          <span className="text-sm font-medium text-gray-700 dark:text-dark-text">
             Available for rent
           </span>
         </label>
@@ -333,9 +345,9 @@ export default function CarForm({ action, initialData, mode }: CarFormProps) {
               defaultChecked={initialData?.featured ?? false}
               className="sr-only peer"
             />
-            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-blue/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-blue"></div>
+            <div className="w-11 h-6 bg-gray-200 dark:bg-dark-border peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-blue/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-blue transition-colors duration-500"></div>
           </div>
-          <span className="text-sm font-medium text-gray-700">
+          <span className="text-sm font-medium text-gray-700 dark:text-dark-text">
             Featured on homepage
           </span>
         </label>
@@ -349,9 +361,9 @@ export default function CarForm({ action, initialData, mode }: CarFormProps) {
               name="regenerateImages"
               className="sr-only peer"
             />
-            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-blue/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-blue"></div>
+            <div className="w-11 h-6 bg-gray-200 dark:bg-dark-border peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-blue/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-blue transition-colors duration-500"></div>
           </div>
-          <span className="text-sm font-medium text-gray-700">
+          <span className="text-sm font-medium text-gray-700 dark:text-dark-text">
             Regenerate images (if make/model/year changed)
           </span>
         </label>
@@ -362,14 +374,14 @@ export default function CarForm({ action, initialData, mode }: CarFormProps) {
         <button
           type="submit"
           disabled={pending}
-          className="bg-primary-blue text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="bg-primary-blue text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed dark:shadow-lg dark:shadow-primary-blue/20"
         >
           {pending ? "Saving..." : mode === "create" ? "Add Car" : "Update Car"}
         </button>
         <button
           type="button"
           onClick={() => router.push("/admin/cars")}
-          className="px-6 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-100 transition-colors"
+          className="px-6 py-2.5 rounded-xl text-sm font-medium text-gray-600 dark:text-dark-muted hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
         >
           Cancel
         </button>

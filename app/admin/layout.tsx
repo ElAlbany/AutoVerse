@@ -18,13 +18,17 @@ export default async function AdminLayout({
   if (!user || user.role !== "ADMIN") redirect("/");
 
   return (
-    <main className="min-h-screen bg-gray-50 pt-28 pb-16">
+    <main className="min-h-screen bg-gray-50 dark:bg-dark-bg pt-28 pb-16 transition-colors duration-500">
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex flex-col lg:flex-row gap-8">
           <aside className="lg:w-64 flex-shrink-0">
-            <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 sticky top-28">
-              <h2 className="text-lg font-bold text-gray-900 mb-1">Admin</h2>
-              <p className="text-sm text-gray-500 mb-6">Manage the platform</p>
+            <div className="bg-white dark:bg-dark-card rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-dark-border sticky top-28 transition-colors duration-500">
+              <h2 className="text-lg font-bold text-gray-900 dark:text-dark-text mb-1">
+                Admin
+              </h2>
+              <p className="text-sm text-gray-500 dark:text-dark-muted mb-6">
+                Manage the platform
+              </p>
               <AdminNav />
             </div>
           </aside>

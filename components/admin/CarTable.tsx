@@ -46,20 +46,35 @@ export default function CarTable({ cars }: { cars: Car[] }) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-left text-sm">
-        <thead className="bg-gray-50 border-b border-gray-100">
+        <thead className="bg-gray-50 dark:bg-dark-surface border-b border-gray-100 dark:border-dark-border transition-colors duration-500">
           <tr>
-            <th className="px-6 py-4 font-semibold text-gray-700">Car</th>
-            <th className="px-6 py-4 font-semibold text-gray-700">Specs</th>
-            <th className="px-6 py-4 font-semibold text-gray-700">Price/Day</th>
-            <th className="px-6 py-4 font-semibold text-gray-700">Available</th>
-            <th className="px-6 py-4 font-semibold text-gray-700">Featured</th>
-            <th className="px-6 py-4 font-semibold text-gray-700">Actions</th>
+            <th className="px-6 py-4 font-semibold text-gray-700 dark:text-dark-text">
+              Car
+            </th>
+            <th className="px-6 py-4 font-semibold text-gray-700 dark:text-dark-text">
+              Specs
+            </th>
+            <th className="px-6 py-4 font-semibold text-gray-700 dark:text-dark-text">
+              Price/Day
+            </th>
+            <th className="px-6 py-4 font-semibold text-gray-700 dark:text-dark-text">
+              Available
+            </th>
+            <th className="px-6 py-4 font-semibold text-gray-700 dark:text-dark-text">
+              Featured
+            </th>
+            <th className="px-6 py-4 font-semibold text-gray-700 dark:text-dark-text">
+              Actions
+            </th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-50">
+        <tbody className="divide-y divide-gray-50 dark:divide-dark-border transition-colors duration-500">
           {optimisticCars.length === 0 && (
             <tr>
-              <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+              <td
+                colSpan={6}
+                className="px-6 py-12 text-center text-gray-500 dark:text-dark-muted"
+              >
                 No cars found. Add your first car to get started.
               </td>
             </tr>
@@ -67,11 +82,11 @@ export default function CarTable({ cars }: { cars: Car[] }) {
           {optimisticCars.map((car) => (
             <tr
               key={car.id}
-              className="hover:bg-gray-50/50 transition-colors group"
+              className="hover:bg-gray-50/50 dark:hover:bg-white/5 transition-colors group"
             >
               <td className="px-6 py-4">
                 <div className="flex items-center gap-3">
-                  <div className="relative w-16 h-10 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                  <div className="relative w-16 h-10 rounded-lg overflow-hidden bg-gray-100 dark:bg-dark-surface flex-shrink-0 transition-colors duration-500">
                     {car.images[0] ? (
                       <Image
                         src={car.images[0]}
@@ -81,34 +96,38 @@ export default function CarTable({ cars }: { cars: Car[] }) {
                         sizes="64px"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
+                      <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-dark-muted text-xs transition-colors duration-500">
                         No img
                       </div>
                     )}
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900 capitalize">
+                    <p className="font-medium text-gray-900 dark:text-dark-text capitalize">
                       {car.year} {car.make} {car.model}
                     </p>
-                    <p className="text-xs text-gray-500">{car.class}</p>
+                    <p className="text-xs text-gray-500 dark:text-dark-muted">
+                      {car.class}
+                    </p>
                   </div>
                 </div>
               </td>
-              <td className="px-6 py-4 text-gray-500 text-xs space-y-0.5">
+              <td className="px-6 py-4 text-gray-500 dark:text-dark-muted text-xs space-y-0.5">
                 <p>
                   {car.fuel_type} •{" "}
                   {car.transmission === "a" ? "Auto" : "Manual"}
                 </p>
                 <p>{car.drive.toUpperCase()}</p>
               </td>
-              <td className="px-6 py-4 font-bold text-gray-900">
+              <td className="px-6 py-4 font-bold text-gray-900 dark:text-dark-text">
                 ${car.pricePerDay}
               </td>
               <td className="px-6 py-4">
                 <button
                   onClick={() => handleToggle(car, "available")}
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    car.available ? "bg-primary-blue" : "bg-gray-200"
+                    car.available
+                      ? "bg-primary-blue"
+                      : "bg-gray-200 dark:bg-dark-border"
                   }`}
                 >
                   <span
@@ -122,7 +141,9 @@ export default function CarTable({ cars }: { cars: Car[] }) {
                 <button
                   onClick={() => handleToggle(car, "featured")}
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    car.featured ? "bg-primary-blue" : "bg-gray-200"
+                    car.featured
+                      ? "bg-primary-blue"
+                      : "bg-gray-200 dark:bg-dark-border"
                   }`}
                 >
                   <span
@@ -136,14 +157,14 @@ export default function CarTable({ cars }: { cars: Car[] }) {
                 <div className="flex items-center gap-2">
                   <Link
                     href={`/admin/cars/${car.id}/edit`}
-                    className="text-sm text-primary-blue hover:underline"
+                    className="text-sm text-primary-blue dark:text-accent-cyan hover:underline"
                   >
                     Edit
                   </Link>
-                  <span className="text-gray-300">|</span>
+                  <span className="text-gray-300 dark:text-dark-border">|</span>
                   <button
                     onClick={() => handleDelete(car.id)}
-                    className="text-sm text-red-600 hover:underline"
+                    className="text-sm text-red-600 dark:text-red-400 hover:underline"
                   >
                     Delete
                   </button>

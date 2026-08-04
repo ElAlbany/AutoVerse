@@ -43,10 +43,17 @@ export default async function Home({
     <main className="overflow-hidden">
       <Hero />
 
+      {/* Section Divider */}
+      <div className="section-divider max-w-[1440px] mx-auto" />
+
       <div className="mt-12 padding-x padding-y max-width" id="discover">
         <div className="home__text-container">
-          <h1 className="text-4xl font-extrabold">Car Catalogue</h1>
-          <p>Explore out cars you might like</p>
+          <h1 className="text-4xl font-extrabold">
+            Car <span className="text-gradient">Catalogue</span>
+          </h1>
+          <p className="text-gray-500 dark:text-gray-400">
+            Explore our curated collection of premium vehicles
+          </p>
         </div>
 
         <div className="home__filters">
@@ -70,7 +77,12 @@ export default async function Home({
           </section>
         ) : (
           <div className="home__error-container">
-            <h2 className="text-black text-xl font-bold">Oops, no results</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+              Oops, no results
+            </h2>
+            <p className="text-gray-500 dark:text-gray-400">
+              Try adjusting your filters
+            </p>
           </div>
         )}
       </div>

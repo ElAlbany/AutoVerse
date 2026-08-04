@@ -51,10 +51,14 @@ export default function StatusUpdater({
       value={currentStatus}
       onChange={handleChange}
       disabled={pending || options.length <= 1}
-      className="text-xs font-medium px-3 py-2 rounded-lg border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-primary-blue/20 disabled:opacity-50 cursor-pointer"
+      className="text-xs font-medium px-3 py-2 rounded-lg border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-primary-blue/20 disabled:opacity-50 cursor-pointer transition-colors duration-500"
     >
       {options.map((s) => (
-        <option key={s.value} value={s.value}>
+        <option
+          key={s.value}
+          value={s.value}
+          className="dark:bg-dark-card dark:text-dark-text"
+        >
           {s.label}
         </option>
       ))}

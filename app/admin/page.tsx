@@ -51,10 +51,14 @@ export default async function AdminDashboard({
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-500 mt-1">Platform overview at a glance</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-dark-text">
+            Dashboard
+          </h1>
+          <p className="text-gray-500 dark:text-dark-muted mt-1">
+            Platform overview at a glance
+          </p>
         </div>
-        <div className="flex bg-white rounded-xl p-1 border border-gray-200 shadow-sm">
+        <div className="flex bg-white dark:bg-dark-card rounded-xl p-1 border border-gray-200 dark:border-dark-border shadow-sm transition-colors duration-500">
           {periods.map((p) => (
             <Link
               key={p.key}
@@ -62,7 +66,7 @@ export default async function AdminDashboard({
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                 period === p.key
                   ? "bg-primary-blue text-white shadow-sm"
-                  : "text-gray-600 hover:bg-gray-50"
+                  : "text-gray-600 dark:text-dark-muted hover:bg-gray-50 dark:hover:bg-white/5"
               }`}
             >
               {p.label}
@@ -106,33 +110,45 @@ export default async function AdminDashboard({
       </div>
 
       {/* Recent Activity Summary */}
-      <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-        <h2 className="text-lg font-bold text-gray-900 mb-4">Quick Stats</h2>
+      <div className="bg-white dark:bg-dark-card rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-dark-border transition-colors duration-500">
+        <h2 className="text-lg font-bold text-gray-900 dark:text-dark-text mb-4">
+          Quick Stats
+        </h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           <div className="text-center">
-            <p className="text-3xl font-bold text-primary-blue">{totalUsers}</p>
-            <p className="text-sm text-gray-500 mt-1">Registered Users</p>
+            <p className="text-3xl font-bold text-primary-blue dark:text-accent-cyan">
+              {totalUsers}
+            </p>
+            <p className="text-sm text-gray-500 dark:text-dark-muted mt-1">
+              Registered Users
+            </p>
           </div>
           <div className="text-center">
-            <p className="text-3xl font-bold text-emerald-600">
+            <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
               {Math.round((completedOrders / (totalOrders || 1)) * 100)}%
             </p>
-            <p className="text-sm text-gray-500 mt-1">Completion Rate</p>
+            <p className="text-sm text-gray-500 dark:text-dark-muted mt-1">
+              Completion Rate
+            </p>
           </div>
           <div className="text-center">
-            <p className="text-3xl font-bold text-amber-600">
+            <p className="text-3xl font-bold text-amber-600 dark:text-amber-400">
               {Math.round((pendingOrders / (totalOrders || 1)) * 100)}%
             </p>
-            <p className="text-sm text-gray-500 mt-1">Pending Rate</p>
+            <p className="text-sm text-gray-500 dark:text-dark-muted mt-1">
+              Pending Rate
+            </p>
           </div>
           <div className="text-center">
-            <p className="text-3xl font-bold text-indigo-600">
+            <p className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">
               $
               {totalOrders
                 ? Math.round(Number(revenue._sum.totalPrice || 0) / totalOrders)
                 : 0}
             </p>
-            <p className="text-sm text-gray-500 mt-1">Avg Order Value</p>
+            <p className="text-sm text-gray-500 dark:text-dark-muted mt-1">
+              Avg Order Value
+            </p>
           </div>
         </div>
       </div>
@@ -152,17 +168,21 @@ function StatCard({
   icon: string;
 }) {
   const colors: Record<string, string> = {
-    blue: "bg-blue-50 text-blue-700 border-blue-100",
-    amber: "bg-amber-50 text-amber-700 border-amber-100",
-    indigo: "bg-indigo-50 text-indigo-700 border-indigo-100",
-    emerald: "bg-emerald-50 text-emerald-700 border-emerald-100",
-    cyan: "bg-cyan-50 text-cyan-700 border-cyan-100",
-    purple: "bg-purple-50 text-purple-700 border-purple-100",
+    blue: "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border-blue-100 dark:border-blue-800",
+    amber:
+      "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-100 dark:border-amber-800",
+    indigo:
+      "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400 border-indigo-100 dark:border-indigo-800",
+    emerald:
+      "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800",
+    cyan: "bg-cyan-50 dark:bg-cyan-900/20 text-cyan-700 dark:text-cyan-400 border-cyan-100 dark:border-cyan-800",
+    purple:
+      "bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 border-purple-100 dark:border-purple-800",
   };
 
   return (
     <div
-      className={`rounded-2xl p-6 border ${colors[color]} transition-transform hover:-translate-y-1 hover:shadow-md`}
+      className={`rounded-2xl p-6 border ${colors[color]} transition-transform hover:-translate-y-1 hover:shadow-md dark:hover:shadow-lg dark:hover:shadow-black/20`}
     >
       <div className="flex items-center justify-between mb-3">
         <p className="text-sm font-medium opacity-80">{label}</p>

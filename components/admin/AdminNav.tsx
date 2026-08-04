@@ -28,8 +28,8 @@ export default function AdminNav() {
             href={item.href}
             className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
               isActive
-                ? "bg-primary-blue text-white shadow-sm"
-                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                ? "bg-primary-blue text-white shadow-sm dark:shadow-lg dark:shadow-primary-blue/20"
+                : "text-gray-600 dark:text-dark-muted hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-dark-text"
             }`}
           >
             <span className="text-lg">{item.icon}</span>

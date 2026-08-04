@@ -24,11 +24,15 @@ export default async function EditCarPage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Edit Car</h1>
-        <p className="text-gray-500 mt-1">Update car details</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-dark-text">
+          Edit Car
+        </h1>
+        <p className="text-gray-500 dark:text-dark-muted mt-1">
+          Update car details
+        </p>
       </div>
 
-      <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100">
+      <div className="bg-white dark:bg-dark-card rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100 dark:border-dark-border transition-colors duration-500">
         <CarForm action={updateCar} initialData={serializedCar} mode="edit" />
       </div>
     </div>
