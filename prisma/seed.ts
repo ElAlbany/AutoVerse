@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { mockCars } from "../utils/MockData";
 import { calculateCarRent, generateCarImageUrl } from "../utils";
+import { CarProps } from "@/types";
 
 const prisma = new PrismaClient();
 
@@ -25,7 +26,13 @@ async function main() {
     cylinders: car.cylinders,
     displacement: car.displacement,
     highway_mpg: car.highway_mpg,
-    images: [generateCarImageUrl(car)],
+    images: [
+      generateCarImageUrl({
+        ...car,
+        available: true,
+        featured: false,
+      } as CarProps),
+    ],
     description: `${car.year} ${car.make} ${car.model}`,
     available: true,
     featured: false,
