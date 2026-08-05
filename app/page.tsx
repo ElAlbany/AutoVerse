@@ -1,6 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { fuels, yearsOfProduction } from "@constants";
-import { CarCard, ShowMore, SearchBar, CustomFilter, Hero } from "@components";
+import { CarCard, ShowMore, Hero, CarFilters } from "@components";
 import { getOrCreateUser } from "@/lib/sync-user";
 
 export default async function Home({
@@ -15,6 +14,9 @@ export default async function Home({
   const fuel = (params.fuel as string) || "";
   const limit = Number(params.limit) || 10;
   const model = (params.model as string) || "";
+  const transmission = (params.transmission as string) || "";
+  const drive = (params.drive as string) || "";
+  const classType = (params.class as string) || "";
 
   const where: any = {};
   if (manufacturer)
@@ -22,14 +24,21 @@ export default async function Home({
   if (year) where.year = year;
   if (fuel) where.fuel_type = { equals: fuel, mode: "insensitive" };
   if (model) where.model = { contains: model, mode: "insensitive" };
+  if (transmission)
+    where.transmission = { equals: transmission, mode: "insensitive" };
+  if (drive) where.drive = { equals: drive, mode: "insensitive" };
+  if (classType) where.class = { equals: classType, mode: "insensitive" };
 
   const allCarsRaw = await prisma.car.findMany({
     where,
-    take: limit,
+    take: limit + 1, // fetch one extra to detect "has more"
   });
 
-  // Convert Decimal and Date to plain types for client components
-  const allCars = allCarsRaw.map((car) => ({
+  // Then determine if there's a next page:
+  const hasMore = allCarsRaw.length > limit;
+
+  // Slice off the extra car before displaying:
+  const allCars = allCarsRaw.slice(0, limit).map((car) => ({
     ...car,
     pricePerDay: Number(car.pricePerDay),
     createdAt: car.createdAt.toISOString(),
@@ -43,7 +52,6 @@ export default async function Home({
     <main className="overflow-hidden">
       <Hero />
 
-      {/* Section Divider */}
       <div className="section-divider max-w-[1440px] mx-auto" />
 
       <div className="mt-12 padding-x padding-y max-width" id="discover">
@@ -56,32 +64,27 @@ export default async function Home({
           </p>
         </div>
 
-        <div className="home__filters">
-          <SearchBar />
-
-          <div className="home__filter-container">
-            <CustomFilter title="fuel" options={fuels} />
-            <CustomFilter title="year" options={yearsOfProduction} />
-          </div>
+        <div className="mt-8">
+          <CarFilters totalResults={allCars.length} />
         </div>
 
         {!isDataEmpty ? (
-          <section>
+          <section className="mt-8">
             <div className="home__cars-wrapper">
               {allCars?.map((car) => (
                 <CarCard key={car.id} car={car as any} />
               ))}
             </div>
 
-            <ShowMore pageNumber={limit / 10} isNext={limit > allCars.length} />
+            <ShowMore pageNumber={limit / 10} isNext={hasMore} />
           </section>
         ) : (
-          <div className="home__error-container">
+          <div className="home__error-container mt-12">
             <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
               Oops, no results
             </h2>
             <p className="text-gray-500 dark:text-gray-400">
-              Try adjusting your filters
+              Try adjusting your filters to see more cars
             </p>
           </div>
         )}

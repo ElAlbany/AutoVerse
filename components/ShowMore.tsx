@@ -1,36 +1,38 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-
-import { ShowMoreProps } from "@types";
-import { updateSearchParams } from "@utils";
 import { CustomButton } from "@components";
 
-const ShowMore = ({ pageNumber, isNext }: ShowMoreProps) => {
+interface ShowMoreProps {
+  pageNumber: number;
+  isNext: boolean;
+}
+
+export default function ShowMore({ pageNumber, isNext }: ShowMoreProps) {
   const router = useRouter();
 
   const handleNavigation = () => {
-    // Calculate the new limit based on the page number and navigation type
     const newLimit = (pageNumber + 1) * 10;
+    const searchParams = new URLSearchParams(window.location.search);
+    searchParams.set("limit", String(newLimit));
 
-    // Update the "limit" search parameter in the URL with the new value
-    const newPathname = updateSearchParams("limit", `${newLimit}`);
-    
-    router.push(newPathname);
+    // scroll: false prevents jumping to top!
+    router.push(`${window.location.pathname}?${searchParams.toString()}`, {
+      scroll: false,
+    });
   };
+
+  // Don't render if there are no more results
+  if (!isNext) return null;
 
   return (
     <div className="w-full flex-center gap-5 mt-10">
-      {!isNext && (
-        <CustomButton
-          btnType="button"
-          title="Show More"
-          containerStyles="bg-primary-blue rounded-full text-white"
-          handleClick={handleNavigation}
-        />
-      )}
+      <CustomButton
+        btnType="button"
+        title="Show More"
+        containerStyles="bg-primary-blue rounded-full text-white min-w-[150px] py-3 px-6 hover:bg-blue-700 transition-all duration-300 hover:shadow-lg hover:shadow-primary-blue/20 dark:hover:shadow-primary-blue/30"
+        handleClick={handleNavigation}
+      />
     </div>
   );
-};
-
-export default ShowMore;
+}

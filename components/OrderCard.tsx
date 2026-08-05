@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import StatusBadge from "./StatusBadge";
+import OrderProgress from "./OrderProgress";
 
 interface OrderCardProps {
   order: {
@@ -67,8 +68,8 @@ export default function OrderCard({
                 {new Date(order.startDate).toLocaleDateString("en-US", {
                   month: "short",
                   day: "numeric",
-                })}{" "}
-                →{" "}
+                })}
+                {" → "}
                 {new Date(order.endDate).toLocaleDateString("en-US", {
                   month: "short",
                   day: "numeric",
@@ -77,6 +78,13 @@ export default function OrderCard({
             </div>
             <StatusBadge status={order.status} />
           </div>
+
+          {/* Progress Bar for current orders */}
+          {isActive && (
+            <div className="my-3">
+              <OrderProgress status={order.status} />
+            </div>
+          )}
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-3">
             <div>
