@@ -63,14 +63,14 @@ const Hero = () => {
               containerStyles="bg-gradient-to-r from-primary-blue to-accent-cyan text-white rounded-full hover:shadow-lg hover:shadow-primary-blue/30 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300"
               handleClick={handleScroll}
             />
-            <CustomButton
+            {/* <CustomButton
               title="How it Works"
               containerStyles="bg-white/10 dark:bg-white/5 backdrop-blur-sm text-gray-700 dark:text-gray-300 rounded-full border border-gray-200 dark:border-white/10 hover:bg-white/20 dark:hover:bg-white/10 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300"
               handleClick={() => {
                 const el = document.getElementById("discover");
                 if (el) el.scrollIntoView({ behavior: "smooth" });
               }}
-            />
+            /> */}
           </div>
 
           {/* Stats */}

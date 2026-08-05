@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@clerk/nextjs";
 import { createOrder } from "@/app/actions/order";
 
 export default function RentForm({ car }: { car: any }) {
+  const { isSignedIn } = useAuth();
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [loading, setLoading] = useState(false);
@@ -37,6 +39,13 @@ export default function RentForm({ car }: { car: any }) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Redirect to sign-in if not authenticated
+    if (!isSignedIn) {
+      router.push("/sign-in");
+      return;
+    }
+
     if (!startDate || !endDate) return;
 
     setLoading(true);
@@ -176,6 +185,8 @@ export default function RentForm({ car }: { car: any }) {
             </svg>
             Processing...
           </span>
+        ) : !isSignedIn ? (
+          "Sign in to Book"
         ) : (
           "Confirm Booking"
         )}
