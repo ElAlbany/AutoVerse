@@ -22,3 +22,4 @@ export { default as SearchableSelect } from "./SearchableSelect";
 export { default as OrderTimeline } from "./OrderTimeline";
 export { default as OrderProgress } from "./OrderProgress";
 export { default as OrderTabs } from "./OrderTabs";
+export { default as FeaturedCars } from "./FeaturedCars";

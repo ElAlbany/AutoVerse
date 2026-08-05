@@ -71,7 +71,7 @@ export default async function AdminUsersPage({
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard
           label="Total Users"
           value={totalUsers}
@@ -133,13 +133,13 @@ function StatCard({
 
   return (
     <div
-      className={`rounded-2xl p-5 border ${colors[color]} transition-transform hover:-translate-y-1 hover:shadow-md dark:hover:shadow-lg dark:hover:shadow-black/20`}
+      className={`rounded-2xl p-4 sm:p-5 border ${colors[color]} transition-transform hover:-translate-y-1 hover:shadow-md dark:hover:shadow-lg dark:hover:shadow-black/20`}
     >
       <div className="flex items-center justify-between mb-2">
-        <p className="text-sm font-medium opacity-80">{label}</p>
-        <span className="text-xl">{icon}</span>
+        <p className="text-xs sm:text-sm font-medium opacity-80">{label}</p>
+        <span className="text-lg sm:text-xl">{icon}</span>
       </div>
-      <p className="text-3xl font-bold">{value}</p>
+      <p className="text-2xl sm:text-3xl font-bold">{value}</p>
     </div>
   );
 }

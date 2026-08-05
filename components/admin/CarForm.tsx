@@ -370,20 +370,20 @@ export default function CarForm({ action, initialData, mode }: CarFormProps) {
       )}
 
       {/* Actions */}
-      <div className="flex items-center gap-4 pt-4">
-        <button
-          type="submit"
-          disabled={pending}
-          className="bg-primary-blue text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed dark:shadow-lg dark:shadow-primary-blue/20"
-        >
-          {pending ? "Saving..." : mode === "create" ? "Add Car" : "Update Car"}
-        </button>
+      <div className="flex flex-col-reverse sm:flex-row sm:items-center gap-3 pt-4 border-t border-gray-100 dark:border-dark-border sm:border-t-0 sm:pt-4">
         <button
           type="button"
           onClick={() => router.push("/admin/cars")}
-          className="px-6 py-2.5 rounded-xl text-sm font-medium text-gray-600 dark:text-dark-muted hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+          className="w-full sm:w-auto text-center px-6 py-2.5 rounded-xl text-sm font-medium text-gray-600 dark:text-dark-muted hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
         >
           Cancel
+        </button>
+        <button
+          type="submit"
+          disabled={pending}
+          className="w-full sm:w-auto bg-primary-blue text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed dark:shadow-lg dark:shadow-primary-blue/20"
+        >
+          {pending ? "Saving..." : mode === "create" ? "Add Car" : "Update Car"}
         </button>
       </div>
     </form>

@@ -8,7 +8,7 @@ import { CarProps } from "@types";
 import CustomButton from "./CustomButton";
 
 interface CarCardProps {
-  car: CarProps;
+  car: CarProps & { pricePerDay?: number }; // pricePerDay added at runtime from page.tsx
 }
 
 const CarCard = ({ car }: CarCardProps) => {
@@ -22,11 +22,15 @@ const CarCard = ({ car }: CarCardProps) => {
     id,
     available,
     featured,
+    pricePerDay, // <-- extracted from the serialized car object
   } = car;
   const { isSignedIn } = useAuth();
   const router = useRouter();
 
-  const carRent = calculateCarRent(city_mpg, year);
+  // Use DB price if available, otherwise fall back to calculated rent
+  const carRent = pricePerDay
+    ? Math.round(pricePerDay)
+    : calculateCarRent(city_mpg, year);
 
   const handleRent = () => {
     if (!isSignedIn) {

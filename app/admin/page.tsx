@@ -58,12 +58,12 @@ export default async function AdminDashboard({
             Platform overview at a glance
           </p>
         </div>
-        <div className="flex bg-white dark:bg-dark-card rounded-xl p-1 border border-gray-200 dark:border-dark-border shadow-sm transition-colors duration-500">
+        <div className="flex bg-white dark:bg-dark-card rounded-xl p-1 border border-gray-200 dark:border-dark-border shadow-sm transition-colors duration-500 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {periods.map((p) => (
             <Link
               key={p.key}
               href={`/admin?period=${p.key}`}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
                 period === p.key
                   ? "bg-primary-blue text-white shadow-sm"
                   : "text-gray-600 dark:text-dark-muted hover:bg-gray-50 dark:hover:bg-white/5"
@@ -75,7 +75,7 @@ export default async function AdminDashboard({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         <StatCard
           label="Total Orders"
           value={totalOrders}
@@ -110,43 +110,43 @@ export default async function AdminDashboard({
       </div>
 
       {/* Recent Activity Summary */}
-      <div className="bg-white dark:bg-dark-card rounded-3xl p-6 shadow-sm border border-gray-100 dark:border-dark-border transition-colors duration-500">
+      <div className="bg-white dark:bg-dark-card rounded-3xl p-5 sm:p-6 shadow-sm border border-gray-100 dark:border-dark-border transition-colors duration-500">
         <h2 className="text-lg font-bold text-gray-900 dark:text-dark-text mb-4">
           Quick Stats
         </h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
           <div className="text-center">
-            <p className="text-3xl font-bold text-primary-blue dark:text-accent-cyan">
+            <p className="text-2xl sm:text-3xl font-bold text-primary-blue dark:text-accent-cyan">
               {totalUsers}
             </p>
-            <p className="text-sm text-gray-500 dark:text-dark-muted mt-1">
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-dark-muted mt-1">
               Registered Users
             </p>
           </div>
           <div className="text-center">
-            <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
+            <p className="text-2xl sm:text-3xl font-bold text-emerald-600 dark:text-emerald-400">
               {Math.round((completedOrders / (totalOrders || 1)) * 100)}%
             </p>
-            <p className="text-sm text-gray-500 dark:text-dark-muted mt-1">
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-dark-muted mt-1">
               Completion Rate
             </p>
           </div>
           <div className="text-center">
-            <p className="text-3xl font-bold text-amber-600 dark:text-amber-400">
+            <p className="text-2xl sm:text-3xl font-bold text-amber-600 dark:text-amber-400">
               {Math.round((pendingOrders / (totalOrders || 1)) * 100)}%
             </p>
-            <p className="text-sm text-gray-500 dark:text-dark-muted mt-1">
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-dark-muted mt-1">
               Pending Rate
             </p>
           </div>
           <div className="text-center">
-            <p className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">
+            <p className="text-2xl sm:text-3xl font-bold text-indigo-600 dark:text-indigo-400">
               $
               {totalOrders
                 ? Math.round(Number(revenue._sum.totalPrice || 0) / totalOrders)
                 : 0}
             </p>
-            <p className="text-sm text-gray-500 dark:text-dark-muted mt-1">
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-dark-muted mt-1">
               Avg Order Value
             </p>
           </div>
@@ -182,13 +182,13 @@ function StatCard({
 
   return (
     <div
-      className={`rounded-2xl p-6 border ${colors[color]} transition-transform hover:-translate-y-1 hover:shadow-md dark:hover:shadow-lg dark:hover:shadow-black/20`}
+      className={`rounded-2xl p-4 sm:p-6 border ${colors[color]} transition-transform hover:-translate-y-1 hover:shadow-md dark:hover:shadow-lg dark:hover:shadow-black/20`}
     >
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-sm font-medium opacity-80">{label}</p>
-        <span className="text-xl">{icon}</span>
+      <div className="flex items-center justify-between mb-2 sm:mb-3">
+        <p className="text-xs sm:text-sm font-medium opacity-80">{label}</p>
+        <span className="text-lg sm:text-xl">{icon}</span>
       </div>
-      <p className="text-3xl font-bold">{value}</p>
+      <p className="text-2xl sm:text-3xl font-bold">{value}</p>
     </div>
   );
 }

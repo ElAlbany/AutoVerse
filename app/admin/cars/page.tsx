@@ -42,7 +42,7 @@ export default async function AdminCarsPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-dark-text">
             Cars
@@ -51,11 +51,11 @@ export default async function AdminCarsPage({
             Manage your car fleet
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           <SearchCars initialSearch={search || ""} />
           <Link
             href="/admin/cars/new"
-            className="bg-primary-blue text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors inline-flex items-center gap-2 dark:shadow-lg dark:shadow-primary-blue/20"
+            className="w-full sm:w-auto justify-center bg-primary-blue text-white px-5 py-2.5 rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors inline-flex items-center gap-2 dark:shadow-lg dark:shadow-primary-blue/20 flex-shrink-0"
           >
             <span>+</span> Add New Car
           </Link>

@@ -50,6 +50,12 @@ const CLASS_OPTIONS = [
   { label: "Van", value: "van" },
 ];
 
+const SORT_OPTIONS = [
+  { label: "Newest First", value: "" },
+  { label: "Price: Low to High", value: "price-low" },
+  { label: "Price: High to Low", value: "price-high" },
+];
+
 const FILTER_KEYS = [
   "manufacturer",
   "model",
@@ -58,6 +64,10 @@ const FILTER_KEYS = [
   "transmission",
   "drive",
   "class",
+  "search",
+  "minPrice",
+  "maxPrice",
+  "sort",
 ];
 
 interface CarFiltersProps {
@@ -76,6 +86,10 @@ export default function CarFilters({ totalResults }: CarFiltersProps) {
     transmission: searchParams.get("transmission") || "",
     drive: searchParams.get("drive") || "",
     class: searchParams.get("class") || "",
+    search: searchParams.get("search") || "",
+    minPrice: searchParams.get("minPrice") || "",
+    maxPrice: searchParams.get("maxPrice") || "",
+    sort: searchParams.get("sort") || "",
   });
 
   const [isExpanded, setIsExpanded] = useState(false);
@@ -110,6 +124,10 @@ export default function CarFilters({ totalResults }: CarFiltersProps) {
       transmission: "",
       drive: "",
       class: "",
+      search: "",
+      minPrice: "",
+      maxPrice: "",
+      sort: "",
     });
 
     const params = new URLSearchParams(window.location.search);
@@ -144,11 +162,19 @@ export default function CarFilters({ totalResults }: CarFiltersProps) {
     transmission: "Transmission",
     drive: "Drive",
     class: "Class",
+    search: "Search",
+    minPrice: "Min Price",
+    maxPrice: "Max Price",
+    sort: "Sort",
   };
 
   const filterDisplayValues: Record<string, Record<string, string>> = {
     transmission: { a: "Automatic", m: "Manual" },
     drive: { fwd: "FWD", rwd: "RWD", awd: "AWD" },
+    sort: {
+      "price-low": "Price: Low to High",
+      "price-high": "Price: High to Low",
+    },
   };
 
   const getDisplayValue = (key: string, value: string) => {
@@ -161,9 +187,65 @@ export default function CarFilters({ totalResults }: CarFiltersProps) {
 
   return (
     <div className="space-y-4">
-      {/* Top bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3 flex-wrap">
+      {/* Top bar: Search + Sort + Filter Toggle */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="flex items-center gap-3 flex-1 flex-wrap">
+          {/* Search Bar */}
+          <div className="relative flex-1 min-w-[200px] max-w-md">
+            <div className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none">
+              <svg
+                className="w-4 h-4 text-gray-400 dark:text-gray-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            </div>
+            <input
+              type="text"
+              value={filters.search}
+              onChange={(e) => updateFilter("search", e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && applyFilters()}
+              placeholder="Search by make, model, or description..."
+              className="w-full rounded-xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card pl-10 pr-10 py-2.5 text-sm text-gray-900 dark:text-dark-text placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue transition-colors duration-500"
+            />
+            {filters.search && (
+              <button
+                onClick={() => {
+                  updateFilter("search", "");
+                  const params = new URLSearchParams(window.location.search);
+                  params.delete("search");
+                  router.push(
+                    `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}`,
+                    { scroll: false },
+                  );
+                }}
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            )}
+          </div>
+
+          {/* Filter Toggle Button */}
           <button
             onClick={() => setIsExpanded(!isExpanded)}
             className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white dark:bg-dark-card border border-gray-200 dark:border-dark-border text-sm font-medium text-gray-700 dark:text-dark-text hover:bg-gray-50 dark:hover:bg-white/5 transition-all duration-300 shadow-sm"
@@ -182,16 +264,67 @@ export default function CarFilters({ totalResults }: CarFiltersProps) {
               />
             </svg>
             {isExpanded ? "Hide Filters" : "Filters"}
-            {activeFilters.length > 0 && (
+            {activeFilters.filter(([k]) => !["search", "sort"].includes(k))
+              .length > 0 && (
               <span className="ml-1 w-5 h-5 rounded-full bg-primary-blue text-white text-xs flex items-center justify-center">
-                {activeFilters.length}
+                {
+                  activeFilters.filter(([k]) => !["search", "sort"].includes(k))
+                    .length
+                }
               </span>
             )}
           </button>
+        </div>
 
-          <span className="text-sm text-gray-500 dark:text-dark-muted">
+        {/* Sort + Results Count */}
+        <div className="flex items-center gap-4">
+          <span className="text-sm text-gray-500 dark:text-dark-muted whitespace-nowrap">
             {totalResults} car{totalResults !== 1 ? "s" : ""} found
           </span>
+
+          <div className="relative">
+            <select
+              value={filters.sort}
+              onChange={(e) => {
+                updateFilter("sort", e.target.value);
+                // Auto-apply sort immediately
+                const params = new URLSearchParams(window.location.search);
+                if (e.target.value) {
+                  params.set("sort", e.target.value);
+                } else {
+                  params.delete("sort");
+                }
+                router.push(
+                  `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}`,
+                  { scroll: false },
+                );
+              }}
+              className="appearance-none bg-white dark:bg-dark-card border border-gray-200 dark:border-dark-border rounded-xl pl-4 pr-10 py-2.5 text-sm text-gray-700 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-primary-blue/20 cursor-pointer transition-colors duration-500"
+            >
+              {SORT_OPTIONS.map((opt) => (
+                <option
+                  key={opt.value}
+                  value={opt.value}
+                  className="dark:bg-dark-card dark:text-dark-text"
+                >
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+            <svg
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </div>
         </div>
       </div>
 
@@ -316,6 +449,42 @@ export default function CarFilters({ totalResults }: CarFiltersProps) {
               options={CLASS_OPTIONS}
               placeholder="All Classes"
             />
+
+            {/* Price Range */}
+            <div className="w-full sm:col-span-2 lg:col-span-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-dark-text mb-1.5">
+                Price Range ($/day)
+              </label>
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 text-sm">
+                    $
+                  </span>
+                  <input
+                    type="number"
+                    min={0}
+                    value={filters.minPrice}
+                    onChange={(e) => updateFilter("minPrice", e.target.value)}
+                    placeholder="Min"
+                    className="w-full rounded-xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card pl-7 pr-3 py-2.5 text-sm text-gray-900 dark:text-dark-text placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue transition-colors duration-500"
+                  />
+                </div>
+                <span className="text-gray-400 text-sm">—</span>
+                <div className="relative flex-1">
+                  <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400 text-sm">
+                    $
+                  </span>
+                  <input
+                    type="number"
+                    min={0}
+                    value={filters.maxPrice}
+                    onChange={(e) => updateFilter("maxPrice", e.target.value)}
+                    placeholder="Max"
+                    className="w-full rounded-xl border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-card pl-7 pr-3 py-2.5 text-sm text-gray-900 dark:text-dark-text placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue transition-colors duration-500"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="flex items-center gap-3 mt-6 pt-5 border-t border-gray-100 dark:border-dark-border">

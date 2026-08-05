@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { CarCard, ShowMore, Hero, CarFilters } from "@components";
+import { CarCard, ShowMore, Hero, CarFilters, FeaturedCars } from "@components";
 import { getOrCreateUser } from "@/lib/sync-user";
 
 export default async function Home({
@@ -17,6 +17,10 @@ export default async function Home({
   const transmission = (params.transmission as string) || "";
   const drive = (params.drive as string) || "";
   const classType = (params.class as string) || "";
+  const search = (params.search as string) || "";
+  const minPrice = params.minPrice ? Number(params.minPrice) : undefined;
+  const maxPrice = params.maxPrice ? Number(params.maxPrice) : undefined;
+  const sort = (params.sort as string) || "";
 
   const where: any = {};
   if (manufacturer)
@@ -29,15 +33,50 @@ export default async function Home({
   if (drive) where.drive = { equals: drive, mode: "insensitive" };
   if (classType) where.class = { equals: classType, mode: "insensitive" };
 
-  const allCarsRaw = await prisma.car.findMany({
-    where,
-    take: limit + 1, // fetch one extra to detect "has more"
+  // Full-text search across make, model, and description
+  if (search) {
+    where.OR = [
+      { make: { contains: search, mode: "insensitive" } },
+      { model: { contains: search, mode: "insensitive" } },
+      { description: { contains: search, mode: "insensitive" } },
+    ];
+  }
+
+  // Price range filter
+  if (minPrice !== undefined || maxPrice !== undefined) {
+    where.pricePerDay = {};
+    if (minPrice !== undefined) where.pricePerDay.gte = minPrice;
+    if (maxPrice !== undefined) where.pricePerDay.lte = maxPrice;
+  }
+
+  // Sort order
+  let orderBy: any = { createdAt: "desc" };
+  if (sort === "price-low") orderBy = { pricePerDay: "asc" };
+  if (sort === "price-high") orderBy = { pricePerDay: "desc" };
+
+  // ─── FEATURED CARS (independent of catalogue filters) ───
+  const featuredCarsRaw = await prisma.car.findMany({
+    where: {
+      featured: true,
+      available: true,
+    },
+    take: 4,
   });
 
-  // Then determine if there's a next page:
-  const hasMore = allCarsRaw.length > limit;
+  const featuredCars = featuredCarsRaw.map((car) => ({
+    ...car,
+    pricePerDay: Number(car.pricePerDay),
+    createdAt: car.createdAt.toISOString(),
+  }));
 
-  // Slice off the extra car before displaying:
+  // ─── CATALOGUE CARS (filtered by URL params) ───
+  const allCarsRaw = await prisma.car.findMany({
+    where,
+    orderBy,
+    take: limit + 1,
+  });
+
+  const hasMore = allCarsRaw.length > limit;
   const allCars = allCarsRaw.slice(0, limit).map((car) => ({
     ...car,
     pricePerDay: Number(car.pricePerDay),
@@ -51,6 +90,8 @@ export default async function Home({
   return (
     <main className="overflow-hidden">
       <Hero />
+
+      <FeaturedCars cars={featuredCars} />
 
       <div className="section-divider max-w-[1440px] mx-auto" />
 

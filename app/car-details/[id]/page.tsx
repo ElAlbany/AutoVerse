@@ -47,21 +47,23 @@ export default async function CarDetailsPage({
         </div>
       </div>
 
-      {/* Hero Section */}
-      <div className="relative bg-gradient-to-br from-primary-blue via-primary-blue-200 to-accent-purple text-white overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
+      {/* Hero Section — Theme-aware, eye-comfort gradient */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-slate-100 via-slate-200 to-slate-100 dark:from-[#0a0f1e] dark:via-[#111827] dark:to-[#1a2236] text-slate-900 dark:text-white transition-colors duration-500">
+        {/* Subtle dot pattern — theme aware via currentColor */}
+        <div className="absolute inset-0 opacity-5 dark:opacity-10">
           <div
             className="absolute inset-0"
             style={{
-              backgroundImage: `radial-gradient(circle at 2px 2px, rgba(255,255,255,0.15) 1px, transparent 0)`,
+              backgroundImage: `radial-gradient(circle at 2px 2px, currentColor 1px, transparent 0)`,
               backgroundSize: "32px 32px",
             }}
           />
         </div>
-        {/* Animated orbs */}
-        <div className="absolute -top-20 -right-20 w-80 h-80 bg-white/10 rounded-full blur-3xl animate-pulse-glow" />
+
+        {/* Animated orbs — muted so they add depth without overwhelming */}
+        <div className="absolute -top-20 -right-20 w-80 h-80 bg-primary-blue/10 dark:bg-white/5 rounded-full blur-3xl animate-pulse-glow" />
         <div
-          className="absolute -bottom-20 -left-20 w-60 h-60 bg-accent-cyan/20 rounded-full blur-3xl animate-pulse-glow"
+          className="absolute -bottom-20 -left-20 w-60 h-60 bg-accent-cyan/10 dark:bg-accent-cyan/20 rounded-full blur-3xl animate-pulse-glow"
           style={{ animationDelay: "2s" }}
         />
 
@@ -69,25 +71,30 @@ export default async function CarDetailsPage({
           <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
             <div className="space-y-6">
               <div className="flex items-center gap-3 flex-wrap">
-                <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-semibold border border-white/30">
+                <span className="px-3 py-1 bg-black/5 dark:bg-white/10 backdrop-blur-sm rounded-full text-xs font-semibold border border-black/10 dark:border-white/20 text-slate-700 dark:text-white">
                   {car.year}
                 </span>
-                <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-semibold border border-white/30 capitalize">
+                <span className="px-3 py-1 bg-black/5 dark:bg-white/10 backdrop-blur-sm rounded-full text-xs font-semibold border border-black/10 dark:border-white/20 text-slate-700 dark:text-white capitalize">
                   {car.class}
                 </span>
                 {!car.available && (
-                  <span className="px-3 py-1 bg-red-500/80 backdrop-blur-sm rounded-full text-xs font-semibold border border-red-400/30">
+                  <span className="px-3 py-1 bg-red-500/80 backdrop-blur-sm rounded-full text-xs font-semibold border border-red-400/30 text-white">
                     Unavailable
                   </span>
                 )}
               </div>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold capitalize leading-tight">
                 {car.make} <br />
-                <span className="text-blue-200">{car.model}</span>
+                <span className="text-primary-blue dark:text-accent-cyan">
+                  {car.model}
+                </span>
               </h1>
               <p className="text-3xl sm:text-4xl font-bold">
                 ${car.pricePerDay}
-                <span className="text-lg text-blue-200 font-normal"> /day</span>
+                <span className="text-lg text-slate-500 dark:text-blue-200 font-normal">
+                  {" "}
+                  /day
+                </span>
               </p>
               <div className="flex flex-wrap gap-3 pt-2">
                 <Badge
@@ -291,7 +298,7 @@ export default async function CarDetailsPage({
 
 function Badge({ text }: { text: string }) {
   return (
-    <span className="px-4 py-1.5 bg-white/20 backdrop-blur-sm rounded-full text-sm font-medium border border-white/30">
+    <span className="px-4 py-1.5 bg-black/5 dark:bg-white/10 backdrop-blur-sm rounded-full text-sm font-medium border border-black/10 dark:border-white/20 text-slate-700 dark:text-white transition-colors duration-300">
       {text}
     </span>
   );
