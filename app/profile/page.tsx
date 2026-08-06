@@ -92,7 +92,7 @@ export default async function ProfilePage() {
       {/* Next Rental Feature Card */}
       {nextRental && (
         <div className="animate-slide-up" style={{ animationDelay: "0.2s" }}>
-          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary-blue/10 via-dark-card to-dark-card border border-primary-blue/20 dark:border-primary-blue/20 p-6 md:p-8">
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary-blue/10 via-dark-card/80 to-dark-card border border-primary-blue/20 dark:border-primary-blue/20 p-6 md:p-8">
             <div className="absolute top-0 right-0 w-64 h-64 bg-primary-blue/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
 
             <div className="relative flex flex-col md:flex-row gap-6 items-center">
@@ -114,7 +114,7 @@ export default async function ProfilePage() {
                   {nextRental.car.year} {nextRental.car.make}{" "}
                   {nextRental.car.model}
                 </h2>
-                <p className="text-gray-500 dark:text-gray-400 mt-1">
+                <p className="text-gray-400 dark:text-gray-400 mt-1">
                   {new Date(nextRental.startDate).toLocaleDateString("en-US", {
                     weekday: "long",
                     month: "long",
@@ -136,7 +136,7 @@ export default async function ProfilePage() {
                   </Link>
                   <Link
                     href="/profile/orders"
-                    className="px-5 py-2 rounded-full bg-white/10 text-gray-700 dark:text-gray-300 text-sm font-semibold hover:bg-white/20 transition-all border border-gray-200 dark:border-white/10"
+                    className="px-5 py-2 rounded-full bg-white/10 text-gray-300 dark:text-gray-300 text-sm font-semibold hover:bg-white/20 transition-all  dark:border-white/10"
                   >
                     All Orders
                   </Link>
