@@ -104,7 +104,7 @@ const Hero = () => {
         <div className="hero__image-container">
           <div className="hero__image">
             <Image
-              src="/hero.png"
+              src="/Rolls_Royce.png"
               alt="Premium SUV"
               fill
               className="object-contain drop-shadow-2xl"
