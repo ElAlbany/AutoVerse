@@ -1,522 +1,425 @@
-<div align="center">
-  <br />
-    <a href="https://youtu.be/pUNSHPyVryU?feature=shared" target="_blank">
-      <img src="https://github.com/adrianhajdin/project_next13_car_showcase/assets/151519281/2453c186-0ae9-448f-b3c4-077bf910680e" alt="Project Banner">
-    </a>
-  <br />
+# AutoVerse — Car Rental Platform
 
-  <div>
-    <img src="https://img.shields.io/badge/-TypeScript-black?style=for-the-badge&logoColor=white&logo=typescript&color=3178C6" alt="typescript" />
-     <img src="https://img.shields.io/badge/-Next_JS-black?style=for-the-badge&logoColor=white&logo=nextdotjs&color=000000" alt="nextdotjs" />
-    <img src="https://img.shields.io/badge/-Tailwind_CSS-black?style=for-the-badge&logoColor=white&logo=tailwindcss&color=06B6D4" alt="tailwindcss" />
-  </div>
+> **Find, book, and rent a car — quick and super easy.**
 
-  <h3 align="center">A Car Showcase Website</h3>
+A production-ready, full-stack car rental platform built with Next.js 16 App Router. AutoVerse covers the complete rental lifecycle — from browsing a curated catalogue and booking a vehicle, to managing orders through a personal dashboard and administrating the entire platform through a dedicated admin panel.
 
-   <div align="center">
-     Build this project step by step with our detailed tutorial on <a href="https://www.youtube.com/@javascriptmastery/videos" target="_blank"><b>JavaScript Mastery</b></a> YouTube. Join the JSM family!
-    </div>
-</div>
+**Live Demo:** [autoverse.vercel.app](https://your-live-url.vercel.app) &nbsp;|&nbsp; **GitHub:** [github.com/your-repo](https://github.com/your-repo)
 
-## 📋 <a name="table">Table of Contents</a>
+---
 
-1. 🤖 [Introduction](#introduction)
-2. ⚙️ [Tech Stack](#tech-stack)
-3. 🔋 [Features](#features)
-4. 🤸 [Quick Start](#quick-start)
-5. 🕸️ [Snippets](#snippets)
-6. 🔗 [Links](#links)
-7. 🚀 [More](#more)
+## Table of Contents
 
-## 🚨 Tutorial
+- [Screenshots](#screenshots)
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Architecture Overview](#architecture-overview)
+- [Database Schema](#database-schema)
+- [Project Structure](#project-structure)
+- [Getting Started](#getting-started)
+- [Environment Variables](#environment-variables)
+- [Key Engineering Decisions](#key-engineering-decisions)
 
-This repository contains the code corresponding to an in-depth tutorial available on our YouTube channel, <a href="https://www.youtube.com/@javascriptmastery/videos" target="_blank"><b>JavaScript Mastery</b></a>. 
+---
 
-If you prefer visual learning, this is the perfect resource for you. Follow our tutorial to learn how to build projects like these step-by-step in a beginner-friendly manner!
+## Screenshots
 
-<a href="https://youtu.be/pUNSHPyVryU?feature=shared" target="_blank"><img src="https://github.com/sujatagunale/EasyRead/assets/151519281/1736fca5-a031-4854-8c09-bc110e3bc16d" /></a>
+| Homepage | Car Catalogue | Car Detail |
+|---|---|---|
+| ![Hero](./public/screenshots/hero.png) | ![Catalogue](./public/screenshots/catalogue.png) | ![Detail](./public/screenshots/detail.png) |
 
-## <a name="introduction">🤖 Introduction</a>
+| Profile Dashboard | My Orders | Admin Panel |
+|---|---|---|
+| ![Dashboard](./public/screenshots/profile.png) | ![Orders](./public/screenshots/orders.png) | ![Admin](./public/screenshots/admin.png) |
 
-Developed with Next.js and leveraging its server-side rendering capabilities, the Car Showcase website presents various car types, showcasing comprehensive information in a well-designed format with advanced filtering and pagination support for an enhanced user experience.
+---
 
-If you're getting started and need assistance or face any bugs, join our active Discord community with over 27k+ members. It's a place where people help each other out.
+## Features
 
-<a href="https://discord.com/invite/n6EdbFJ" target="_blank"><img src="https://github.com/sujatagunale/EasyRead/assets/151519281/618f4872-1e10-42da-8213-1d69e486d02e" /></a>
+### Customer-Facing
 
-## <a name="tech-stack">⚙️ Tech Stack</a>
+- **Aurora Hero Section** — animated gradient background with floating particles and live platform stats
+- **Featured Vehicles** — curated homepage preview of top-tier cars with a dedicated `/featured` page showing the full collection
+- **Car Catalogue** — paginated grid with "Show More" pagination that hides automatically when all results are loaded
+- **Advanced Filter System** — full-text search across make, model, and description; price range (min/max); sort by newest, price low→high, price high→low; all filters stored in URL query params for shareable and bookmarkable links; active filters shown as removable pill badges
+- **Car Detail Page** — full gallery, key specs, rental info card, and a prominent "Rent This Car" CTA
+- **Booking Flow** — authenticated rent form with date picker (pick-up and return), total price calculation, and instant booking confirmation
+- **Auth Guard** — unauthenticated users attempting to rent are redirected to sign-in and returned to the booking page after login
+- **Transactional Emails** — automated emails at every order status change (created, confirmed, active, completed, cancelled) via Resend
 
-- Next.js
-- TypeScript
-- Tailwind CSS
+### User Profile
 
-## <a name="features">🔋 Features</a>
+- **Dashboard** (`/profile`) — 4 stat cards (active orders, total orders, completed, total spent), next upcoming rental with countdown, vertical activity timeline of recent events
+- **Orders Center** (`/profile/orders`) — full order list with tab filters (Current / History), status sub-filters (All, Pending, Confirmed, Active), sort options, and per-order visual progress bar (Pending → Confirmed → Active → Completed)
+- **Order Detail** (`/profile/orders/[id]`) — full breakdown with interactive timeline
+- **Account Settings** — theme-aware Clerk `<UserProfile />` component for managing email, password, and connected accounts
+- **Optimistic Cancel** — order cancellation updates the UI instantly via `useOptimistic` before the server confirms
 
-👉 **Home Page**: Showcases a visually appealing display of cars fetched from a third-party API, providing a captivating introduction to the diverse range of vehicles available.
+### Admin Panel (`/admin`)
 
-👉 **Exploration and Filtering**: Explore a wide variety of cars from around the world, utilizing a search and filter system based on criteria such as model, manufacturer, year, fuel type, and make.
+- **Role Guard** — server-side check on every admin route; non-admins are redirected to `/`
+- **Dashboard** — stats for total orders, pending, confirmed, completed, total cars, revenue, and quick stats (registered users, completion rate, pending rate, average order value); filterable by All Time / This Month / This Year
+- **Car Management** — full CRUD; searchable table with available and featured toggle switches using `useOptimistic` for instant feedback; featured cars marked with amber star badge
+- **Order Management** — searchable orders table with inline status updater dropdown; only valid next-state transitions are shown (e.g. PENDING can only move to CONFIRMED or CANCELLED)
+- **User Management** — user list with stat cards, role promotion/demotion via inline select (admins cannot demote themselves), and user deletion with cascade warning
+- **Fully Responsive** — below `lg` breakpoint, all admin tables convert to stacked card layouts per row; sidebar nav collapses to a horizontal scrollable pill bar
 
-👉 **Transition to Server-Side Rendering**: A seamless transition from client-side rendering to server-side rendering, enhancing performance and providing a smoother browsing experience.
+### Platform-Wide
 
-👉 **Pagination**: For easy navigation through a large dataset of cars, allowing users to explore multiple pages effortlessly.
+- **Dark / Light Theme** — cookie-driven with a `<head>` inline script that applies the theme class before first paint, eliminating flash-of-incorrect-theme on hard reload; persisted for 1 year
+- **Fully Responsive** — mobile-first design across all pages; `lg` as the single layout breakpoint throughout
+- **Automatic Order Sync** — `lib/order-sync.ts` runs on every `/admin/*` and `/profile/*` load, auto-advancing CONFIRMED → ACTIVE when the start date arrives, and ACTIVE → COMPLETED when the end date passes
 
-👉 **Metadata Optimization and SEO**: Optimize metadata for car listing, enhancing search engine optimization (SEO) and ensuring better visibility on search engine results pages.
+---
 
-👉 **TypeScript Types**: Utilize TypeScript to provide robust typing for enhanced code quality and better development
+## Tech Stack
 
-👉 **Responsive Website Design**: The website is designed to be visually pleasing and responsive, ensuring an optimal user experience across various devices.
+| Layer | Technology |
+|---|---|
+| **Framework** | Next.js 16 (App Router) |
+| **Language** | TypeScript |
+| **Styling** | Tailwind CSS 3 with custom CSS variable theming |
+| **Database** | PostgreSQL (hosted on Neon) |
+| **ORM** | Prisma 6 |
+| **Authentication** | Clerk |
+| **Email** | Resend |
+| **UI Primitives** | Headless UI |
+| **Images** | Imagin.studio CDN (dynamic car images by make/model/year) |
+| **Deployment** | Vercel |
+| **Font** | Manrope (Google Fonts) |
 
-and many more, including code architecture and reusability 
+---
 
-## <a name="quick-start">🤸 Quick Start</a>
+## Architecture Overview
 
-Follow these steps to set up the project locally on your machine.
+### Server Components First
 
-**Prerequisites**
+Pages are React Server Components by default. They query Prisma directly — no API routes needed for data fetching. This keeps sensitive database logic off the client and eliminates redundant network round-trips.
 
-Make sure you have the following installed on your machine:
-
-- [Git](https://git-scm.com/)
-- [Node.js](https://nodejs.org/en)
-- [npm](https://www.npmjs.com/) (Node Package Manager)
-
-**Cloning the Repository**
-
-```bash
-git clone https://github.com/adrianhajdin/project_next13_car_showcase.git
-cd project_next13_car_showcase
+```
+Browser → Next.js Server Component → Prisma → Neon PostgreSQL
 ```
 
-**Installation**
+Client Components are used only where interactivity is required (filters, forms, toggles, optimistic updates).
 
-Install the project dependencies using npm:
+### Serialization Rule
+
+Prisma's `Decimal` and `Date` types are not serializable to JSON. Every server component that passes data to a client component explicitly converts these before the boundary:
+
+```ts
+// Always do this before passing Prisma data to client components
+const serialized = {
+  ...car,
+  pricePerDay: Number(car.pricePerDay),   // Decimal → number
+  createdAt: car.createdAt.toISOString(), // Date → string
+}
+```
+
+Raw Prisma objects are never spread directly into client component props.
+
+### Auth & User Sync
+
+Clerk manages authentication (sign-in, sign-up, session). On every authenticated request, `lib/sync-user.ts` runs `getOrCreateUser()` which syncs the Clerk user into the Prisma `User` table, creating the record if it does not exist yet. This keeps the two systems in sync without webhooks.
+
+```
+Clerk Session → getOrCreateUser() → Prisma User record
+```
+
+### Order Status Lifecycle
+
+```
+PENDING ──► CONFIRMED ──► ACTIVE ──► COMPLETED
+   │              │           │
+   └──────────────┴───────────┴──► CANCELLED
+```
+
+- Admin manually promotes `PENDING → CONFIRMED`
+- `lib/order-sync.ts` auto-advances `CONFIRMED → ACTIVE` when `startDate` is reached
+- `lib/order-sync.ts` auto-advances `ACTIVE → COMPLETED` when `endDate` passes
+- CANCELLED is available from any state except COMPLETED
+
+### Filter Architecture
+
+`CarFilters.tsx` is a Client Component that holds all filter state locally. When the user clicks "Apply", it updates the URL query params. The parent Server Component (`app/page.tsx`) reads those params, builds the Prisma `where` clause, and re-fetches — the URL is the single source of truth.
+
+```
+User interaction → URL params → Server re-fetch → Prisma query → Updated results
+```
+
+### Dark Mode
+
+Tailwind's `darkMode: "class"` strategy is used. An inline `<script>` in `<head>` reads the `theme` cookie and sets the `dark` class on `<html>` before the browser paints, preventing any flash of the wrong theme. Toggling writes a new cookie (1-year expiry) and flips the class without a page reload.
+
+---
+
+## Database Schema
+
+```prisma
+model User {
+  id        String   @id @default(uuid())
+  clerkId   String   @unique
+  email     String   @unique
+  firstName String?
+  lastName  String?
+  phone     String?
+  role      String   @default("USER") // "USER" | "ADMIN"
+  orders    Order[]
+  reviews   Review[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Car {
+  id              String   @id @default(uuid())
+  make            String
+  model           String
+  year            Int
+  pricePerDay     Decimal  @db.Decimal(10, 2)
+  fuel_type       String
+  transmission    String
+  drive           String
+  city_mpg        Int
+  highway_mpg     Int
+  combination_mpg Int
+  cylinders       Int
+  displacement    Float
+  class           String
+  images          String[]
+  description     String?
+  available       Boolean  @default(true)
+  featured        Boolean  @default(false)
+  orders          Order[]
+  reviews         Review[]
+  createdAt       DateTime @default(now())
+
+  @@index([make])
+  @@index([fuel_type])
+  @@index([year])
+  @@index([available])
+}
+
+model Order {
+  id         String      @id @default(uuid())
+  userId     String
+  carId      String
+  startDate  DateTime
+  endDate    DateTime
+  totalPrice Decimal     @db.Decimal(10, 2)
+  status     OrderStatus @default(PENDING)
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  car        Car         @relation(fields: [carId], references: [id], onDelete: Cascade)
+  review     Review?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  orderId   String   @unique  // one review per order
+  userId    String
+  carId     String
+  rating    Int
+  comment   String?
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  car       Car      @relation(fields: [carId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+```
+
+**Relationships:**
+- `User` 1:N `Order` — a user can place many orders
+- `User` 1:N `Review` — a user can write many reviews
+- `Car` 1:N `Order` — a car can be booked many times
+- `Car` 1:N `Review` — a car can receive many reviews
+- `Order` 1:1 `Review` — enforced via `@unique` on `orderId`
+
+---
+
+## Project Structure
+
+```
+car_showcase/
+├── app/
+│   ├── admin/
+│   │   ├── layout.tsx          # Role guard + responsive sidebar layout
+│   │   ├── page.tsx            # Dashboard with period filter
+│   │   ├── cars/
+│   │   │   ├── page.tsx        # Car management table
+│   │   │   ├── new/page.tsx    # Add car form
+│   │   │   └── [id]/edit/page.tsx  # Edit car form
+│   │   ├── orders/page.tsx     # Orders table + search
+│   │   └── users/page.tsx      # User management + role control
+│   ├── car-details/[id]/
+│   │   └── page.tsx            # Car detail page
+│   ├── featured/
+│   │   └── page.tsx            # All featured cars with hero
+│   ├── profile/
+│   │   ├── layout.tsx          # Profile layout + order sync
+│   │   ├── page.tsx            # User dashboard
+│   │   ├── orders/
+│   │   │   ├── page.tsx        # Orders center with tabs + filters
+│   │   │   └── [id]/page.tsx   # Order detail + timeline
+│   │   └── account/page.tsx    # Clerk UserProfile
+│   ├── rent/page.tsx           # Booking form
+│   ├── sign-in/[[...sign-in]]/
+│   ├── sign-up/[[...sign-up]]/
+│   ├── globals.css             # CSS variables, aurora, particles
+│   ├── layout.tsx              # Root layout + theme script
+│   └── page.tsx                # Homepage
+│
+├── components/
+│   ├── admin/
+│   │   ├── AdminNav.tsx        # Sidebar (desktop) + pill bar (mobile)
+│   │   ├── CarForm.tsx         # Reusable add/edit car form
+│   │   ├── CarTable.tsx        # Table (lg+) / cards (mobile)
+│   │   ├── UserTable.tsx       # Table (lg+) / cards (mobile)
+│   │   ├── SearchCars.tsx
+│   │   ├── SearchOrders.tsx
+│   │   └── SearchUsers.tsx
+│   ├── CarCard.tsx             # Car card with featured badge
+│   ├── CarFilters.tsx          # Client-side filter panel
+│   ├── FeaturedCars.tsx        # Homepage featured section
+│   ├── Hero.tsx                # Aurora hero + particles + stats
+│   ├── Navbar.tsx              # Logo + theme toggle
+│   ├── OrderCard.tsx
+│   ├── OrderList.tsx           # useOptimistic cancel
+│   ├── OrderProgress.tsx       # Status progress bar
+│   ├── OrderTabs.tsx           # Tab switcher + sort
+│   ├── OrderTimeline.tsx       # Vertical activity timeline
+│   ├── RentForm.tsx            # Auth guard + booking form
+│   ├── SearchableSelect.tsx    # Headless UI combobox
+│   ├── ShowMore.tsx            # Pagination (hides when no more)
+│   ├── StatusBadge.tsx         # Animated status pill
+│   └── StatusUpdater.tsx       # Admin status dropdown
+│
+├── lib/
+│   ├── prisma.ts               # Prisma singleton
+│   ├── email.ts                # Lazy Resend init (build-safe)
+│   ├── order-sync.ts           # Auto-advance order statuses
+│   ├── sync-user.ts            # Clerk ↔ DB user sync
+│   └── car-options.ts          # Dropdown arrays for car form
+│
+├── app/actions/
+│   ├── admin.ts                # Car/order/user server actions
+│   ├── order.ts                # Order CRUD + cancel
+│   └── user.ts                 # User sync
+│
+├── prisma/
+│   ├── schema.prisma
+│   ├── seed.ts
+│   └── config.ts
+│
+├── types/index.ts
+├── constants/index.ts
+└── tailwind.config.js
+```
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+
+- A [Neon](https://neon.tech) PostgreSQL database
+- A [Clerk](https://clerk.com) application
+- A [Resend](https://resend.com) account (optional — emails are skipped gracefully if the key is absent)
+
+### Installation
 
 ```bash
+# 1. Clone the repository
+git clone https://github.com/your-repo/autoverse.git
+cd autoverse
+
+# 2. Install dependencies
 npm install
-```
 
-**Set Up Environment Variables**
+# 3. Set up environment variables
+cp .env.example .env.local
+# Fill in the values — see Environment Variables section below
 
-Create a new file named `.env` in the root of your project and add the following content:
+# 4. Push the schema to your database
+npx prisma db push
 
-```env
-NEXT_PUBLIC_RAPID_API_KEY=
-NEXT_PUBLIC_IMAGIN_API_KEY=hrjavascript-mastery
-```
+# 5. (Optional) Seed the database with sample cars
+npx prisma db seed
 
-Replace the placeholder values with your actual credentials. You can obtain these credentials by signing up on the corresponding websites from [Rapid API](https://www.youtube.com/redirect?event=video_description&redir_token=QUFFLUhqbmI1TlE1NHFGZ1JLdHU3dnAxSTU5a2R5UUM4QXxBQ3Jtc0tsUDY0aW8xMFhUZVdxMUNzSUlKUExRTG5UaDZoR3hWVFprN2tJV0k2dnk4MXo2NVFMVkk0NWhGS19Nd0g5cGRfN2JjcTdaSlJJRHJKYzlfT3lSS1M4TDVNVTV5Wl91c1lIR2VPZUYzbHJ2Tll2QkJ0aw&q=https%3A%2F%2Frapidapi.com%2Fapininjas%2Fapi%2Fcars-by-api-ninjas%3Futm_source%3Dyoutube.com%2FJavaScriptMastery%26utm_medium%3Dreferral%26utm_campaign%3DDevRel&v=pUNSHPyVryU) to [Imagin Cars](https://www.imagin.studio/solutions/api)
-
-**Running the Project**
-
-```bash
+# 6. Start the development server
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser to view the project.
+Open [http://localhost:3000](http://localhost:3000).
 
-## <a name="snippets">🕸️ Snippets</a>
+### Making yourself an admin
 
-<details>
-<summary><code>constants.ts</code></summary>
+After signing up through the app, open your Neon database console and run:
 
-```typescript
-export const manufacturers = [
-  "Acura",
-  "Alfa Romeo",
-  "Aston Martin",
-  "Audi",
-  "Bentley",
-  "BMW",
-  "Buick",
-  "Cadillac",
-  "Chevrolet",
-  "Chrysler",
-  "Citroen",
-  "Dodge",
-  "Ferrari",
-  "Fiat",
-  "Ford",
-  "GMC",
-  "Honda",
-  "Hyundai",
-  "Infiniti",
-  "Jaguar",
-  "Jeep",
-  "Kia",
-  "Lamborghini",
-  "Land Rover",
-  "Lexus",
-  "Lincoln",
-  "Maserati",
-  "Mazda",
-  "McLaren",
-  "Mercedes-Benz",
-  "MINI",
-  "Mitsubishi",
-  "Nissan",
-  "Porsche",
-  "Ram",
-  "Rolls-Royce",
-  "Subaru",
-  "Tesla",
-  "Toyota",
-  "Volkswagen",
-  "Volvo",
-];
-
-export const yearsOfProduction = [
-  { title: "Year", value: "" },
-  { title: "2015", value: "2015" },
-  { title: "2016", value: "2016" },
-  { title: "2017", value: "2017" },
-  { title: "2018", value: "2018" },
-  { title: "2019", value: "2019" },
-  { title: "2020", value: "2020" },
-  { title: "2021", value: "2021" },
-  { title: "2022", value: "2022" },
-  { title: "2023", value: "2023" },
-];
-
-export const fuels = [
-  {
-    title: "Fuel",
-    value: "",
-  },
-  {
-    title: "Gas",
-    value: "Gas",
-  },
-  {
-    title: "Electricity",
-    value: "Electricity",
-  },
-];
-
-export const footerLinks = [
-  {
-    title: "About",
-    links: [
-      { title: "How it works", url: "/" },
-      { title: "Featured", url: "/" },
-      { title: "Partnership", url: "/" },
-      { title: "Bussiness Relation", url: "/" },
-    ],
-  },
-  {
-    title: "Company",
-    links: [
-      { title: "Events", url: "/" },
-      { title: "Blog", url: "/" },
-      { title: "Podcast", url: "/" },
-      { title: "Invite a friend", url: "/" },
-    ],
-  },
-  {
-    title: "Socials",
-    links: [
-      { title: "Discord", url: "/" },
-      { title: "Instagram", url: "/" },
-      { title: "Twitter", url: "/" },
-      { title: "Facebook", url: "/" },
-    ],
-  },
-];
+```sql
+UPDATE "User" SET role = 'ADMIN' WHERE email = 'your@email.com';
 ```
 
-</details>
+Then visit [http://localhost:3000/admin](http://localhost:3000/admin).
 
-<details>
-<summary><code>globals.css</code></summary>
+---
 
-```css
-@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&display=swap");
+## Environment Variables
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+Create a `.env.local` file in the root with the following:
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: "Manrope", sans-serif;
-}
+```env
+# ── Database (Neon) ──────────────────────────────
+DATABASE_URL="postgresql://user:password@host/dbname?sslmode=require"
+DIRECT_URL="postgresql://user:password@host/dbname?sslmode=require"
 
-/* START: General styles */
-.max-width {
-  @apply max-w-[1440px] mx-auto;
-}
+# ── Clerk ────────────────────────────────────────
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+CLERK_SECRET_KEY=sk_test_...
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/
+NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/
 
-.padding-x {
-  @apply sm:px-16 px-6;
-}
-
-.padding-y {
-  @apply py-4;
-}
-
-.flex-center {
-  @apply flex items-center justify-center;
-}
-
-.flex-between {
-  @apply flex justify-between items-center;
-}
-
-.custom-btn {
-  @apply flex flex-row relative justify-center items-center py-3 px-6 outline-none;
-}
-/* END: General styles */
-
-/* START: Hero styles */
-.hero {
-  @apply flex xl:flex-row flex-col gap-5 relative z-0 max-w-[1440px] mx-auto;
-}
-
-.hero__title {
-  @apply 2xl:text-[72px] sm:text-[64px] text-[50px] font-extrabold;
-}
-
-.hero__subtitle {
-  @apply text-[27px] text-black-100 font-light mt-5;
-}
-
-.hero__image-container {
-  @apply xl:flex-[1.5] flex justify-end items-end w-full xl:h-screen;
-}
-
-.hero__image {
-  @apply relative xl:w-full w-[90%] xl:h-full h-[590px] z-0;
-}
-
-.hero__image-overlay {
-  @apply absolute xl:-top-24 xl:-right-1/2 -right-1/4 bg-hero-bg bg-repeat-round -z-10 w-full xl:h-screen h-[590px] overflow-hidden;
-}
-/* END: Hero styles */
-
-/* START: Home styles */
-
-.home__text-container {
-  @apply flex flex-col items-start justify-start gap-y-2.5 text-black-100;
-}
-
-.home__filters {
-  @apply mt-12 w-full flex-between items-center flex-wrap gap-5;
-}
-
-.home__filter-container {
-  @apply flex justify-start flex-wrap items-center gap-2;
-}
-
-.home__cars-wrapper {
-  @apply grid 2xl:grid-cols-4 xl:grid-cols-3 md:grid-cols-2 grid-cols-1 w-full gap-8 pt-14;
-}
-
-.home__error-container {
-  @apply mt-16 flex justify-center items-center flex-col gap-2;
-}
-/* END: Home styles */
-
-/* START: Car Card styles */
-.car-card {
-  @apply flex flex-col p-6 justify-center items-start text-black-100 bg-primary-blue-100 hover:bg-white hover:shadow-md rounded-3xl;
-}
-
-.car-card__content {
-  @apply w-full flex justify-between items-start gap-2;
-}
-
-.car-card__content-title {
-  @apply text-[22px] leading-[26px] font-bold capitalize;
-}
-
-.car-card__price {
-  @apply flex mt-6 text-[32px] leading-[38px] font-extrabold;
-}
-
-.car-card__price-dollar {
-  @apply self-start text-[14px] leading-[17px] font-semibold;
-}
-
-.car-card__price-day {
-  @apply self-end text-[14px] leading-[17px] font-medium;
-}
-
-.car-card__image {
-  @apply relative w-full h-40 my-3 object-contain;
-}
-
-.car-card__icon-container {
-  @apply flex group-hover:invisible w-full justify-between text-grey;
-}
-
-.car-card__icon {
-  @apply flex flex-col justify-center items-center gap-2;
-}
-
-.car-card__icon-text {
-  @apply text-[14px] leading-[17px];
-}
-
-.car-card__btn-container {
-  @apply hidden group-hover:flex absolute bottom-0 w-full z-10;
-}
-/* END: Car Card styles */
-
-/* START: Car Details styles */
-.car-details__dialog-panel {
-  @apply relative w-full max-w-lg max-h-[90vh] overflow-y-auto transform rounded-2xl bg-white p-6 text-left shadow-xl transition-all flex flex-col gap-5;
-}
-
-.car-details__close-btn {
-  @apply absolute top-2 right-2 z-10 w-fit p-2 bg-primary-blue-100 rounded-full;
-}
-
-.car-details__main-image {
-  @apply relative w-full h-40 bg-pattern bg-cover bg-center rounded-lg;
-}
-/* END: Car Details styles */
-
-/* START: Custom Filter styles */
-.custom-filter__btn {
-  @apply relative w-full min-w-[127px] flex justify-between items-center cursor-default rounded-lg bg-white py-2 px-3 text-left shadow-md sm:text-sm border;
-}
-
-.custom-filter__options {
-  @apply absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm;
-}
-/* END: Custom Filter styles */
-
-/* START: Footer styles */
-.footer {
-  @apply flex flex-col text-black-100  mt-5 border-t border-gray-100;
-}
-
-.footer__links-container {
-  @apply flex max-md:flex-col flex-wrap justify-between gap-5 sm:px-16 px-6 py-10;
-}
-
-.footer__rights {
-  @apply flex flex-col justify-start items-start gap-6;
-}
-
-.footer__links {
-  @apply flex-1 w-full flex md:justify-end flex-wrap max-md:mt-10 gap-20;
-}
-
-.footer__link {
-  @apply flex flex-col gap-6 text-base min-w-[170px];
-}
-
-.footer__copyrights {
-  @apply flex justify-between items-center flex-wrap mt-10 border-t border-gray-100 sm:px-16 px-6 py-10;
-}
-
-.footer__copyrights-link {
-  @apply flex-1 flex sm:justify-end justify-center max-sm:mt-4 gap-10;
-}
-/* END: Footer styles */
-
-/* START: searchbar styles */
-.searchbar {
-  @apply flex items-center justify-start max-sm:flex-col w-full relative max-sm:gap-4 max-w-3xl;
-}
-
-.searchbar__item {
-  @apply flex-1 max-sm:w-full flex justify-start items-center relative;
-}
-
-.searchbar__input {
-  @apply w-full h-[48px] pl-12 p-4 bg-light-white rounded-r-full max-sm:rounded-full outline-none cursor-pointer text-sm;
-}
-/* END: searchbar styles */
-
-/* START: search manufacturer styles */
-.search-manufacturer {
-  @apply flex-1 max-sm:w-full flex justify-start items-center;
-}
-
-.search-manufacturer__input {
-  @apply w-full h-[48px] pl-12 p-4 rounded-l-full max-sm:rounded-full bg-light-white outline-none cursor-pointer text-sm;
-}
-
-.search-manufacturer__options {
-  @apply absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm;
-}
-
-.search-manufacturer__option {
-  @apply cursor-default select-none py-2 pl-10 pr-4;
-}
-/* END: search manufacturer styles */
+# ── Email (optional) ─────────────────────────────
+RESEND_API_KEY=re_...
 ```
 
-</details>
+> **Note:** The build will not fail if `RESEND_API_KEY` is missing. The Resend client is initialized lazily at runtime, so Vercel builds succeed even without the key.
 
-<details>
-<summary><code>tailwind.config.js</code></summary>
+---
 
-```javascript
-/** @type {import('tailwindcss').Config} */
-module.exports = {
-  content: [
-    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
-    "./components/**/*.{js,ts,jsx,tsx,mdx}",
-    "./app/**/*.{js,ts,jsx,tsx,mdx}",
-  ],
-  mode: "jit",
-  theme: {
-    extend: {
-      fontFamily: {
-        inter: ["Inter", "sans-serif"],
-      },
-      colors: {
-        "black-100": "#2B2C35",
-        "primary-blue": {
-          DEFAULT: "#2B59FF",
-          100: "#F5F8FF",
-        },
-        "secondary-orange": "#f79761",
-        "light-white": {
-          DEFAULT: "rgba(59,60,152,0.03)",
-          100: "rgba(59,60,152,0.02)",
-        },
-        grey: "#747A88",
-      },
-      backgroundImage: {
-        'pattern': "url('/pattern.png')",
-        'hero-bg': "url('/hero-bg.png')"
-      }
-    },
-  },
-  plugins: [],
-};
-```
+## Key Engineering Decisions
 
-</details>
+**Why Server Components for data fetching?**
+Fetching directly from Prisma in Server Components means zero client-side data fetching boilerplate, no loading spinners for initial data, and sensitive DB credentials never leave the server. The only trade-off is that interactive pages need a `"use client"` boundary, which is explicit and visible in the code.
 
-## <a name="links">🔗 Links</a>
+**Why URL params as the filter source of truth?**
+Keeping filter state in the URL instead of React state means filtered views are shareable, bookmarkable, and survive page refreshes without any extra persistence layer. It also makes the Back button work correctly for free.
 
-Assets used in the project are [here](https://drive.google.com/file/d/1Ague8aTHA6JSrzy3kscEZmrJQdtDxqwy/view)
+**Why `useOptimistic` for admin toggles and order cancellation?**
+Admin toggle switches (available, featured) and order cancellations feel instant because the UI updates immediately while the server action runs in the background. If the server action fails, React rolls back the optimistic state automatically.
 
-## <a name="more">🚀 More</a>
+**Why lazy Resend initialization?**
+Initializing `new Resend(key)` at module load time would crash Vercel builds when `RESEND_API_KEY` is not set in the build environment. Lazy init (`if (!client) client = new Resend(key)`) defers this to runtime, where the key is always available.
 
-**Advance your skills with Next.js 14 Pro Course**
+**Why cookie-based theme instead of `localStorage`?**
+`localStorage` is not accessible during server-side rendering, which means the theme can only be applied after hydration — causing a visible flash. A cookie is readable by the inline `<head>` script before the browser paints anything, eliminating the flash entirely.
 
-Enjoyed creating this project? Dive deeper into our PRO courses for a richer learning adventure. They're packed with detailed explanations, cool features, and exercises to boost your skills. Give it a go!
+---
 
-<a href="https://jsmastery.pro/next14" target="_blank">
-<img src="https://github.com/sujatagunale/EasyRead/assets/151519281/557837ce-f612-4530-ab24-189e75133c71" alt="Project Banner">
-</a>
+## License
 
-<br />
-<br />
+MIT — feel free to use this as a reference or starting point for your own projects.
 
-**Accelerate your professional journey with the Expert Training program**
+---
 
-And if you're hungry for more than just a course and want to understand how we learn and tackle tech challenges, hop into our personalized masterclass. We cover best practices, different web skills, and offer mentorship to boost your confidence. Let's learn and grow together!
-
-<a href="https://www.jsmastery.pro/masterclass" target="_blank">
-<img src="https://github.com/sujatagunale/EasyRead/assets/151519281/fed352ad-f27b-400d-9b8f-c7fe628acb84" alt="Project Banner">
-</a>
-
-#
+*Built with Next.js, Prisma, PostgreSQL, Clerk, Tailwind CSS, and Resend.*
