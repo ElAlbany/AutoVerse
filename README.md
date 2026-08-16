@@ -4,13 +4,12 @@
 
 A production-ready, full-stack car rental platform built with Next.js 16 App Router. AutoVerse covers the complete rental lifecycle — from browsing a curated catalogue and booking a vehicle, to managing orders through a personal dashboard and administrating the entire platform through a dedicated admin panel.
 
-**Live Demo:** [autoverse.vercel.app](https://your-live-url.vercel.app) &nbsp;|&nbsp; **GitHub:** [github.com/your-repo](https://github.com/your-repo)
+**Live Demo:** [autoverse.vercel.app]([https://your-live-url.vercel.app](https://auto-verse-tau.vercel.app/)) &nbsp;
 
 ---
 
 ## Table of Contents
 
-- [Screenshots](#screenshots)
 - [Features](#features)
 - [Tech Stack](#tech-stack)
 - [Architecture Overview](#architecture-overview)
@@ -19,18 +18,6 @@ A production-ready, full-stack car rental platform built with Next.js 16 App Rou
 - [Getting Started](#getting-started)
 - [Environment Variables](#environment-variables)
 - [Key Engineering Decisions](#key-engineering-decisions)
-
----
-
-## Screenshots
-
-| Homepage | Car Catalogue | Car Detail |
-|---|---|---|
-| ![Hero](./public/screenshots/hero.png) | ![Catalogue](./public/screenshots/catalogue.png) | ![Detail](./public/screenshots/detail.png) |
-
-| Profile Dashboard | My Orders | Admin Panel |
-|---|---|---|
-| ![Dashboard](./public/screenshots/profile.png) | ![Orders](./public/screenshots/orders.png) | ![Admin](./public/screenshots/admin.png) |
 
 ---
 

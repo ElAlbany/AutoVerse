@@ -23,3 +23,4 @@ export { default as OrderTimeline } from "./OrderTimeline";
 export { default as OrderProgress } from "./OrderProgress";
 export { default as OrderTabs } from "./OrderTabs";
 export { default as FeaturedCars } from "./FeaturedCars";
+export { default as VeroChat } from "./VeroChat";

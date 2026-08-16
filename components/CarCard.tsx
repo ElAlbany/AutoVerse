@@ -8,7 +8,7 @@ import { CarProps } from "@types";
 import CustomButton from "./CustomButton";
 
 interface CarCardProps {
-  car: CarProps & { pricePerDay?: number }; // pricePerDay added at runtime from page.tsx
+  car: CarProps & { pricePerDay?: number };
 }
 
 const CarCard = ({ car }: CarCardProps) => {
@@ -22,12 +22,11 @@ const CarCard = ({ car }: CarCardProps) => {
     id,
     available,
     featured,
-    pricePerDay, // <-- extracted from the serialized car object
+    pricePerDay,
   } = car;
   const { isSignedIn } = useAuth();
   const router = useRouter();
 
-  // Use DB price if available, otherwise fall back to calculated rent
   const carRent = pricePerDay
     ? Math.round(pricePerDay)
     : calculateCarRent(city_mpg, year);
@@ -48,7 +47,6 @@ const CarCard = ({ car }: CarCardProps) => {
           : ""
       }`}
     >
-      {/* Featured Badge */}
       {featured && (
         <div className="absolute -top-3 left-4 z-20 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg shadow-amber-400/30 flex items-center gap-1.5">
           <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
@@ -58,7 +56,6 @@ const CarCard = ({ car }: CarCardProps) => {
         </div>
       )}
 
-      {/* Unavailable Badge */}
       {!available && (
         <div className="absolute bottom-2 right-2 z-10 bg-red-500/90 backdrop-blur-sm text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-lg">
           Unavailable
@@ -89,6 +86,7 @@ const CarCard = ({ car }: CarCardProps) => {
           priority
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
           className="object-contain transition-transform duration-500 group-hover:scale-105"
+          suppressHydrationWarning
         />
       </div>
 
@@ -101,6 +99,7 @@ const CarCard = ({ car }: CarCardProps) => {
               height={20}
               alt="steering wheel"
               className="dark:invert dark:opacity-70"
+              suppressHydrationWarning
             />
             <p className="text-[14px] leading-[17px]">
               {transmission === "a" ? "Automatic" : "Manual"}
@@ -113,6 +112,7 @@ const CarCard = ({ car }: CarCardProps) => {
               height={20}
               alt="drive"
               className="dark:invert dark:opacity-70"
+              suppressHydrationWarning
             />
             <p className="car-card__icon-text">{drive.toUpperCase()}</p>
           </div>
@@ -123,6 +123,7 @@ const CarCard = ({ car }: CarCardProps) => {
               height={20}
               alt="mpg"
               className="dark:invert dark:opacity-70"
+              suppressHydrationWarning
             />
             <p className="car-card__icon-text">{city_mpg} MPG</p>
           </div>
@@ -147,6 +148,7 @@ const CarCard = ({ car }: CarCardProps) => {
             <button
               disabled
               className="flex-1 py-[14px] rounded-full bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 text-[14px] leading-[17px] font-bold cursor-not-allowed border border-gray-200 dark:border-gray-600"
+              suppressHydrationWarning
             >
               Unavailable
             </button>

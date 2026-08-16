@@ -13,24 +13,17 @@ const Hero = () => {
 
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden">
-      {/* Aurora Background */}
       <div className="aurora-bg" />
-
-      {/* Floating Orbs */}
       <div className="orb orb-1" />
       <div className="orb orb-2" />
-
-      {/* Floating Particles */}
       <div className="particles-container">
-        {Array.from({ length: 20 }).map((_, i) => (
+        {Array.from({ length: 20 }).map((_, i: number) => (
           <div key={i} className="particle" />
         ))}
       </div>
 
-      {/* Content */}
       <div className="hero relative z-10 w-full">
         <div className="flex-1 pt-36 padding-x">
-          {/* Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary-blue/10 dark:bg-primary-blue/20 border border-primary-blue/20 dark:border-primary-blue/30 mb-8 animate-slide-up">
             <span className="w-2 h-2 rounded-full bg-primary-blue animate-pulse" />
             <span className="text-sm font-medium text-primary-blue dark:text-primary-blue-300">
@@ -63,17 +56,8 @@ const Hero = () => {
               containerStyles="bg-gradient-to-r from-primary-blue to-accent-cyan text-white rounded-full hover:shadow-lg hover:shadow-primary-blue/30 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300"
               handleClick={handleScroll}
             />
-            {/* <CustomButton
-              title="How it Works"
-              containerStyles="bg-white/10 dark:bg-white/5 backdrop-blur-sm text-gray-700 dark:text-gray-300 rounded-full border border-gray-200 dark:border-white/10 hover:bg-white/20 dark:hover:bg-white/10 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300"
-              handleClick={() => {
-                const el = document.getElementById("discover");
-                if (el) el.scrollIntoView({ behavior: "smooth" });
-              }}
-            /> */}
           </div>
 
-          {/* Stats */}
           <div
             className="flex items-center gap-8 mt-16 animate-slide-up"
             style={{ animationDelay: "0.4s" }}
@@ -109,6 +93,7 @@ const Hero = () => {
               fill
               className="object-contain drop-shadow-2xl"
               priority
+              suppressHydrationWarning
             />
           </div>
           <div className="hero__image-overlay" />

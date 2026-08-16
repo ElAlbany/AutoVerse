@@ -2,6 +2,7 @@ import "./globals.css";
 
 import { Footer, NavBar } from "@components";
 import { ClerkProvider } from "@clerk/nextjs";
+import VeroChat from "@/components/VeroChat";
 
 export const metadata = {
   title: "AutoVerse — Find, Book, Drive",
@@ -17,7 +18,6 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Theme initialization script to prevent flash */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -36,11 +36,12 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="relative">
+      <body className="relative" suppressHydrationWarning>
         <ClerkProvider afterSignOutUrl="/">
           <NavBar />
           {children}
           <Footer />
+          <VeroChat />
         </ClerkProvider>
       </body>
     </html>
