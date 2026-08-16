@@ -184,8 +184,8 @@ Do NOT explain this line to the user. It is invisible metadata.`;
       if (idsStr.toLowerCase() !== "none") {
         recommendedCarIds = idsStr
           .split(",")
-          .map((s) => s.trim())
-          .filter((id) => carById.has(id));
+          .map((s: string) => s.trim())
+          .filter((id: string) => carById.has(id));
       }
       // Remove the metadata line from user-facing text
       textForUser = rawText.replace(/RECOMMENDED:\s*.+/i, "").trim();
