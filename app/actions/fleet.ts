@@ -135,7 +135,23 @@ export async function assignVehicle(form: FormData) {
         where: {
           unitId,
           active: true,
-          NOT: { orderId },
+          order: {
+            id: { not: orderId },
+            status: "ACTIVE",
+            endDate: { lt: new Date() },
+          },
+        },
+      })
+    )
+      throw new Error(
+        "This vehicle has an overdue rental. Record its return before reassigning another booking to it.",
+      );
+    if (
+      await tx.vehicleReservation.count({
+        where: {
+          unitId,
+          active: true,
+          OR: [{ orderId: null }, { orderId: { not: orderId } }],
           startDate: { lt: bufferedEnd(fresh.endDate) },
           endDate: { gt: fresh.startDate },
         },

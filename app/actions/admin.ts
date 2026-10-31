@@ -83,7 +83,7 @@ export async function updateOrderStatus(orderId: string, status: string) {
           where: {
             unitId: order.reservation.unitId,
             active: true,
-            NOT: { orderId },
+            OR: [{ orderId: null }, { orderId: { not: orderId } }],
             startDate: { lt: preparationEnd },
             endDate: { gt: returned },
           },
