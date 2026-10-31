@@ -26,7 +26,9 @@ export default function CompareNavLink() {
   return (
     <Link href="/compare" className="av-compare-nav">
       <Columns2 size={15} /> Compare cars{" "}
-      <span aria-label={`${count} cars selected`}>{count}</span>
+      <span aria-label={`${count} ${count === 1 ? "car" : "cars"} selected`}>
+        {count}
+      </span>
     </Link>
   );
 }

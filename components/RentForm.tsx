@@ -179,7 +179,8 @@ export default function RentForm({
         <div className="av-quote">
           <div>
             <span>
-              {money(car.pricePerDay)} × {quote.days} rental days
+              {money(car.pricePerDay)} × {quote.days} rental{" "}
+              {quote.days === 1 ? "day" : "days"}
             </span>
             <span>{money(quote.total)}</span>
           </div>
