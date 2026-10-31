@@ -31,6 +31,8 @@ Open [localhost:3000](http://localhost:3000). A production preview uses `npm run
 
 Admin roles are stored in PostgreSQL and checked on server mutations. The admin panel includes cars, orders, fleet schedule, maintenance blocks, physical units, conflict reconciliation, review moderation and analytics. Cars are archived to preserve booking history. Staff explicitly record pickup and return; a calendar date never automatically marks a vehicle returned.
 
+The fleet calendar now has date navigation, a timeline/list switch, filters, pagination and a focused vehicle workspace. See [Fleet calendar UX](docs/FLEET_CALENDAR_UX.md).
+
 The upgrade migration preserved existing orders and flagged ambiguous legacy vehicle assignments. Use **Admin → Fleet calendar** to reconcile those bookings against actual stock before re-enabling an affected listing.
 
 ## Background processing

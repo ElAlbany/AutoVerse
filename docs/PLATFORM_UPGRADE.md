@@ -92,4 +92,4 @@ The original checkpoint passed five policy/redirect tests and three database/pay
 
 Post-test counts remained 49 listings, 49 initial vehicle units and 16 original orders, with two legacy orders flagged for reconciliation. No integration fixtures remained and no email or payment API was invoked by these tests.
 
-Development work is tracked in feature commits on `codex/rental-platform-upgrade`; each checkpoint is pushed to the repository. The main branch has not been merged or deployed by this task.
+Development work is tracked in feature commits on `rental-platform-upgrade`; each checkpoint is pushed to the repository. The main branch has not been merged or deployed by this task.

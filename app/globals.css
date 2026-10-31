@@ -2044,67 +2044,6 @@ a.bg-gradient-to-r {
   }
 }
 
-.av-fleet-calendar {
-  overflow: auto;
-}
-.av-calendar-inner {
-  min-width: 650px;
-}
-.av-calendar-row {
-  display: grid;
-  grid-template-columns: 150px 1fr;
-  gap: 14px;
-  min-height: 43px;
-  align-items: center;
-  border-bottom: 1px solid var(--border-color);
-  font-size: 10px;
-  padding: 5px 0;
-}
-.av-calendar-row > span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.av-calendar-row small {
-  display: block;
-  color: var(--text-secondary);
-  font-size: 8px;
-}
-.av-calendar-dates {
-  display: grid;
-  grid-template-columns: repeat(14, 1fr);
-  color: var(--text-secondary);
-}
-.av-calendar-track {
-  height: 28px;
-  position: relative;
-  background: repeating-linear-gradient(
-    90deg,
-    transparent,
-    transparent calc(7.1428% - 1px),
-    var(--border-color) calc(7.1428% - 1px),
-    var(--border-color) 7.1428%
-  );
-}
-.av-calendar-track > span {
-  position: absolute;
-  height: 22px;
-  top: 3px;
-  padding: 4px 5px;
-  overflow: hidden;
-  border-radius: 2px;
-  font-size: 7px;
-  white-space: nowrap;
-}
-.av-calendar-rental {
-  background: var(--av-accent);
-  color: var(--av-on-accent);
-}
-.av-calendar-block {
-  background: var(--av-bronze);
-  color: var(--bg-primary);
-}
-
 .av-panel,
 .av-booking-layout > *,
 .av-detail-layout > *,
@@ -2254,3 +2193,147 @@ a.bg-gradient-to-r {
 .av-gallery-thumbs button[aria-pressed="true"] { border-color:var(--av-accent); box-shadow:0 0 0 1px var(--av-accent); color:var(--text-primary); }
 .av-gallery-thumb { display:block; position:relative; height:72px; background:var(--bg-secondary); margin-bottom:6px; }
 .av-media-preview { overflow:hidden; border:1px solid var(--border-color); border-radius:8px; }
+
+/* Fleet workspace: browse the schedule, then open one vehicle at a time. */
+.av-fleet-workspace { display:grid; gap:22px; }
+.av-fleet-heading { display:flex; justify-content:space-between; align-items:flex-start; gap:20px; }
+.av-fleet-heading h1 { font-size:clamp(28px,3vw,36px); margin:8px 0; }
+.av-fleet-heading-actions { display:flex; gap:9px; flex-wrap:wrap; padding-top:6px; }
+.av-fleet-stats { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
+.av-fleet-stats > * { background:var(--bg-card); border:1px solid var(--border-color); padding:17px 19px; border-radius:9px; display:flex; flex-direction:column; gap:7px; }
+.av-fleet-stats span { color:var(--text-secondary); font-size:11px; }
+.av-fleet-stats strong { font-size:27px; line-height:1.15; font-weight:600; }
+.av-fleet-stats a:hover,.av-fleet-stats a.is-selected { border-color:var(--av-accent); }
+.av-fleet-stats a.is-selected { box-shadow:inset 3px 0 var(--av-accent); }
+.av-fleet-attention { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:17px 20px; background:var(--bg-card); border:1px solid var(--av-bronze); border-left:4px solid var(--av-bronze); border-radius:8px; }
+.av-fleet-attention strong { font-size:13px; }
+.av-fleet-attention p { color:var(--text-secondary); font-size:11px; margin-top:4px; }
+.av-fleet-board { border:1px solid var(--border-color); border-radius:12px; background:var(--bg-card); min-width:0; overflow:hidden; }
+.av-fleet-filters { display:flex; flex-wrap:wrap; gap:12px; align-items:flex-end; padding:20px; border-bottom:1px solid var(--border-color); }
+.av-fleet-filters .av-field { flex:1 1 155px; }
+.av-fleet-filters .av-fleet-search { flex:2 1 230px; }
+.av-fleet-filters .av-field > span { display:flex; gap:6px; align-items:center; }
+.av-fleet-filters .av-button { min-height:43px; }
+.av-fleet-period { display:flex; align-items:center; gap:15px; flex-wrap:wrap; padding:18px 20px; }
+.av-fleet-period-navigation { display:flex; align-items:center; gap:4px; }
+.av-fleet-period-navigation .av-icon-button { width:30px; height:34px; }
+.av-fleet-range-label { flex:1 1 180px; display:flex; flex-direction:column; gap:5px; }
+.av-fleet-range-label strong { font-size:15px; font-weight:600; }
+.av-fleet-range-label span { color:var(--text-secondary); font-size:10px; }
+.av-fleet-period-form { display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap; }
+.av-fleet-period-form label { display:flex; flex-direction:column; gap:5px; font-size:10px; color:var(--text-secondary); }
+.av-fleet-period-form input,.av-fleet-period-form select { color:var(--text-primary); background:var(--bg-primary); border:1px solid var(--border-color); border-radius:5px; font-size:11px; padding:8px; height:35px; min-width:0; }
+.av-fleet-period-form .av-button { min-height:35px; padding:8px 12px; }
+.av-fleet-view-bar { display:flex; flex-wrap:wrap; justify-content:space-between; gap:12px; align-items:center; padding:0 20px 17px; }
+.av-fleet-legend { display:flex; flex-wrap:wrap; gap:7px; }
+.av-fleet-badge { display:inline-flex; width:fit-content; align-items:center; gap:5px; border-radius:4px; padding:4px 6px; font-size:10px; line-height:1.2; color:var(--fleet-tone,var(--text-secondary)); background:var(--fleet-wash,var(--bg-secondary)); white-space:nowrap; }
+.av-fleet-badge > span { width:5px; height:5px; border-radius:50%; background:currentColor; flex-shrink:0; }
+.av-fleet-kind-rental { --fleet-tone:var(--av-accent); --fleet-wash:var(--bg-secondary); --fleet-fill:var(--av-accent); --fleet-ink:var(--av-on-accent); }
+.av-fleet-kind-hold { --fleet-tone:#785b1c; --fleet-wash:#f5ecd3; --fleet-fill:#e9d99e; --fleet-ink:#3d3218; }
+.av-fleet-kind-maintenance { --fleet-tone:#86512a; --fleet-wash:#f7e9dc; --fleet-fill:#93633e; --fleet-ink:#fff7ed; }
+.av-fleet-kind-preparation { --fleet-tone:#52687b; --fleet-wash:#e7edf1; --fleet-fill:repeating-linear-gradient(135deg,#c7d2da,#c7d2da 4px,#e3e9ed 4px,#e3e9ed 8px); --fleet-ink:#283c4b; }
+.av-fleet-kind-overdue { --fleet-tone:#9e3936; --fleet-wash:#fae5e2; --fleet-fill:#a94442; --fleet-ink:#fff; }
+.av-fleet-kind-offline { --fleet-tone:var(--text-secondary); --fleet-wash:var(--bg-secondary); }
+.av-fleet-kind-ready { --fleet-tone:var(--av-accent); --fleet-wash:var(--bg-secondary); }
+.dark .av-fleet-kind-hold { --fleet-tone:#e7ce8d; --fleet-wash:#3d3625; }
+.dark .av-fleet-kind-maintenance { --fleet-tone:#dfb18c; --fleet-wash:#3c2f25; }
+.dark .av-fleet-kind-preparation { --fleet-tone:#bfd0df; --fleet-wash:#2a3842; }
+.dark .av-fleet-kind-overdue { --fleet-tone:#f6b1a9; --fleet-wash:#482c2b; }
+.av-fleet-view-switch,.av-fleet-tabs { display:flex; gap:3px; padding:3px; background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:7px; }
+.av-fleet-view-switch button,.av-fleet-tabs button { display:flex; justify-content:center; align-items:center; gap:6px; padding:8px 11px; font-size:11px; border:1px solid transparent; border-radius:5px; color:var(--text-secondary); }
+.av-fleet-view-switch button[aria-pressed="true"],.av-fleet-tabs button[aria-pressed="true"] { color:var(--text-primary); background:var(--bg-card); border-color:var(--border-color); box-shadow:0 1px 2px #00000008; }
+.av-fleet-timeline-tools { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:10px 15px; background:var(--bg-secondary); border-top:1px solid var(--border-color); color:var(--text-secondary); font-size:10px; }
+.av-fleet-timeline-tools > div { display:flex; gap:6px; }
+.av-fleet-timeline-tools button { border:1px solid var(--border-color); border-radius:5px; padding:4px; background:var(--bg-card); color:var(--text-primary); }
+.av-fleet-scroll { overflow:auto; max-height:560px; overscroll-behavior-x:contain; scrollbar-width:thin; }
+.av-fleet-grid-row { display:grid; grid-template-columns:210px 1fr; min-height:90px; border-bottom:1px solid var(--border-color); }
+.av-fleet-grid-row.is-offline .av-fleet-vehicle-button { opacity:.7; }
+.av-fleet-vehicle-cell { position:sticky; left:0; z-index:4; background:var(--bg-card); padding:14px 16px; border-right:1px solid var(--border-color); text-align:left; display:flex; flex-direction:column; align-items:flex-start; gap:5px; }
+.av-fleet-vehicle-cell > strong { font-size:12px; font-weight:600; line-height:1.35; }
+.av-fleet-vehicle-cell > small,.av-fleet-vehicle-cell > span:not(.av-fleet-badge) { font-size:10px; color:var(--text-secondary); overflow-wrap:anywhere; }
+.av-fleet-vehicle-button:hover { background:var(--bg-secondary); }
+.av-fleet-grid-head { position:sticky; top:0; z-index:8; min-height:72px; background:var(--bg-card); }
+.av-fleet-grid-head > .av-fleet-vehicle-cell { z-index:9; justify-content:center; }
+.av-fleet-day-headings { display:grid; }
+.av-fleet-day-headings > div { display:flex; flex-direction:column; align-items:center; justify-content:center; border-right:1px solid var(--border-color); gap:3px; padding:7px 2px; }
+.av-fleet-day-headings span { font-size:10px; color:var(--text-secondary); }
+.av-fleet-day-headings strong { font-size:13px; }
+.av-fleet-day-headings small { font-size:9px; font-weight:400; }
+.av-fleet-day-headings em { font-style:normal; color:var(--av-accent); font-size:8px; }
+.av-fleet-day-headings .is-today { background:var(--bg-secondary); box-shadow:inset 0 -2px var(--av-accent); }
+.av-fleet-lanes { position:relative; min-width:0; background-image:linear-gradient(90deg,transparent calc(100% - 1px),var(--border-color) 1px); cursor:grab; }
+.av-fleet-now-line { position:absolute; top:0; bottom:0; border-left:1px dashed var(--av-bronze); z-index:2; pointer-events:none; }
+.av-fleet-bar { position:absolute; z-index:3; height:27px; min-width:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; border-radius:4px; font-size:10px; line-height:27px; padding:0 7px; text-align:left; background:var(--fleet-fill); color:var(--fleet-ink); cursor:pointer; }
+.av-fleet-bar:hover { filter:brightness(1.1); outline:1px solid var(--text-secondary); outline-offset:1px; }
+.av-fleet-no-bookings { position:absolute; left:18px; top:34px; font-size:10px; color:var(--text-secondary); pointer-events:none; }
+.av-fleet-scroll-hint { margin:0; padding:10px 16px; font-size:10px; color:var(--text-secondary); border-bottom:1px solid var(--border-color); }
+.av-fleet-pagination { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 20px; flex-wrap:wrap; font-size:11px; color:var(--text-secondary); }
+.av-fleet-pagination nav { display:flex; gap:14px; align-items:center; }
+.av-fleet-pagination a { display:inline-flex; gap:5px; align-items:center; color:var(--av-accent); }
+.av-fleet-footer-note { color:var(--text-secondary); display:flex; align-items:center; flex-wrap:wrap; gap:7px; font-size:11px; }
+.av-fleet-footer-note a { text-decoration:underline; text-underline-offset:3px; }
+.av-fleet-vehicle-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; padding:18px 20px; border-top:1px solid var(--border-color); }
+.av-fleet-vehicle-list > article { border:1px solid var(--border-color); border-radius:8px; padding:17px; display:grid; gap:15px; }
+.av-fleet-list-heading { display:flex; flex-wrap:wrap; gap:9px; justify-content:space-between; align-items:flex-start; }
+.av-fleet-list-heading h2 { font-size:17px; }
+.av-fleet-list-heading p { color:var(--text-secondary); font-size:10px; margin-top:4px; overflow-wrap:anywhere; }
+.av-fleet-vehicle-list ul { list-style:none; }
+.av-fleet-vehicle-list li + li { border-top:1px solid var(--border-color); }
+.av-fleet-vehicle-list li button { text-align:left; display:grid; grid-template-columns:1fr auto; gap:4px 10px; padding:11px 0; width:100%; }
+.av-fleet-vehicle-list li button > span:first-child { font-size:12px; }
+.av-fleet-vehicle-list li button > span:nth-child(2) { grid-row:2; color:var(--text-secondary); font-size:10px; }
+.av-fleet-vehicle-list li svg { grid-column:2; grid-row:1 / span 2; align-self:center; }
+.av-fleet-dialog { position:fixed; inset:0 0 0 auto; width:min(580px,100%); max-width:100%; height:100dvh; max-height:100dvh; margin:0 0 0 auto; padding:0; border:0; border-left:1px solid var(--border-color); background:var(--bg-card); color:var(--text-primary); box-shadow:-12px 0 60px #0003; }
+.av-fleet-dialog[open] { display:flex; flex-direction:column; }
+.av-fleet-dialog::backdrop { background:#0b171569; backdrop-filter:blur(2px); }
+body:has(.av-fleet-dialog[open]) { overflow:hidden; }
+.av-fleet-dialog-heading { display:flex; justify-content:space-between; align-items:flex-start; gap:15px; padding:25px; border-bottom:1px solid var(--border-color); flex-shrink:0; }
+.av-fleet-dialog-heading h2 { font-size:27px; margin-top:8px; text-transform:capitalize; }
+.av-fleet-dialog-body { overflow:auto; padding:25px; }
+.av-fleet-unit-summary { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:20px; }
+.av-fleet-unit-summary strong { font-size:14px; overflow-wrap:anywhere; }
+.av-fleet-unit-summary p { display:flex; gap:5px; align-items:center; color:var(--text-secondary); font-size:11px; margin-top:5px; }
+.av-fleet-tabs { margin:20px 0; }
+.av-fleet-tabs button { flex:1; padding:9px 7px; }
+.av-fleet-detail-schedule { display:grid; gap:14px; }
+.av-fleet-event-card { padding:18px; border:1px solid var(--border-color); border-radius:8px; margin-bottom:14px; }
+.av-fleet-event-card > div > strong { font-size:13px; }
+.av-fleet-event-overdue { border-color:var(--av-bronze); }
+.av-fleet-event-dates { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:16px 0 10px; }
+.av-fleet-event-dates dt { font-size:10px; color:var(--text-secondary); margin-bottom:5px; }
+.av-fleet-event-dates dd { font-size:12px; }
+.av-fleet-disclosure { margin-top:15px; border-top:1px solid var(--border-color); padding-top:12px; }
+.av-fleet-disclosure summary { cursor:pointer; font-size:12px; margin-bottom:12px; color:var(--av-accent); }
+.av-fleet-settings-transfer { padding-top:24px; border-top:1px solid var(--border-color); }
+.av-fleet-dialog-empty { display:flex; flex-direction:column; gap:14px; align-items:flex-start; padding:24px 0; }
+.av-fleet-dialog-empty p { font-size:13px; color:var(--text-secondary); }
+.av-fleet-help { list-style:decimal; padding-left:20px; display:grid; gap:23px; }
+.av-fleet-help strong { font-size:15px; }
+.av-fleet-help p { color:var(--text-secondary); font-size:13px; line-height:1.7; margin-top:7px; }
+@media(max-width:1100px) { .av-fleet-heading { flex-direction:column; gap:10px; } }
+@media(max-width:760px) {
+  .av-fleet-workspace { gap:17px; }
+  .av-fleet-stats { grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+  .av-fleet-stats > * { padding:14px; }
+  .av-fleet-attention { align-items:flex-start; flex-direction:column; padding:15px; }
+  .av-fleet-filters { padding:15px; }
+  .av-fleet-filters .av-field { flex-basis:100%; }
+  .av-fleet-filters .av-button { width:100%; }
+  .av-fleet-period { padding:15px; gap:15px 9px; }
+  .av-fleet-range-label { flex-basis:100%; order:-1; }
+  .av-fleet-period-form { flex:1 1 100%; }
+  .av-fleet-period-form label:first-of-type { flex:1; }
+  .av-fleet-period-form input { width:100%; }
+  .av-fleet-view-bar { padding:0 15px 15px; }
+  .av-fleet-view-switch { width:100%; }
+  .av-fleet-view-switch button { flex:1; }
+  .av-fleet-vehicle-list { grid-template-columns:1fr; padding:15px; }
+  .av-fleet-grid-row { grid-template-columns:155px 1fr; }
+  .av-fleet-vehicle-cell { padding:12px 10px; }
+  .av-fleet-timeline-tools { align-items:flex-start; }
+  .av-fleet-pagination { padding:15px; }
+  .av-fleet-dialog-heading,.av-fleet-dialog-body { padding:20px; }
+  .av-fleet-tabs button { font-size:10px; }
+}
+
+.av-fleet-bar.av-fleet-kind-preparation { padding:0; font-size:0; }

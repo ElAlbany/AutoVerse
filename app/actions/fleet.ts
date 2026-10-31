@@ -1,4 +1,5 @@
 "use server";
+import { parseFleetDateTime } from "@/lib/fleet-calendar";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
 import { expireHolds, lockCar } from "@/lib/inventory";
@@ -52,8 +53,8 @@ export async function setVehicleEnabled(form: FormData) {
 export async function blockVehicle(form: FormData) {
   await requireAdmin();
   const unitId = String(form.get("unitId"));
-  const start = new Date(String(form.get("start"))),
-    end = new Date(String(form.get("end")));
+  const start = parseFleetDateTime(String(form.get("start"))),
+    end = parseFleetDateTime(String(form.get("end")));
   validatePeriod(start, end);
   const reason = String(form.get("reason") || "Maintenance")
     .trim()

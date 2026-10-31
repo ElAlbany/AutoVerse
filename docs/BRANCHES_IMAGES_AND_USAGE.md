@@ -1,6 +1,6 @@
 # Branches, imagery and driving suitability
 
-Follow-up implementation, 31 October 2026. Each completed feature is committed and pushed on `codex/rental-platform-upgrade`.
+Follow-up implementation, 31 October 2026. Each completed feature is committed and pushed on `rental-platform-upgrade`.
 
 ## Booking and availability
 
