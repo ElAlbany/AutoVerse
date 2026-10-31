@@ -7,6 +7,7 @@ import {
   releaseBlock,
   setVehicleEnabled,
   assignVehicle,
+  transferVehicle,
 } from "@/app/actions/fleet";
 import ActionForm from "@/components/admin/ActionForm";
 
@@ -20,7 +21,7 @@ export default async function FleetPage({
   const search = (params.search || "").slice(0, 100);
   const now = new Date();
   const until = new Date(now.getTime() + 14 * 86400000);
-  const [cars, units, conflicts, overdue] = await Promise.all([
+  const [cars, units, conflicts, overdue, branches] = await Promise.all([
     prisma.car.findMany({
       where: { archived: false },
       select: { id: true, make: true, model: true },
@@ -28,16 +29,20 @@ export default async function FleetPage({
       take: 250,
     }),
     prisma.vehicleUnit.findMany({
-      where: search
-        ? {
-            OR: [
-              { code: { contains: search, mode: "insensitive" } },
-              { car: { model: { contains: search, mode: "insensitive" } } },
-            ],
-          }
-        : {},
+      where: {
+        ...(params.branchId ? { branchId: params.branchId } : {}),
+        ...(search
+          ? {
+              OR: [
+                { code: { contains: search, mode: "insensitive" } },
+                { car: { model: { contains: search, mode: "insensitive" } } },
+              ],
+            }
+          : {}),
+      },
       include: {
         car: true,
+        branch: true,
         reservations: {
           where: {
             active: true,
@@ -64,6 +69,7 @@ export default async function FleetPage({
       select: { id: true, vehicleName: true, endDate: true },
       take: 50,
     }),
+    prisma.branch.findMany({ orderBy: { name: "asc" } }),
   ]);
   const fmt = (d: Date) =>
     d.toLocaleString("en-GB", {
@@ -78,9 +84,15 @@ export default async function FleetPage({
       <p className="av-eyebrow">Operations</p>
       <h1 className="text-3xl">Fleet & availability</h1>
       <p className="av-muted">
-        Next 14 days · times shown in UTC · {units.length} vehicles shown.
+        Next 14 days Â· times shown in UTC Â· {units.length} vehicles shown.
         Rentals reserve a 60-minute preparation buffer. Add only physical
-        vehicles you actually operate.
+        vehicles you actually operate. This calendar shows which physical cars
+        are out, being prepared or under maintenance, helping staff plan
+        collections and avoid clashes. Manage collection locations in{" "}
+        <Link href="/admin/branches" className="underline">
+          Branches & stock
+        </Link>
+        .
       </p>
       {!!overdue.length && (
         <section className="av-panel">
@@ -95,7 +107,7 @@ export default async function FleetPage({
               <Link className="underline" href={`/profile/orders/${o.id}`}>
                 {o.vehicleName || o.id.slice(0, 8)}
               </Link>{" "}
-              · expected {fmt(o.endDate)} UTC
+              Â· expected {fmt(o.endDate)} UTC
             </p>
           ))}
         </section>
@@ -113,19 +125,21 @@ export default async function FleetPage({
               className="py-4 border-t border-[var(--border-color)]"
             >
               <p className="av-muted mb-3">
-                {o.car.make} {o.car.model} · {o.id.slice(0, 8)} ·{" "}
-                {fmt(o.startDate)} → {fmt(o.endDate)}
+                {o.car.make} {o.car.model} Â· {o.id.slice(0, 8)} Â·{" "}
+                {fmt(o.startDate)} â†’ {fmt(o.endDate)}
               </p>
               <ActionForm action={assignVehicle} label="Assign vehicle">
                 <input type="hidden" name="orderId" value={o.id} />
                 <label className="av-field">
                   Physical vehicle
                   <select name="unitId" required>
-                    {o.car.units.map((u) => (
-                      <option value={u.id} key={u.id}>
-                        {u.code}
-                      </option>
-                    ))}
+                    {o.car.units
+                      .filter((u) => !o.branchId || u.branchId === o.branchId)
+                      .map((u) => (
+                        <option value={u.id} key={u.id}>
+                          {u.code}
+                        </option>
+                      ))}
                   </select>
                 </label>
               </ActionForm>
@@ -148,13 +162,36 @@ export default async function FleetPage({
               </select>
             </label>
             <label className="av-field">
+              Collection branch
+              <select name="branchId" required>
+                {branches
+                  .filter((b) => b.active)
+                  .map((b) => (
+                    <option value={b.id} key={b.id}>
+                      {b.name} · {b.city}
+                    </option>
+                  ))}
+              </select>
+            </label>
+            <label className="av-field">
               Unique internal fleet code
               <input name="code" required placeholder="AV-101" maxLength={40} />
             </label>
           </ActionForm>
         </div>
       </details>
-      <form className="flex gap-3">
+      <form className="flex flex-wrap gap-3">
+        <label className="av-field">
+          <span className="sr-only">Branch</span>
+          <select name="branchId" defaultValue={params.branchId || ""}>
+            <option value="">All branches</option>
+            {branches.map((b) => (
+              <option value={b.id} key={b.id}>
+                {b.name}
+              </option>
+            ))}
+          </select>
+        </label>
         <label className="av-field flex-1">
           <span className="sr-only">Search fleet</span>
           <input
@@ -220,7 +257,7 @@ export default async function FleetPage({
           ))}
         </div>
         <p className="av-muted mt-3">
-          Pine: rental · Bronze: maintenance. Details and operational actions
+          Pine: rental Â· Bronze: maintenance. Details and operational actions
           are listed below.
         </p>
       </section>
@@ -233,7 +270,7 @@ export default async function FleetPage({
                   {u.car.make} {u.car.model}
                 </h2>
                 <p className="av-muted">
-                  {u.code} · {u.enabled ? "In service" : "Offline"}
+                  {u.code} Â· {u.enabled ? "In service" : "Offline"}
                 </p>
               </div>
               <ActionForm
@@ -254,7 +291,7 @@ export default async function FleetPage({
                   <div key={r.id} className="av-alert">
                     <div className="flex justify-between flex-wrap gap-3">
                       <span>
-                        {fmt(r.startDate)} → {fmt(r.endDate)} UTC ·{" "}
+                        {fmt(r.startDate)} â†’ {fmt(r.endDate)} UTC Â·{" "}
                         {r.order?.status || r.reason}
                       </span>
                       {r.orderId ? (
@@ -282,6 +319,7 @@ export default async function FleetPage({
                                     .filter(
                                       (other) =>
                                         other.carId === u.carId &&
+                                        other.branchId === u.branchId &&
                                         other.enabled,
                                     )
                                     .map((other) => (
@@ -306,6 +344,30 @@ export default async function FleetPage({
                 <p className="av-muted">No reservations in the next 14 days.</p>
               )}
             </div>
+            <details className="mt-5">
+              <summary className="av-muted cursor-pointer">
+                Transfer to another branch
+              </summary>
+              <ActionForm action={transferVehicle} label="Transfer vehicle">
+                <input type="hidden" name="unitId" value={u.id} />
+                <label className="av-field">
+                  Destination branch
+                  <select name="branchId" defaultValue={u.branchId}>
+                    {branches
+                      .filter((b) => b.active)
+                      .map((b) => (
+                        <option value={b.id} key={b.id}>
+                          {b.name} · {b.city}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+                <p className="av-muted">
+                  Only vehicles without active or upcoming reservations can
+                  transfer.
+                </p>
+              </ActionForm>
+            </details>
             <details className="mt-5">
               <summary className="av-muted cursor-pointer">
                 Schedule maintenance / cleaning

@@ -44,10 +44,16 @@ model Car {
   available       Boolean  @default(true)
   featured        Boolean  @default(false)
   archived        Boolean  @default(false)
-  seats           Int?
+  seats           Int @default(5)
   luggage         Int?
   features        String[] @default([])
   location        String   @default("Main collection point")
+  imageSource     String @default("API")
+  usageTags       String[] @default([])
+  groundClearanceMm Int?
+  lowRange4x4     Boolean @default(false)
+  suitableTyres   Boolean @default(false)
+  roughRoadApproved Boolean @default(false)
   units           VehicleUnit[]
   favorites       Favorite[]
   orders          Order[]
@@ -65,6 +71,8 @@ model Order {
   userId     String
   carId      String
   startDate  DateTime
+  branchId   String? 
+  branch     Branch? @relation(fields: [branchId], references: [id], onDelete: Restrict)
   endDate    DateTime
   totalPrice Decimal     @db.Decimal(10, 2)
   status     OrderStatus @default(PENDING)
@@ -89,6 +97,7 @@ model Order {
   @@index([userId, createdAt])
   @@index([status, expiresAt])
   @@index([carId, startDate, endDate])
+  @@index([branchId, startDate, endDate])
 }
 
 model Review {
@@ -113,12 +122,27 @@ model Review {
 model VehicleUnit {
   id         String @id @default(uuid())
   carId      String
+  branchId   String @default("branch-main")
   code       String @unique
   enabled    Boolean @default(true)
   createdAt  DateTime @default(now())
   car        Car @relation(fields: [carId], references: [id], onDelete: Restrict)
+  branch     Branch @relation(fields: [branchId], references: [id], onDelete: Restrict)
   reservations VehicleReservation[]
   @@index([carId, enabled])
+  @@index([branchId, carId, enabled])
+}
+
+model Branch {
+  id String @id @default(uuid())
+  name String @unique
+  city String
+  address String?
+  active Boolean @default(true)
+  createdAt DateTime @default(now())
+  units VehicleUnit[]
+  orders Order[]
+  @@index([active, city])
 }
 
 // Bookings and maintenance share one schedule so the database protects both.

@@ -13,7 +13,7 @@ import VehicleImage from "@/components/VehicleImage";
 import { carImage, hasCarPhoto } from "@/lib/car-media";
 import { money } from "@/lib/rental-policy";
 import ReportReview from "@/components/ReportReview";
-import BookingSearch from "@/components/BookingSearch";
+import { publicBranches } from "@/lib/branches";
 export default async function CarDetailsPage({
   params,
   searchParams,
@@ -34,12 +34,18 @@ export default async function CarDetailsPage({
     },
   });
   if (!car) notFound();
+  const branches = await publicBranches(id);
+  const collection =
+    branches
+      .map((b) => `${b.name}${b.city !== b.name ? ` · ${b.city}` : ""}`)
+      .join(", ") || "No active collection branch";
   const stats = await prisma.review.aggregate({
     where: { carId: id, hidden: false },
     _avg: { rating: true },
     _count: { id: true },
   });
   const rentQuery = new URLSearchParams({ carId: id });
+  if (query.branchId) rentQuery.set("branchId", query.branchId);
   if (query.start) rentQuery.set("start", query.start);
   if (query.end) rentQuery.set("end", query.end);
   return (
@@ -110,7 +116,7 @@ export default async function CarDetailsPage({
               <h2>The useful details.</h2>
               <ul>
                 {car.features.map((f) => (
-                  <li key={f}>✓ {f}</li>
+                  <li key={f}>âœ“ {f}</li>
                 ))}
               </ul>
             </section>
@@ -118,7 +124,7 @@ export default async function CarDetailsPage({
           <section className="av-details-section">
             <h2>Collection & rental terms.</h2>
             <p>
-              Collection: {car.location}. A valid driving licence and
+              Collection: {collection}. A valid driving licence and
               identification are required. Mileage, protection, and any deposit
               are confirmed by the rental team before collection.
             </p>
@@ -135,7 +141,7 @@ export default async function CarDetailsPage({
             id="reviews"
             className="av-details-section av-detail-reviews"
           >
-            <h2>From the driver’s seat.</h2>
+            <h2>From the driverâ€™s seat.</h2>
             <p>
               {stats._count.id
                 ? `${stats._avg.rating?.toFixed(1)} / 5 from ${stats._count.id} verified rentals`
@@ -144,14 +150,14 @@ export default async function CarDetailsPage({
             {car.reviews.map((r) => (
               <article key={r.id}>
                 <span className="av-rating">
-                  {"★".repeat(r.rating)} · Verified rental
+                  {"â˜…".repeat(r.rating)} Â· Verified rental
                 </span>
                 <p>{r.comment || "Rating only"}</p>
                 <small>
-                  {r.user.firstName || "AutoVerse driver"} ·{" "}
+                  {r.user.firstName || "AutoVerse driver"} Â·{" "}
                   {r.createdAt.toLocaleDateString("en-GB")}
                   {r.updatedAt.getTime() - r.createdAt.getTime() > 60000
-                    ? " · Edited"
+                    ? " Â· Edited"
                     : ""}
                 </small>
                 <div className="mt-3">
@@ -174,7 +180,7 @@ export default async function CarDetailsPage({
             </strong>
             <span className="av-muted"> / day</span>
           </p>
-          <p className="av-muted">Starting daily rate · {car.location}</p>
+          <p className="av-muted">Starting daily rate Â· {collection}</p>
           <hr className="my-6 border-[var(--border-color)]" />
           <p className="av-muted">
             Choose your dates for an exact quote and an availability check. One

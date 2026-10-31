@@ -6,17 +6,21 @@ import { bufferedEnd, validatePeriod } from "@/lib/rental-policy";
 import { revalidatePath } from "next/cache";
 
 export async function addVehicle(form: FormData) {
-  const admin = await requireAdmin();
+  await requireAdmin();
+  const branchId = String(form.get("branchId") || "");
   const carId = String(form.get("carId") || "");
   const code = String(form.get("code") || "").trim();
   if (!/^[a-zA-Z0-9-]{2,40}$/.test(code))
     throw new Error(
-      "Use a unique fleet code with 2–40 letters, numbers or hyphens."
+      "Use a unique fleet code with 2Ã¢â‚¬â€œ40 letters, numbers or hyphens.",
     );
   await prisma.$transaction(async (tx) => {
     await lockCar(tx, carId);
     await tx.car.findUniqueOrThrow({ where: { id: carId } });
-    await tx.vehicleUnit.create({ data: { carId, code } });
+    await tx.$queryRaw`SELECT id FROM "Branch" WHERE id = ${branchId} FOR SHARE`;
+    if (!(await tx.branch.findFirst({ where: { id: branchId, active: true } })))
+      throw new Error("Choose an active branch.");
+    await tx.vehicleUnit.create({ data: { carId, code, branchId } });
   });
   revalidatePath("/admin/fleet");
   revalidatePath("/");
@@ -37,7 +41,7 @@ export async function setVehicleEnabled(form: FormData) {
       }))
     )
       throw new Error(
-        "Reassign or finish upcoming reservations before taking this vehicle offline."
+        "Reassign or finish upcoming reservations before taking this vehicle offline.",
       );
     await tx.vehicleUnit.update({ where: { id }, data: { enabled } });
   });
@@ -71,7 +75,7 @@ export async function blockVehicle(form: FormData) {
       })
     )
       throw new Error(
-        "This maintenance period overlaps a rental or another block."
+        "This maintenance period overlaps a rental or another block.",
       );
     await tx.vehicleReservation.create({
       data: { unitId, startDate: start, endDate: end, reason },
@@ -115,11 +119,16 @@ export async function assignVehicle(form: FormData) {
     if (!["PENDING", "CONFIRMED", "ACTIVE"].includes(fresh.status))
       throw new Error("Only upcoming or active rentals can be assigned.");
     const unit = await tx.vehicleUnit.findFirst({
-      where: { id: unitId, carId: order.carId, enabled: true },
+      where: {
+        id: unitId,
+        carId: order.carId,
+        enabled: true,
+        ...(fresh.branchId ? { branchId: fresh.branchId } : {}),
+      },
     });
     if (!unit)
       throw new Error(
-        "Choose an enabled vehicle belonging to the same listing."
+        "Choose an enabled vehicle belonging to the same listing and booked branch.",
       );
     if (
       await tx.vehicleReservation.count({
@@ -145,7 +154,10 @@ export async function assignVehicle(form: FormData) {
     });
     await tx.order.update({
       where: { id: orderId },
-      data: { inventoryConflict: false },
+      data: {
+        inventoryConflict: false,
+        branchId: fresh.branchId || unit.branchId,
+      },
     });
     await tx.orderEvent.create({
       data: {
@@ -157,4 +169,37 @@ export async function assignVehicle(form: FormData) {
   });
   revalidatePath("/admin/fleet");
   revalidatePath("/admin/orders");
+}
+
+export async function transferVehicle(form: FormData) {
+  await requireAdmin();
+  const id = String(form.get("unitId"));
+  const branchId = String(form.get("branchId"));
+  const unit = await prisma.vehicleUnit.findUniqueOrThrow({ where: { id } });
+  await prisma.$transaction(async (tx) => {
+    await lockCar(tx, unit.carId);
+    await expireHolds(tx, unit.carId);
+    await tx.$queryRaw`SELECT id FROM "Branch" WHERE id = ${branchId} FOR SHARE`;
+    if (!(await tx.branch.findFirst({ where: { id: branchId, active: true } })))
+      throw new Error("Choose an active branch.");
+    if (
+      await tx.vehicleReservation.count({
+        where: {
+          unitId: id,
+          active: true,
+          OR: [
+            { endDate: { gt: new Date() } },
+            { order: { status: "ACTIVE" } },
+          ],
+        },
+      })
+    )
+      throw new Error(
+        "Finish or reassign all active and upcoming reservations before transferring a vehicle.",
+      );
+    await tx.vehicleUnit.update({ where: { id }, data: { branchId } });
+  });
+  revalidatePath("/admin/fleet");
+  revalidatePath("/admin/branches");
+  revalidatePath("/");
 }

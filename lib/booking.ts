@@ -15,6 +15,7 @@ import { rateLimit } from "./rate-limit";
 
 export type BookingInput = {
   carId: string;
+  branchId?: string;
   start: string;
   end: string;
   requestKey: string;
@@ -41,6 +42,7 @@ export async function book(input: BookingInput) {
         if (
           previous.userId !== user.id ||
           previous.carId !== input.carId ||
+          (!!input.branchId && previous.branchId !== input.branchId) ||
           previous.startDate.getTime() !== start.getTime() ||
           previous.endDate.getTime() !== end.getTime()
         )
@@ -52,9 +54,27 @@ export async function book(input: BookingInput) {
       const car = await tx.car.findUnique({ where: { id: input.carId } });
       if (!car || car.archived || !car.available)
         throw new Error("This car is not currently accepting bookings.");
+      let branchId = input.branchId;
+      if (!branchId) {
+        const choices = await tx.vehicleUnit.findMany({
+          where: { carId: car.id, enabled: true, branch: { active: true } },
+          select: { branchId: true },
+          distinct: ["branchId"],
+          take: 2,
+        });
+        if (choices.length !== 1)
+          throw new Error("Select a collection branch before booking.");
+        branchId = choices[0].branchId;
+      }
+      await tx.$queryRaw`SELECT id FROM "Branch" WHERE id = ${branchId} FOR SHARE`;
+      const branch = await tx.branch.findFirst({
+        where: { id: branchId, active: true },
+      });
+      if (!branch)
+        throw new Error("This collection branch is not accepting bookings.");
       const quote = quoteRental(Number(car.pricePerDay), start, end);
       const unit = await tx.vehicleUnit.findFirst({
-        where: { carId: car.id, ...freeUnitWhere(start, end) },
+        where: { carId: car.id, ...freeUnitWhere(start, end, branch.id) },
         orderBy: { code: "asc" },
       });
       if (!unit)
@@ -66,6 +86,7 @@ export async function book(input: BookingInput) {
           id: randomUUID(),
           userId: user.id,
           carId: car.id,
+          branchId: branch.id,
           startDate: start,
           endDate: end,
           totalPrice: quote.total,
@@ -74,7 +95,8 @@ export async function book(input: BookingInput) {
           vehicleName: `${car.year} ${car.make} ${car.model}`,
           policy: {
             ...RENTAL_POLICY,
-            location: car.location,
+            location: `${branch.name} · ${branch.city}`,
+            collectionAddress: branch.address,
             payment: input.payment ? "stripe-sandbox" : "pay-at-collection",
           },
           requestKey: input.requestKey,

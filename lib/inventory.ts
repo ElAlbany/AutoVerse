@@ -11,7 +11,7 @@ export async function lockCar(tx: Prisma.TransactionClient, carId: string) {
 
 export async function expireHolds(
   tx: Prisma.TransactionClient,
-  carId?: string
+  carId?: string,
 ) {
   const expired = await tx.order.findMany({
     where: {
@@ -44,10 +44,13 @@ export async function expireHolds(
 
 export function freeUnitWhere(
   start: Date,
-  end: Date
+  end: Date,
+  branchId?: string,
 ): Prisma.VehicleUnitWhereInput {
   return {
     enabled: true,
+    branchId: branchId || undefined,
+    branch: { active: true },
     NOT: {
       reservations: {
         some: {
@@ -76,12 +79,17 @@ export function freeUnitWhere(
   };
 }
 
-export async function availableUnits(carId: string, start: Date, end: Date) {
+export async function availableUnits(
+  carId: string,
+  start: Date,
+  end: Date,
+  branchId?: string,
+) {
   return prisma.vehicleUnit.count({
     where: {
       carId,
       car: { archived: false, available: true },
-      ...freeUnitWhere(start, end),
+      ...freeUnitWhere(start, end, branchId),
     },
   });
 }

@@ -7,6 +7,7 @@ import BookingSearch from "@/components/BookingSearch";
 import { freeUnitWhere } from "@/lib/inventory";
 import { quoteRental, validatePeriod } from "@/lib/rental-policy";
 import { ArrowUpRight, CalendarDays, KeyRound, Route } from "lucide-react";
+import { publicBranches } from "@/lib/branches";
 import { auth } from "@clerk/nextjs/server";
 
 export default async function Home({
@@ -49,10 +50,10 @@ export default async function Home({
   if (value("fuel"))
     where.fuel_type = { equals: value("fuel"), mode: "insensitive" };
   if (value("transmission")) where.transmission = value("transmission");
-  if (value("location"))
-    where.location = {
-      contains: value("location").slice(0, 100),
-      mode: "insensitive",
+  const branchId = value("branchId");
+  if (branchId)
+    where.units = {
+      some: { branchId, enabled: true, branch: { active: true } },
     };
   const seats = Number(value("seats"));
   if (Number.isInteger(seats) && seats > 0) where.seats = { gte: seats };
@@ -72,9 +73,9 @@ export default async function Home({
     };
   if (period) {
     where.available = true;
-    where.units = { some: freeUnitWhere(start, end) };
+    where.units = { some: freeUnitWhere(start, end, branchId) };
   }
-  const [cars, total, latestReviews, session] = await Promise.all([
+  const [cars, total, latestReviews, session, branches] = await Promise.all([
     prisma.car.findMany({
       where,
       orderBy:
@@ -86,10 +87,25 @@ export default async function Home({
       take: pageSize,
       skip: offset,
       include: {
+        units: {
+          where: {
+            enabled: true,
+            branch: { active: true },
+            ...(branchId ? { branchId } : {}),
+          },
+          select: { branch: { select: { name: true, city: true } } },
+          take: 50,
+        },
         _count: {
           select: {
             units: {
-              where: period ? freeUnitWhere(start, end) : { enabled: true },
+              where: period
+                ? freeUnitWhere(start, end, branchId)
+                : {
+                    enabled: true,
+                    branch: { active: true },
+                    ...(branchId ? { branchId } : {}),
+                  },
             },
           },
         },
@@ -106,6 +122,7 @@ export default async function Home({
       },
     }),
     auth(),
+    publicBranches(),
   ]);
   const [ratings, favorites] = await Promise.all([
     prisma.review.groupBy({
@@ -124,9 +141,13 @@ export default async function Home({
   const query = new URLSearchParams();
   for (const [key, v] of Object.entries(raw))
     if (typeof v === "string") query.set(key, v);
-  const bookingQuery = period
-    ? `?${new URLSearchParams({ start: start.toISOString(), end: end.toISOString() })}`
-    : "";
+  const bookingParams = new URLSearchParams();
+  if (period) {
+    bookingParams.set("start", start.toISOString());
+    bookingParams.set("end", end.toISOString());
+  }
+  if (branchId) bookingParams.set("branchId", branchId);
+  const bookingQuery = bookingParams.size ? `?${bookingParams}` : "";
   const more = new URLSearchParams(query);
   more.delete("limit");
   more.set("page", String(page + 1));
@@ -138,7 +159,8 @@ export default async function Home({
       <Hero
         start={value("start")}
         end={value("end")}
-        location={value("location")}
+        branchId={branchId}
+        branches={branches}
       />
       <div className="av-promise-strip av-shell">
         <span>
@@ -167,7 +189,8 @@ export default async function Home({
           <BookingSearch
             start={value("start")}
             end={value("end")}
-            location={value("location")}
+            branchId={branchId}
+            branches={branches}
           />
         )}
         {error && (
@@ -178,7 +201,7 @@ export default async function Home({
         <form className="av-filter-bar" action="/#discover">
           <input type="hidden" name="start" value={value("start")} />
           <input type="hidden" name="end" value={value("end")} />
-          <input type="hidden" name="location" value={value("location")} />
+          <input type="hidden" name="branchId" value={branchId} />
           <label className="sr-only" htmlFor="car-search">
             Search cars
           </label>
@@ -186,7 +209,7 @@ export default async function Home({
             id="car-search"
             name="search"
             defaultValue={search}
-            placeholder="Make, model, or a little inspiration…"
+            placeholder="Make, model, or a little inspirationâ€¦"
           />
           <label>
             <span className="sr-only">Category</span>
@@ -284,6 +307,10 @@ export default async function Home({
                   key={car.id}
                   car={{
                     ...car,
+                    location:
+                      [...new Set(car.units.map((u) => u.branch.name))].join(
+                        " · ",
+                      ) || "No active collection branch",
                     pricePerDay: Number(car.pricePerDay),
                     rating: rating?._avg.rating,
                     reviewCount: rating?._count.id || 0,
@@ -357,7 +384,7 @@ export default async function Home({
                 icon: KeyRound,
                 n: "02",
                 title: "Choose your companion",
-                text: "Compare the details, read the terms, and sign in when you’re ready to book.",
+                text: "Compare the details, read the terms, and sign in when youâ€™re ready to book.",
               },
               {
                 icon: Route,
@@ -379,14 +406,14 @@ export default async function Home({
         </div>
       </section>
       <section className="av-shell av-reviews-section">
-        <p className="av-eyebrow">From the driver’s seat</p>
+        <p className="av-eyebrow">From the driverâ€™s seat</p>
         <h2>Good journeys leave a story.</h2>
         {latestReviews.length ? (
           <div className="av-review-grid">
             {latestReviews.map((r) => (
               <blockquote key={r.id}>
                 <span className="av-rating">
-                  {"★".repeat(r.rating)} · Verified rental
+                  {"â˜…".repeat(r.rating)} Â· Verified rental
                 </span>
                 <p>{r.comment || "A rated AutoVerse rental."}</p>
                 <footer>

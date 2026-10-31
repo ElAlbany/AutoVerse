@@ -14,14 +14,23 @@ export default function RentForm({
   paymentEnabled = false,
   initialStart = "",
   initialEnd = "",
+  initialBranch = "",
+  branches = [],
 }: {
   car: { id: string; pricePerDay: number; available: boolean };
   paymentEnabled?: boolean;
   initialStart?: string;
   initialEnd?: string;
+  initialBranch?: string;
+  branches?: { id: string; name: string; city: string }[];
 }) {
   const { isSignedIn, isLoaded } = useAuth();
   const router = useRouter();
+  const [branchId, setBranchId] = useState(
+    branches.some((b) => b.id === initialBranch)
+      ? initialBranch
+      : branches[0]?.id || "",
+  );
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
   const [loading, setLoading] = useState(false);
@@ -46,12 +55,13 @@ export default function RentForm({
   useEffect(() => {
     setRequestKey(crypto.randomUUID());
     setAccepted(false);
-  }, [start, end]);
+  }, [start, end, branchId]);
   useEffect(() => {
+    setChecking(false);
     setQuote(null);
     setCount(null);
     setError("");
-    if (!start || !end) return;
+    if (!start || !end || !branchId) return;
     const controller = new AbortController();
     const a = new Date(start),
       b = new Date(end);
@@ -63,7 +73,7 @@ export default function RentForm({
     const timer = setTimeout(async () => {
       try {
         const result = await fetch(
-          `/api/availability?${new URLSearchParams({ carId: car.id, start: a.toISOString(), end: b.toISOString() })}`,
+          `/api/availability?${new URLSearchParams({ carId: car.id, branchId, start: a.toISOString(), end: b.toISOString() })}`,
           { signal: controller.signal },
         );
         const data = await result.json();
@@ -85,16 +95,17 @@ export default function RentForm({
       clearTimeout(timer);
       controller.abort();
     };
-  }, [start, end, car.id]);
+  }, [start, end, car.id, branchId]);
   const late = start && !canCancel(new Date(start));
   return (
     <form
       className="av-booking-form"
       onSubmit={async (e) => {
         e.preventDefault();
-        if (!start || !end) return;
+        if (!start || !end || !branchId) return;
         const params = new URLSearchParams({
           carId: car.id,
+          branchId,
           start: new Date(start).toISOString(),
           end: new Date(end).toISOString(),
         });
@@ -107,6 +118,7 @@ export default function RentForm({
         try {
           const result = await createOrder({
             carId: car.id,
+            branchId,
             start: new Date(start).toISOString(),
             end: new Date(end).toISOString(),
             requestKey,
@@ -123,6 +135,24 @@ export default function RentForm({
         }
       }}
     >
+      <label className="av-field">
+        Collection branch
+        <select
+          value={branchId}
+          onChange={(e) => setBranchId(e.target.value)}
+          required
+        >
+          <option value="" disabled>
+            Choose a collection branch
+          </option>
+          {branches.map((b) => (
+            <option key={b.id} value={b.id}>
+              {b.name}
+              {b.name !== b.city ? ` Â· ${b.city}` : ""}
+            </option>
+          ))}
+        </select>
+      </label>
       <div className="av-form-row">
         <RentalDateFields
           start={start}
@@ -133,7 +163,7 @@ export default function RentForm({
       </div>
       <div aria-live="polite">
         {checking ? (
-          <p className="av-muted">Checking the fleet for your dates…</p>
+          <p className="av-muted">Checking the fleet for your datesâ€¦</p>
         ) : (
           count != null && (
             <p className="av-muted">
@@ -148,7 +178,7 @@ export default function RentForm({
         <div className="av-quote">
           <div>
             <span>
-              {money(car.pricePerDay)} × {quote.days} rental days
+              {money(car.pricePerDay)} Ã— {quote.days} rental days
             </span>
             <span>{money(quote.total)}</span>
           </div>
@@ -165,8 +195,8 @@ export default function RentForm({
       <div className="av-muted">
         <ShieldCheck size={17} className="inline mr-2" />
         {paymentEnabled
-          ? "Stripe sandbox · no real money is charged."
-          : "Instant confirmation · pay at collection."}
+          ? "Stripe sandbox Â· no real money is charged."
+          : "Instant confirmation Â· pay at collection."}
       </div>
       <p className="av-muted">
         {paymentEnabled
@@ -215,7 +245,7 @@ export default function RentForm({
         }
       >
         {loading
-          ? "Preparing your rental…"
+          ? "Preparing your rentalâ€¦"
           : !isSignedIn
             ? "Sign in to continue"
             : paymentEnabled

@@ -38,10 +38,16 @@ type CarFormProps = {
     available: boolean;
     featured: boolean;
   };
+  branches?: { id: string; name: string; city: string }[];
   mode: "create" | "edit";
 };
 
-export default function CarForm({ action, initialData, mode }: CarFormProps) {
+export default function CarForm({
+  action,
+  initialData,
+  mode,
+  branches = [],
+}: CarFormProps) {
   const router = useRouter();
   const [make, setMake] = useState(initialData?.make || "");
   const [models, setModels] = useState<string[]>(CAR_MODELS[make] || []);
@@ -367,6 +373,7 @@ export default function CarForm({ action, initialData, mode }: CarFormProps) {
             <input
               type="number"
               name="seats"
+              required
               min="1"
               max="20"
               defaultValue={initialData?.seats ?? ""}
@@ -383,14 +390,25 @@ export default function CarForm({ action, initialData, mode }: CarFormProps) {
             />
           </label>
         </div>
-        <label className="av-field">
-          Collection point
-          <input
-            name="location"
-            maxLength={200}
-            defaultValue={initialData?.location || "Main collection point"}
-          />
-        </label>
+        {mode === "create" && (
+          <label className="av-field">
+            Initial physical vehicle's branch
+            <select name="branchId" required>
+              <option value="">Select a branch</option>
+              {branches.map((b) => (
+                <option value={b.id} key={b.id}>
+                  {b.name} · {b.city}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        {mode === "edit" && (
+          <p className="av-muted">
+            Assign branches and quantities per physical vehicle in Fleet
+            calendar.
+          </p>
+        )}
         <label className="av-field">
           Features (comma separated)
           <input
@@ -401,7 +419,7 @@ export default function CarForm({ action, initialData, mode }: CarFormProps) {
           />
         </label>
         <label className="av-field">
-          Approved image URLs · one HTTPS URL per line
+          Approved image URLs Â· one HTTPS URL per line
           <textarea
             name="images"
             rows={4}

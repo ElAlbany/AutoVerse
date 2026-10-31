@@ -10,7 +10,7 @@ export async function GET(request: Request) {
       request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
     await rateLimit(
       `availability:${createHash("sha256").update(ip).digest("hex")}`,
-      150
+      150,
     );
     const params = new URL(request.url).searchParams;
     const car = await prisma.car.findFirst({
@@ -21,10 +21,15 @@ export async function GET(request: Request) {
     const start = new Date(params.get("start") || "");
     const end = new Date(params.get("end") || "");
     const quote = quoteRental(Number(car.pricePerDay), start, end);
-    const count = await availableUnits(car.id, start, end);
+    const count = await availableUnits(
+      car.id,
+      start,
+      end,
+      params.get("branchId") || undefined,
+    );
     return Response.json(
       { available: count, quote },
-      { headers: { "Cache-Control": "no-store" } }
+      { headers: { "Cache-Control": "no-store" } },
     );
   } catch (e) {
     return Response.json(
@@ -32,7 +37,7 @@ export async function GET(request: Request) {
         error:
           e instanceof Error ? e.message : "Availability could not be checked.",
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 }

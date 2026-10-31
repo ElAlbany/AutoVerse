@@ -24,7 +24,7 @@ const WELCOME: Message = {
   id: "welcome",
   role: "assistant",
   content:
-    "Hi! I'm **VERO**, your AutoVerse car assistant 🚗\n\nI can help you find the perfect car from our live fleet. To get started — what's your daily budget, and how many passengers will you have?",
+    "Hi! I'm **VERO**, your AutoVerse car assistant ðŸš—\n\nI can help you find the perfect car from our live fleet. To get started â€” what's your daily budget, and how many passengers will you have?",
 };
 
 const STORAGE_KEY = "vero-chat-session";
@@ -81,7 +81,7 @@ export default function VeroChat() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // ── Load from localStorage on mount (client-only) ───────────
+  // â”€â”€ Load from localStorage on mount (client-only) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -101,7 +101,7 @@ export default function VeroChat() {
     setHasLoaded(true);
   }, []);
 
-  // ── Save to localStorage whenever messages change ─────────────
+  // â”€â”€ Save to localStorage whenever messages change â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
     if (!hasLoaded) return;
     localStorage.setItem(
@@ -153,6 +153,7 @@ export default function VeroChat() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: history.slice(-20),
+          branchId: new URLSearchParams(window.location.search).get("branchId"),
           start: new URLSearchParams(window.location.search).get("start"),
           end: new URLSearchParams(window.location.search).get("end"),
         }),
@@ -282,7 +283,7 @@ export default function VeroChat() {
           >
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none" />
             <div className="relative w-9 h-9 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0 border border-white/30">
-              <span className="text-lg">🚗</span>
+              <span className="text-lg">ðŸš—</span>
               <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-white" />
             </div>
             <div className="flex-1 min-w-0">
@@ -371,7 +372,7 @@ export default function VeroChat() {
               >
                 {msg.role === "assistant" && (
                   <div className="w-7 h-7 rounded-full bg-primary-blue flex items-center justify-center flex-shrink-0 mr-2 mt-0.5 text-[13px]">
-                    🚗
+                    ðŸš—
                   </div>
                 )}
 
@@ -415,11 +416,11 @@ export default function VeroChat() {
                                   {car.name}
                                 </p>
                                 <p className="text-xs text-gray-500 dark:text-dark-muted">
-                                  {car.class} · ${car.pricePerDay}/day
+                                  {car.class} Â· ${car.pricePerDay}/day
                                 </p>
                               </div>
                               <span className="text-xs font-medium text-primary-blue dark:text-accent-cyan whitespace-nowrap">
-                                Book →
+                                Book â†’
                               </span>
                             </div>
                           </a>
@@ -433,7 +434,7 @@ export default function VeroChat() {
             {isTyping && (
               <div className="vero-message flex justify-start">
                 <div className="w-7 h-7 rounded-full bg-primary-blue flex items-center justify-center flex-shrink-0 mr-2 mt-0.5 text-[13px]">
-                  🚗
+                  ðŸš—
                 </div>
                 <div className="bg-gray-100 dark:bg-dark-surface rounded-2xl rounded-bl-sm border border-gray-200 dark:border-dark-border transition-colors duration-500">
                   <TypingDots />
@@ -521,7 +522,7 @@ export default function VeroChat() {
 
           <div className="pb-2 flex justify-center flex-shrink-0">
             <p className="text-[10px] text-gray-300 dark:text-dark-border transition-colors duration-500">
-              Powered by Gemini · AutoVerse
+              Powered by Gemini Â· AutoVerse
             </p>
           </div>
         </div>

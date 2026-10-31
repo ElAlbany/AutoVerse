@@ -147,15 +147,15 @@ function carData(form: FormData) {
     throw new Error(
       "Provide a make, model, valid year and positive daily rate.",
     );
-  const seats = text("seats") ? num("seats") : null,
+  const seats = num("seats"),
     luggage = text("luggage") ? num("luggage") : null;
-  if (seats !== null && (!Number.isInteger(seats) || seats < 1 || seats > 20))
-    throw new Error("Seats must be 1–20.");
+  if (!Number.isInteger(seats) || seats < 1 || seats > 20)
+    throw new Error("Seats must be 1â€“20.");
   if (
     luggage !== null &&
     (!Number.isInteger(luggage) || luggage < 0 || luggage > 20)
   )
-    throw new Error("Luggage capacity must be 0–20.");
+    throw new Error("Luggage capacity must be 0â€“20.");
   const images = text("images", 4000)
     .split(/\r?\n/)
     .map((v) => v.trim())
@@ -208,11 +208,20 @@ function carData(form: FormData) {
 export async function createCar(form: FormData) {
   await requireAdmin();
   const data = carData(form);
-  await prisma.car.create({
-    data: {
-      ...data,
-      units: { create: { code: `AV-${randomUUID().slice(0, 8)}` } },
-    },
+  const branchId = String(form.get("branchId") || "");
+  await prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM "Branch" WHERE id = ${branchId} FOR SHARE`;
+    const branch = await tx.branch.findFirst({
+      where: { id: branchId, active: true },
+    });
+    if (!branch) throw new Error("Choose an active collection branch.");
+    await tx.car.create({
+      data: {
+        ...data,
+        location: branch.name,
+        units: { create: { code: `AV-${randomUUID().slice(0, 8)}`, branchId } },
+      },
+    });
   });
   revalidatePath("/");
   revalidatePath("/admin/cars");

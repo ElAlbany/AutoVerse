@@ -7,11 +7,13 @@ import { ArrowUpRight, MapPin } from "lucide-react";
 export default function BookingSearch({
   start = "",
   end = "",
-  location = "",
+  branchId = "",
+  branches = [],
 }: {
   start?: string;
   end?: string;
-  location?: string;
+  branchId?: string;
+  branches?: { id: string; name: string; city: string }[];
 }) {
   const router = useRouter();
   const [from, setFrom] = useState("");
@@ -37,8 +39,8 @@ export default function BookingSearch({
           start: new Date(String(data.get("start"))).toISOString(),
           end: new Date(String(data.get("end"))).toISOString(),
         });
-        if (data.get("location"))
-          query.set("location", String(data.get("location")));
+        if (data.get("branchId"))
+          query.set("branchId", String(data.get("branchId")));
         router.push(`/?${query}#discover`);
       }}
       className="av-search"
@@ -48,12 +50,19 @@ export default function BookingSearch({
         <span>
           <MapPin size={14} /> Collection point
         </span>
-        <input
-          name="location"
-          placeholder="Main collection point"
-          defaultValue={location}
-          maxLength={100}
-        />
+        <select
+          name="branchId"
+          defaultValue={branchId}
+          aria-label="Collection branch"
+        >
+          <option value="">All collection branches</option>
+          {branches.map((branch) => (
+            <option key={branch.id} value={branch.id}>
+              {branch.name}
+              {branch.city !== branch.name ? ` · ${branch.city}` : ""}
+            </option>
+          ))}
+        </select>
       </label>
       <RentalDateFields
         start={from}

@@ -4,6 +4,7 @@ import Link from "next/link";
 import RentForm from "@/components/RentForm";
 import VehicleImage from "@/components/VehicleImage";
 import { carImage } from "@/lib/car-media";
+import { publicBranches } from "@/lib/branches";
 import { money } from "@/lib/rental-policy";
 export default async function RentPage({
   searchParams,
@@ -15,6 +16,7 @@ export default async function RentPage({
     where: { id: params.carId || "", archived: false },
   });
   if (!car) notFound();
+  const branches = await publicBranches(car.id);
   const payments =
     !!process.env.STRIPE_SECRET_KEY?.startsWith("sk_test_") &&
     !!process.env.STRIPE_WEBHOOK_SECRET;
@@ -40,8 +42,8 @@ export default async function RentPage({
             {car.year} {car.make} {car.model}
           </h2>
           <p className="av-muted">
-            {car.class} · {car.transmission === "a" ? "Automatic" : "Manual"} ·{" "}
-            {car.location}
+            {car.class} Â· {car.transmission === "a" ? "Automatic" : "Manual"}{" "}
+            Â· {car.seats} seats
           </p>
           <p className="av-muted mt-4">
             {money(Number(car.pricePerDay))} per rental day
@@ -58,7 +60,7 @@ export default async function RentPage({
           <p className="av-eyebrow">Your next chapter</p>
           <h1 className="text-3xl mt-3 mb-3">Make it yours.</h1>
           <p className="av-muted mb-7">
-            Choose a little time for the road. We’ll check the details.
+            Choose a little time for the road. Weâ€™ll check the details.
           </p>
           <RentForm
             car={{
@@ -69,6 +71,8 @@ export default async function RentPage({
             paymentEnabled={payments}
             initialStart={params.start}
             initialEnd={params.end}
+            initialBranch={params.branchId}
+            branches={branches}
           />
         </section>
       </div>

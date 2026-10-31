@@ -13,7 +13,7 @@ export async function POST(request: Request) {
         error:
           "Please sign in to use VERO. You can browse and compare the collection freely.",
       },
-      { status: 401 }
+      { status: 401 },
     );
   try {
     await rateLimit(`chat:${userId}`, 20, 60);
@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     if (body.length > 20000)
       return Response.json(
         { error: "Please shorten the conversation." },
-        { status: 413 }
+        { status: 413 },
       );
     const input = JSON.parse(body);
     if (
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
           !m ||
           !["user", "assistant"].includes(m.role) ||
           typeof m.content !== "string" ||
-          m.content.length > 3000
+          m.content.length > 3000,
       )
     )
       return Response.json({ error: "Invalid conversation." }, { status: 400 });
@@ -42,7 +42,7 @@ export async function POST(request: Request) {
           error:
             "VERO is not configured. Browse the collection to find your car.",
         },
-        { status: 503 }
+        { status: 503 },
       );
     let period = false;
     const start = new Date(input.start || ""),
@@ -55,14 +55,36 @@ export async function POST(request: Request) {
       .map((m: { content: string }) => m.content.toLowerCase())
       .join(" ");
     const passengers = Number(
-      history.match(/(\d+)\s*(?:passengers?|people|seats?)/)?.[1] || 0
+      history.match(/(\d+)\s*(?:passengers?|people|seats?)/)?.[1] || 0,
     );
     const cars = await prisma.car.findMany({
       where: {
         available: true,
         archived: false,
         ...(passengers > 0 ? { seats: { gte: passengers } } : {}),
-        ...(period ? { units: { some: freeUnitWhere(start, end) } } : {}),
+        ...(period
+          ? {
+              units: {
+                some: freeUnitWhere(
+                  start,
+                  end,
+                  typeof input.branchId === "string"
+                    ? input.branchId
+                    : undefined,
+                ),
+              },
+            }
+          : {
+              units: {
+                some: {
+                  enabled: true,
+                  branch: { active: true },
+                  ...(typeof input.branchId === "string" && input.branchId
+                    ? { branchId: input.branchId }
+                    : {}),
+                },
+              },
+            }),
       },
       orderBy: { pricePerDay: "asc" },
       take: 40,
@@ -112,11 +134,11 @@ export async function POST(request: Request) {
             (m: { role: string; content: string }) => ({
               role: m.role === "assistant" ? "model" : "user",
               parts: [{ text: m.content }],
-            })
+            }),
           ),
           generationConfig: { maxOutputTokens: 800, temperature: 0.4 },
         }),
-      }
+      },
     );
     if (!response.ok)
       return Response.json(
@@ -126,7 +148,7 @@ export async function POST(request: Request) {
               ? "VERO has reached its current usage limit. Please try later or browse the collection."
               : "VERO is temporarily unavailable. Your rental can still be booked through the collection.",
         },
-        { status: response.status === 429 ? 429 : 502 }
+        { status: response.status === 429 ? 429 : 502 },
       );
     const data = await response.json();
     const raw = String(data.candidates?.[0]?.content?.parts?.[0]?.text || "");
@@ -170,7 +192,7 @@ export async function POST(request: Request) {
             ? e.message
             : "VERO could not complete this request. Please try again.",
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 }

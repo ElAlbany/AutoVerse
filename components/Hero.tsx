@@ -6,11 +6,13 @@ import BookingSearch from "./BookingSearch";
 export default function Hero({
   start = "",
   end = "",
-  location = "",
+  branchId = "",
+  branches = [],
 }: {
   start?: string;
   end?: string;
-  location?: string;
+  branchId?: string;
+  branches?: { id: string; name: string; city: string }[];
 }) {
   return (
     <section className="av-hero av-shell">
@@ -50,7 +52,12 @@ export default function Hero({
         </div>
       </div>
       <div className="av-hero-search">
-        <BookingSearch start={start} end={end} location={location} />
+        <BookingSearch
+          start={start}
+          end={end}
+          branchId={branchId}
+          branches={branches}
+        />
       </div>
     </section>
   );
