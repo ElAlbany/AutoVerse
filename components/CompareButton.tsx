@@ -64,7 +64,7 @@ export default function CompareButton({ car }: { car: CompareCar }) {
         <Columns2 size={14} />
         {selected ? "Added to comparison" : "Compare"}
       </button>
-      {selected && <a href="/compare">View comparison â†’</a>}
+      {selected && <a href="/compare">View comparison →</a>}
       {message && <small role="status">{message}</small>}
     </div>
   );

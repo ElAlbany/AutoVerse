@@ -84,7 +84,7 @@ export default async function FleetPage({
       <p className="av-eyebrow">Operations</p>
       <h1 className="text-3xl">Fleet & availability</h1>
       <p className="av-muted">
-        Next 14 days Â· times shown in UTC Â· {units.length} vehicles shown.
+        Next 14 days · times shown in UTC · {units.length} vehicles shown.
         Rentals reserve a 60-minute preparation buffer. Add only physical
         vehicles you actually operate. This calendar shows which physical cars
         are out, being prepared or under maintenance, helping staff plan
@@ -107,7 +107,7 @@ export default async function FleetPage({
               <Link className="underline" href={`/profile/orders/${o.id}`}>
                 {o.vehicleName || o.id.slice(0, 8)}
               </Link>{" "}
-              Â· expected {fmt(o.endDate)} UTC
+              · expected {fmt(o.endDate)} UTC
             </p>
           ))}
         </section>
@@ -125,8 +125,8 @@ export default async function FleetPage({
               className="py-4 border-t border-[var(--border-color)]"
             >
               <p className="av-muted mb-3">
-                {o.car.make} {o.car.model} Â· {o.id.slice(0, 8)} Â·{" "}
-                {fmt(o.startDate)} â†’ {fmt(o.endDate)}
+                {o.car.make} {o.car.model} · {o.id.slice(0, 8)} ·{" "}
+                {fmt(o.startDate)} → {fmt(o.endDate)}
               </p>
               <ActionForm action={assignVehicle} label="Assign vehicle">
                 <input type="hidden" name="orderId" value={o.id} />
@@ -257,7 +257,7 @@ export default async function FleetPage({
           ))}
         </div>
         <p className="av-muted mt-3">
-          Pine: rental Â· Bronze: maintenance. Details and operational actions
+          Pine: rental · Bronze: maintenance. Details and operational actions
           are listed below.
         </p>
       </section>
@@ -270,7 +270,7 @@ export default async function FleetPage({
                   {u.car.make} {u.car.model}
                 </h2>
                 <p className="av-muted">
-                  {u.code} Â· {u.enabled ? "In service" : "Offline"}
+                  {u.code} · {u.enabled ? "In service" : "Offline"}
                 </p>
               </div>
               <ActionForm
@@ -291,7 +291,7 @@ export default async function FleetPage({
                   <div key={r.id} className="av-alert">
                     <div className="flex justify-between flex-wrap gap-3">
                       <span>
-                        {fmt(r.startDate)} â†’ {fmt(r.endDate)} UTC Â·{" "}
+                        {fmt(r.startDate)} → {fmt(r.endDate)} UTC ·{" "}
                         {r.order?.status || r.reason}
                       </span>
                       {r.orderId ? (

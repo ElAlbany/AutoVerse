@@ -1,4 +1,5 @@
 "use server";
+import { validCarImageUrl } from "@/lib/car-media";
 import { validateVehicleUses } from "@/lib/vehicle-use";
 import { randomUUID } from "node:crypto";
 import { OrderStatus } from "@prisma/client";
@@ -151,21 +152,31 @@ function carData(form: FormData) {
   const seats = num("seats"),
     luggage = text("luggage") ? num("luggage") : null;
   if (!Number.isInteger(seats) || seats < 1 || seats > 20)
-    throw new Error("Seats must be 1Ã¢â‚¬â€œ20.");
+    throw new Error("Seats must be 1–20.");
   if (
     luggage !== null &&
     (!Number.isInteger(luggage) || luggage < 0 || luggage > 20)
   )
-    throw new Error("Luggage capacity must be 0Ã¢â‚¬â€œ20.");
+    throw new Error("Luggage capacity must be 0–20.");
   const images = text("images", 4000)
     .split(/\r?\n/)
     .map((v) => v.trim())
     .filter(Boolean);
+  if (images.length > 12 || images.some((src) => !validCarImageUrl(src)))
+    throw new Error("Use up to 12 uploaded photos or HTTPS image URLs.");
+  const imageSource = text("imageSource");
+  if (!["API", "UPLOADED"].includes(imageSource))
+    throw new Error("Choose API illustrations or real photographs.");
   if (
-    images.length > 12 ||
-    images.some((v) => !v.startsWith("/vehicle-") && !/^https:\/\//.test(v))
+    imageSource === "UPLOADED" &&
+    (!images.length ||
+      images.some(
+        (src) => src.includes("imagin.studio") || src.includes("placeholder"),
+      ))
   )
-    throw new Error("Use up to 12 HTTPS image URLs, one per line.");
+    throw new Error(
+      "Add at least one real vehicle photo, or select model illustrations.",
+    );
   const metrics = {
     city_mpg: num("city_mpg"),
     highway_mpg: num("highway_mpg"),
@@ -214,6 +225,7 @@ function carData(form: FormData) {
     seats,
     luggage,
     images,
+    imageSource,
     features: text("features", 1500)
       .split(",")
       .map((v) => v.trim())

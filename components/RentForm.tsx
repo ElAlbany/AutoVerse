@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createOrder } from "@/app/actions/order";
 import { signInUrl } from "@/lib/sign-in";
 import { money, canCancel } from "@/lib/rental-policy";
+import { suggestedReturn } from "@/lib/rental-dates";
 import RentalDateFields from "./RentalDateFields";
 import { ArrowUpRight, ShieldCheck } from "lucide-react";
 
@@ -50,7 +51,7 @@ export default function RentForm({
         : "";
     };
     setStart(local(initialStart));
-    setEnd(local(initialEnd));
+    setEnd(suggestedReturn(local(initialStart), local(initialEnd)));
   }, [initialStart, initialEnd]);
   useEffect(() => {
     setRequestKey(crypto.randomUUID());
@@ -148,7 +149,7 @@ export default function RentForm({
           {branches.map((b) => (
             <option key={b.id} value={b.id}>
               {b.name}
-              {b.name !== b.city ? ` Â· ${b.city}` : ""}
+              {b.name !== b.city ? ` · ${b.city}` : ""}
             </option>
           ))}
         </select>
@@ -163,7 +164,7 @@ export default function RentForm({
       </div>
       <div aria-live="polite">
         {checking ? (
-          <p className="av-muted">Checking the fleet for your datesâ€¦</p>
+          <p className="av-muted">Checking the fleet for your dates…</p>
         ) : (
           count != null && (
             <p className="av-muted">
@@ -178,7 +179,7 @@ export default function RentForm({
         <div className="av-quote">
           <div>
             <span>
-              {money(car.pricePerDay)} Ã— {quote.days} rental days
+              {money(car.pricePerDay)} × {quote.days} rental days
             </span>
             <span>{money(quote.total)}</span>
           </div>
@@ -195,8 +196,8 @@ export default function RentForm({
       <div className="av-muted">
         <ShieldCheck size={17} className="inline mr-2" />
         {paymentEnabled
-          ? "Stripe sandbox Â· no real money is charged."
-          : "Instant confirmation Â· pay at collection."}
+          ? "Stripe sandbox · no real money is charged."
+          : "Instant confirmation · pay at collection."}
       </div>
       <p className="av-muted">
         {paymentEnabled
@@ -245,7 +246,7 @@ export default function RentForm({
         }
       >
         {loading
-          ? "Preparing your rentalâ€¦"
+          ? "Preparing your rental…"
           : !isSignedIn
             ? "Sign in to continue"
             : paymentEnabled

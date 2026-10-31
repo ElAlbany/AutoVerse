@@ -10,8 +10,8 @@ import {
   ArrowUpRight,
   Star,
 } from "lucide-react";
-import VehicleImage from "@/components/VehicleImage";
-import { carImage, hasCarPhoto } from "@/lib/car-media";
+import VehicleGallery from "@/components/VehicleGallery";
+import { carGallery, hasCarPhoto } from "@/lib/car-media";
 import { money } from "@/lib/rental-policy";
 import ReportReview from "@/components/ReportReview";
 import { publicBranches } from "@/lib/branches";
@@ -38,7 +38,7 @@ export default async function CarDetailsPage({
   const branches = await publicBranches(id);
   const collection =
     branches
-      .map((b) => `${b.name}${b.city !== b.name ? ` Â· ${b.city}` : ""}`)
+      .map((b) => `${b.name}${b.city !== b.name ? ` · ${b.city}` : ""}`)
       .join(", ") || "No active collection branch";
   const stats = await prisma.review.aggregate({
     where: { carId: id, hidden: false },
@@ -90,20 +90,11 @@ export default async function CarDetailsPage({
       </div>
       <div className="av-detail-layout">
         <div className="av-detail-content">
-          <div className="av-detail-photo">
-            <VehicleImage
-              src={carImage(car)}
-              alt={`${car.make} ${car.model}`}
-              priority
-              sizes="(max-width:760px) 100vw, 60vw"
-            />
-          </div>
-          {!hasCarPhoto(car) && (
-            <p className="av-muted">
-              Illustration shown. Vehicle photographs are being prepared by the
-              team.
-            </p>
-          )}
+          <VehicleGallery
+            images={carGallery(car)}
+            name={`${car.make} ${car.model}`}
+            actual={hasCarPhoto(car)}
+          />
           <section className="av-details-section">
             <h2>A little more about your drive.</h2>
             <p>
@@ -138,7 +129,7 @@ export default async function CarDetailsPage({
               <h2>The useful details.</h2>
               <ul>
                 {car.features.map((f) => (
-                  <li key={f}>Ã¢Å“â€œ {f}</li>
+                  <li key={f}>✓ {f}</li>
                 ))}
               </ul>
             </section>
@@ -163,7 +154,7 @@ export default async function CarDetailsPage({
             id="reviews"
             className="av-details-section av-detail-reviews"
           >
-            <h2>From the driverÃ¢â‚¬â„¢s seat.</h2>
+            <h2>From the driver's seat.</h2>
             <p>
               {stats._count.id
                 ? `${stats._avg.rating?.toFixed(1)} / 5 from ${stats._count.id} verified rentals`
@@ -172,14 +163,14 @@ export default async function CarDetailsPage({
             {car.reviews.map((r) => (
               <article key={r.id}>
                 <span className="av-rating">
-                  {"Ã¢Ëœâ€¦".repeat(r.rating)} Ã‚Â· Verified rental
+                  {"★".repeat(r.rating)} · Verified rental
                 </span>
                 <p>{r.comment || "Rating only"}</p>
                 <small>
-                  {r.user.firstName || "AutoVerse driver"} Ã‚Â·{" "}
+                  {r.user.firstName || "AutoVerse driver"} ·{" "}
                   {r.createdAt.toLocaleDateString("en-GB")}
                   {r.updatedAt.getTime() - r.createdAt.getTime() > 60000
-                    ? " Ã‚Â· Edited"
+                    ? " · Edited"
                     : ""}
                 </small>
                 <div className="mt-3">
@@ -202,7 +193,7 @@ export default async function CarDetailsPage({
             </strong>
             <span className="av-muted"> / day</span>
           </p>
-          <p className="av-muted">Starting daily rate Ã‚Â· {collection}</p>
+          <p className="av-muted">Starting daily rate · {collection}</p>
           <hr className="my-6 border-[var(--border-color)]" />
           <p className="av-muted">
             Choose your dates for an exact quote and an availability check. One

@@ -1,6 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { suggestedReturn } from "@/lib/rental-dates";
 import RentalDateFields from "./RentalDateFields";
 import { ArrowUpRight, MapPin } from "lucide-react";
 
@@ -28,7 +29,7 @@ export default function BookingSearch({
         : "";
     };
     setFrom(local(start));
-    setUntil(local(end));
+    setUntil(suggestedReturn(local(start), local(end)));
   }, [start, end]);
   return (
     <form

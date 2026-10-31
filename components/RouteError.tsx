@@ -9,7 +9,7 @@ export default function RouteError({
   return (
     <section className="av-panel av-route-error" role="alert">
       <p className="av-eyebrow">A small detour</p>
-      <h1>We couldn’t load this page.</h1>
+      <h1>We couldn't load this page.</h1>
       <p className="av-muted">
         Your saved information is safe. Try again, or return to the collection.
         If a booking was submitted, check My rentals before submitting again.

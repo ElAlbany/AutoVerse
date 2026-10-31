@@ -153,15 +153,15 @@ export default async function BranchesPage({
               </span>
             </h2>
             <p className="av-muted">
-              {b.city} Â· {b.address || "Add collection instructions"}
+              {b.city} · {b.address || "Add collection instructions"}
             </p>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {[...groups].map(([id, g]) => (
                 <div key={id} className="av-alert">
                   <strong>{g.name}</strong>
                   <p className="av-muted">
-                    {g.total} physical Â· {g.enabled} in service Â·{" "}
-                    {error ? "â€”" : g.free} available for these dates
+                    {g.total} physical · {g.enabled} in service ·{" "}
+                    {error ? "—" : g.free} available for these dates
                   </p>
                 </div>
               ))}

@@ -212,7 +212,7 @@ export default async function Home({
             id="car-search"
             name="search"
             defaultValue={search}
-            placeholder="Make, model, or a little inspirationÃ¢â‚¬Â¦"
+            placeholder="Make, model, or a little inspiration…"
           />
           <label>
             <span className="sr-only">Category</span>
@@ -323,7 +323,7 @@ export default async function Home({
                     ...car,
                     location:
                       [...new Set(car.units.map((u) => u.branch.name))].join(
-                        " Â· ",
+                        " · ",
                       ) || "No active collection branch",
                     pricePerDay: Number(car.pricePerDay),
                     rating: rating?._avg.rating,
@@ -398,7 +398,7 @@ export default async function Home({
                 icon: KeyRound,
                 n: "02",
                 title: "Choose your companion",
-                text: "Compare the details, read the terms, and sign in when youÃ¢â‚¬â„¢re ready to book.",
+                text: "Compare the details, read the terms, and sign in when you're ready to book.",
               },
               {
                 icon: Route,
@@ -420,14 +420,14 @@ export default async function Home({
         </div>
       </section>
       <section className="av-shell av-reviews-section">
-        <p className="av-eyebrow">From the driverÃ¢â‚¬â„¢s seat</p>
+        <p className="av-eyebrow">From the driver's seat</p>
         <h2>Good journeys leave a story.</h2>
         {latestReviews.length ? (
           <div className="av-review-grid">
             {latestReviews.map((r) => (
               <blockquote key={r.id}>
                 <span className="av-rating">
-                  {"Ã¢Ëœâ€¦".repeat(r.rating)} Ã‚Â· Verified rental
+                  {"★".repeat(r.rating)} · Verified rental
                 </span>
                 <p>{r.comment || "A rated AutoVerse rental."}</p>
                 <footer>

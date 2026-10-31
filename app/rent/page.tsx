@@ -42,8 +42,8 @@ export default async function RentPage({
             {car.year} {car.make} {car.model}
           </h2>
           <p className="av-muted">
-            {car.class} Â· {car.transmission === "a" ? "Automatic" : "Manual"}{" "}
-            Â· {car.seats} seats
+            {car.class} · {car.transmission === "a" ? "Automatic" : "Manual"}{" "}
+            · {car.seats} seats
           </p>
           <p className="av-muted mt-4">
             {money(Number(car.pricePerDay))} per rental day
@@ -60,7 +60,7 @@ export default async function RentPage({
           <p className="av-eyebrow">Your next chapter</p>
           <h1 className="text-3xl mt-3 mb-3">Make it yours.</h1>
           <p className="av-muted mb-7">
-            Choose a little time for the road. Weâ€™ll check the details.
+            Choose a little time for the road. We'll check the details.
           </p>
           <RentForm
             car={{

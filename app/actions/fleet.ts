@@ -12,7 +12,7 @@ export async function addVehicle(form: FormData) {
   const code = String(form.get("code") || "").trim();
   if (!/^[a-zA-Z0-9-]{2,40}$/.test(code))
     throw new Error(
-      "Use a unique fleet code with 2Ã¢â‚¬â€œ40 letters, numbers or hyphens.",
+      "Use a unique fleet code with 2–40 letters, numbers or hyphens.",
     );
   await prisma.$transaction(async (tx) => {
     await lockCar(tx, carId);

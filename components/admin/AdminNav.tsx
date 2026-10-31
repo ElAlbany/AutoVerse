@@ -5,14 +5,14 @@ import { usePathname } from "next/navigation";
 
 const navItems = [
   { href: "/admin/branches", label: "Branches & stock", icon: "⌖" },
-  { href: "/admin", label: "Dashboard", icon: "ðŸ“Š" },
-  { href: "/admin/analytics", label: "Analytics", icon: "ðŸ“Š" },
-  { href: "/admin/fleet", label: "Fleet calendar", icon: "â–¦" },
-  { href: "/admin/reviews", label: "Reviews", icon: "â˜†" },
-  { href: "/admin/orders", label: "Orders", icon: "ðŸ“‹" },
-  { href: "/admin/cars", label: "Cars", icon: "ðŸš—" },
-  { href: "/admin/users", label: "Users", icon: "ðŸ‘¥" },
-  { href: "/profile", label: "My Profile", icon: "ðŸ‘¤" },
+  { href: "/admin", label: "Dashboard", icon: "📊" },
+  { href: "/admin/analytics", label: "Analytics", icon: "📊" },
+  { href: "/admin/fleet", label: "Fleet calendar", icon: "▦" },
+  { href: "/admin/reviews", label: "Reviews", icon: "☆" },
+  { href: "/admin/orders", label: "Orders", icon: "📋" },
+  { href: "/admin/cars", label: "Cars", icon: "🚗" },
+  { href: "/admin/users", label: "Users", icon: "👥" },
+  { href: "/profile", label: "My Profile", icon: "👤" },
 ];
 
 export default function AdminNav({

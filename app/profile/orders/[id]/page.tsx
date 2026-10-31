@@ -38,7 +38,7 @@ export default async function OrderDetailPage({
     if (stored?.stripeSessionId) {
       try {
         const session = await getStripe().checkout.sessions.retrieve(
-          stored.stripeSessionId
+          stored.stripeSessionId,
         );
         if (session.status === "open") paymentUrl = session.url;
       } catch {}
@@ -47,6 +47,7 @@ export default async function OrderDetailPage({
   const policy = order.policy as {
     pickup?: string;
     location?: string;
+    collectionAddress?: string;
     cancellationHours?: number;
   } | null;
   const expired =
@@ -124,6 +125,9 @@ export default async function OrderDetailPage({
                 policy?.pickup ||
                 "The team will confirm your collection point."}
             </p>
+            {policy?.collectionAddress && (
+              <p className="av-muted mt-2">{policy.collectionAddress}</p>
+            )}
             <p className="av-muted mt-3">
               Bring your valid driving licence and identification. Collection
               arrangements and any deposit, mileage, and protection terms must

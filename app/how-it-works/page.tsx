@@ -34,10 +34,10 @@ export default function Guide() {
         <section>
           <h2>03 / Collect and enjoy</h2>
           <p>
-            Wait for confirmation before making travel arrangements around your
-            rental. Bring valid identification and a driving licence. Staff
-            record collection and return, and confirm mileage, deposit,
-            protection and pickup details.
+            Check your confirmed booking and collection branch in your account.
+            Bring valid identification and a driving licence. Staff record
+            collection and return, and confirm mileage, deposit, protection and
+            pickup details.
           </p>
         </section>
         <section>

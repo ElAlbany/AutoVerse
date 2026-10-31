@@ -30,7 +30,7 @@ export default function Guide() {
             Stripe processes sandbox payment details on its own checkout page.
             AutoVerse stores payment references and status, not raw card
             numbers. Configured email delivery uses Resend. The optional VERO
-            assistant sends submitted conversation content to Google’s Gemini
+            assistant sends submitted conversation content to Google's Gemini
             service; avoid entering sensitive personal information.
           </p>
         </section>
@@ -46,7 +46,7 @@ export default function Guide() {
         <section>
           <h2>Reviews and data requests</h2>
           <p>
-            Reviews are public with the author’s first name and rental
+            Reviews are public with the author's first name and rental
             verification. Do not include personal or sensitive details in
             reviews. Contact the company operating this site for access,
             correction, retention, or deletion requests; its contact details

@@ -23,7 +23,7 @@ export default function Guide() {
         <section>
           <h2>Pricing and rental periods</h2>
           <p>
-            The server calculates the quote from the listing’s daily rate. Each
+            The server calculates the quote from the listing's daily rate. Each
             started 24-hour period is charged as a rental day. Rentals must
             start in the future and end after pickup, with a maximum online
             duration of 90 days. Quotes and terms are stored with the booking. A
@@ -62,7 +62,7 @@ export default function Guide() {
             Changes depend on availability and a new quote. Do not assume an
             extension is approved. Actual collection and return are recorded by
             staff. Report delays promptly so the team can protect the next
-            customer’s booking.
+            customer's booking.
           </p>
         </section>
         <Link href="/#discover" className="av-button mt-6">

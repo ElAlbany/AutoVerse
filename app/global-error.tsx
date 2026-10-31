@@ -10,7 +10,7 @@ export default function GlobalError({ reset }: { reset: () => void }) {
           color: "#202a25",
         }}
       >
-        <h1>Let’s try that again.</h1>
+        <h1>Let's try that again.</h1>
         <p>AutoVerse could not start this page. Please retry.</p>
         <button
           onClick={reset}

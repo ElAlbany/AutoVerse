@@ -34,16 +34,14 @@ export default function CarCard({ car }: { car: ListingCard }) {
             alt={
               hasCarPhoto(car)
                 ? `${car.make} ${car.model}`
-                : `Illustration; photographs for ${car.make} ${car.model} are being prepared`
+                : `Model illustration of ${car.make} ${car.model}`
             }
           />
         </Link>
         <span className="av-car-category">{car.class}</span>
         {car.id && <FavoriteButton carId={car.id} initial={car.saved} />}
         <span className="av-photo-label">
-          {hasCarPhoto(car)
-            ? "Vehicle photography"
-            : "Illustration Â· photos coming soon"}
+          {hasCarPhoto(car) ? "Vehicle photography" : "Model illustration"}
         </span>
       </div>
       <div className="av-car-body">

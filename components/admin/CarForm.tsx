@@ -1,5 +1,6 @@
 "use client";
 
+import CarMediaEditor from "./CarMediaEditor";
 import { VEHICLE_USES } from "@/lib/vehicle-use";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -26,6 +27,7 @@ type CarFormProps = {
     luggage?: number | null;
     location?: string;
     images?: string[];
+    imageSource?: string;
     features?: string[];
     make: string;
     model: string;
@@ -55,9 +57,16 @@ export default function CarForm({
   branches = [],
 }: CarFormProps) {
   const router = useRouter();
-  const [make, setMake] = useState(initialData?.make || "");
+  const [make, setMake] = useState(
+    CAR_MAKES.find(
+      (m) => m.toLowerCase() === initialData?.make.toLowerCase(),
+    ) ||
+      initialData?.make ||
+      "",
+  );
   const [models, setModels] = useState<string[]>(CAR_MODELS[make] || []);
   const [selectedModel, setSelectedModel] = useState(initialData?.model || "");
+  const [uploading, setUploading] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
 
@@ -69,6 +78,7 @@ export default function CarForm({
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (uploading) return;
     setPending(true);
     setError("");
 
@@ -108,6 +118,9 @@ export default function CarForm({
             className="w-full rounded-xl border border-gray-200 dark:border-dark-border px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue dark:bg-dark-surface dark:text-dark-text transition-colors duration-500"
           >
             <option value="">Select make</option>
+            {make && !CAR_MAKES.some((m) => m === make) && (
+              <option value={make}>{make}</option>
+            )}
             {CAR_MAKES.map((m) => (
               <option key={m} value={m}>
                 {m}
@@ -132,6 +145,9 @@ export default function CarForm({
             <option value="">
               {make ? "Select model" : "Select make first"}
             </option>
+            {selectedModel && !models.includes(selectedModel) && (
+              <option value={selectedModel}>{selectedModel}</option>
+            )}
             {models.map((m) => (
               <option key={m} value={m}>
                 {m}
@@ -403,7 +419,7 @@ export default function CarForm({
               <option value="">Select a branch</option>
               {branches.map((b) => (
                 <option value={b.id} key={b.id}>
-                  {b.name} Â· {b.city}
+                  {b.name} · {b.city}
                 </option>
               ))}
             </select>
@@ -424,24 +440,11 @@ export default function CarForm({
             placeholder="Apple CarPlay, Heated seats, Parking sensors"
           />
         </label>
-        <label className="av-field">
-          Approved image URLs Ã‚Â· one HTTPS URL per line
-          <textarea
-            name="images"
-            rows={4}
-            defaultValue={
-              initialData?.images
-                ?.filter((v) => !v.includes("imagin.studio"))
-                .join("\n") || ""
-            }
-            placeholder="https://your-image-host.example/car-front.jpg"
-          />
-        </label>
-        <p className="av-muted">
-          Use licensed photographs of this vehicle. Without approved photos, the
-          listing displays a labeled illustration. Physical fleet quantities are
-          managed in Fleet calendar.
-        </p>
+        <CarMediaEditor
+          initialImages={initialData?.images}
+          initialSource={initialData?.imageSource}
+          onBusy={setUploading}
+        />
       </fieldset>
 
       <fieldset className="av-panel space-y-5">
@@ -528,10 +531,16 @@ export default function CarForm({
         </button>
         <button
           type="submit"
-          disabled={pending}
+          disabled={pending || uploading}
           className="w-full sm:w-auto bg-primary-blue text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed dark:shadow-lg dark:shadow-primary-blue/20"
         >
-          {pending ? "Saving..." : mode === "create" ? "Add Car" : "Update Car"}
+          {uploading
+            ? "Uploading photographs..."
+            : pending
+              ? "Saving..."
+              : mode === "create"
+                ? "Add Car"
+                : "Update Car"}
         </button>
       </div>
     </form>

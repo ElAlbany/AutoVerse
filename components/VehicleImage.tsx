@@ -1,6 +1,6 @@
 "use client";
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function VehicleImage({
   src,
@@ -14,17 +14,21 @@ export default function VehicleImage({
   sizes?: string;
 }) {
   const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [src]);
   return (
     <Image
       src={failed ? "/vehicle-placeholder.svg" : src}
       alt={alt}
+      unoptimized={src.includes("cdn.imagin.studio/")}
       fill
       sizes={sizes}
       priority={priority}
       className={
         src.includes("placeholder") || failed
           ? "object-contain p-8"
-          : "object-cover"
+          : src.includes("imagin.studio")
+            ? "object-contain p-2"
+            : "object-cover"
       }
       onError={() => setFailed(true)}
     />
