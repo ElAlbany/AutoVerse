@@ -2133,3 +2133,8 @@ a.bg-gradient-to-r {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+.av-skeleton {
+  background: var(--border-color);
+  border-radius: 3px;
+}

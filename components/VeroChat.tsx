@@ -106,7 +106,7 @@ export default function VeroChat() {
     if (!hasLoaded) return;
     localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ messages, timestamp: Date.now() })
+      JSON.stringify({ messages, timestamp: Date.now() }),
     );
   }, [messages, hasLoaded]);
 
@@ -231,12 +231,11 @@ export default function VeroChat() {
           className="
             fixed bottom-6 right-6 z-50
             w-14 h-14 rounded-full
-            bg-gradient-to-br from-primary-blue to-accent-cyan
+            bg-primary-blue
             text-white shadow-lg
             flex items-center justify-center
             transition-all duration-300
             hover:scale-110 hover:shadow-primary-blue/40 hover:shadow-xl
-            vero-fab-pulse
           "
         >
           <svg
@@ -269,7 +268,7 @@ export default function VeroChat() {
             ${
               isMaximized
                 ? "inset-y-0 right-0 w-full sm:w-[420px] md:w-[480px] lg:w-[520px] rounded-none sm:rounded-l-3xl border-r-0"
-                : "bottom-24 right-6 w-[350px] sm:w-[380px] h-[520px] sm:h-[560px] rounded-3xl"
+                : "bottom-24 right-4 w-[calc(100vw-2rem)] sm:right-6 sm:w-[380px] h-[min(520px,75dvh)] sm:h-[560px] rounded-xl"
             }
           `}
         >
@@ -277,7 +276,7 @@ export default function VeroChat() {
           <div
             className="
               flex items-center gap-3 px-5 py-4 flex-shrink-0
-              bg-gradient-to-r from-primary-blue via-primary-blue-200 to-accent-cyan
+              bg-primary-blue
               relative overflow-hidden
             "
           >
@@ -371,7 +370,7 @@ export default function VeroChat() {
                 className={`vero-message flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
               >
                 {msg.role === "assistant" && (
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary-blue to-accent-cyan flex items-center justify-center flex-shrink-0 mr-2 mt-0.5 text-[13px]">
+                  <div className="w-7 h-7 rounded-full bg-primary-blue flex items-center justify-center flex-shrink-0 mr-2 mt-0.5 text-[13px]">
                     🚗
                   </div>
                 )}
@@ -382,7 +381,7 @@ export default function VeroChat() {
                       px-4 py-2.5 rounded-2xl text-sm leading-relaxed
                       ${
                         msg.role === "user"
-                          ? "bg-gradient-to-br from-primary-blue to-primary-blue-200 text-white rounded-br-sm"
+                          ? "bg-primary-blue text-white rounded-br-sm"
                           : "bg-gray-100 dark:bg-dark-surface text-gray-900 dark:text-dark-text rounded-bl-sm border border-gray-200 dark:border-dark-border"
                       }
                       transition-colors duration-500
@@ -433,7 +432,7 @@ export default function VeroChat() {
 
             {isTyping && (
               <div className="vero-message flex justify-start">
-                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary-blue to-accent-cyan flex items-center justify-center flex-shrink-0 mr-2 mt-0.5 text-[13px]">
+                <div className="w-7 h-7 rounded-full bg-primary-blue flex items-center justify-center flex-shrink-0 mr-2 mt-0.5 text-[13px]">
                   🚗
                 </div>
                 <div className="bg-gray-100 dark:bg-dark-surface rounded-2xl rounded-bl-sm border border-gray-200 dark:border-dark-border transition-colors duration-500">
@@ -482,7 +481,7 @@ export default function VeroChat() {
               aria-label="Send message"
               className="
                 w-10 h-10 rounded-xl flex-shrink-0
-                bg-gradient-to-br from-primary-blue to-accent-cyan
+                bg-primary-blue
                 text-white flex items-center justify-center
                 transition-all duration-200
                 hover:shadow-lg hover:shadow-primary-blue/30 hover:scale-105
