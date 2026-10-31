@@ -61,7 +61,7 @@ export default async function AdminDashboard({
   ]);
 
   const revenue = await prisma.order.aggregate({
-    where: { ...dateFilter, status: { not: "CANCELLED" } },
+    where: { ...dateFilter, paymentStatus: "PAID" },
     _sum: { totalPrice: true },
   });
 
@@ -69,7 +69,7 @@ export default async function AdminDashboard({
   const totalChats = chatAnalytics.length;
   const totalRecommendations = chatAnalytics.reduce(
     (s, c) => s + c.carsShown.length,
-    0,
+    0
   );
   const uniqueUsers = await prisma.chatAnalytic.groupBy({
     by: ["userId"],
