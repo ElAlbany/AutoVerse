@@ -1,4 +1,5 @@
 "use client";
+import AdminTableScroll from "./AdminTableScroll";
 
 import { useOptimistic, useTransition, useState } from "react";
 import { updateUserRole, deleteUser } from "@/app/actions/admin";
@@ -178,7 +179,7 @@ export default function UserTable({
       </div>
 
       {/* ───── Desktop table (lg and up) ───── */}
-      <div className="hidden lg:block overflow-x-auto">
+      <AdminTableScroll label="Users table">
         <table className="w-full text-left text-sm">
           <thead className="bg-gray-50 dark:bg-dark-surface border-b border-gray-100 dark:border-dark-border transition-colors duration-500">
             <tr>
@@ -278,7 +279,7 @@ export default function UserTable({
             ))}
           </tbody>
         </table>
-      </div>
+      </AdminTableScroll>
     </>
   );
 }

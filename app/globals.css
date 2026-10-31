@@ -2138,3 +2138,110 @@ a.bg-gradient-to-r {
   background: var(--border-color);
   border-radius: 3px;
 }
+
+.av-compare-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.av-compare-nav > span {
+  display: grid;
+  place-items: center;
+  min-width: 19px;
+  height: 19px;
+  padding: 2px;
+  border-radius: 50%;
+  background: var(--av-accent);
+  color: var(--av-on-accent);
+  font-size: 9px;
+}
+.av-table-toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  align-items: center;
+  padding: 12px 18px;
+  background: var(--bg-secondary);
+  border-block: 1px solid var(--border-color);
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+.av-table-toolbar > span,
+.av-table-toolbar > div {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.av-table-toolbar button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 30px;
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+.av-table-top-scroll {
+  overflow-x: scroll;
+  overflow-y: hidden;
+  height: 16px;
+}
+.av-table-viewport {
+  overflow: auto;
+  max-height: 65vh;
+  overscroll-behavior: contain;
+  cursor: grab;
+}
+.av-table-viewport:active {
+  cursor: grabbing;
+  user-select: none;
+}
+.av-table-viewport table {
+  min-width: 1000px;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.av-table-viewport th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--bg-secondary);
+  font-size: 10px;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.av-table-viewport th:first-child,
+.av-table-viewport td:first-child {
+  position: sticky;
+  left: 0;
+  background: var(--bg-card);
+  z-index: 1;
+  box-shadow: 1px 0 var(--border-color);
+}
+.av-table-viewport th:first-child {
+  z-index: 3;
+  background: var(--bg-secondary);
+}
+.av-table-viewport tbody td {
+  padding: 16px 20px;
+  font-size: 12px;
+  vertical-align: middle;
+}
+.av-table-viewport tbody tr:nth-child(even) {
+  background: var(--bg-secondary);
+}
+.av-table-viewport td:first-child {
+  min-width: 130px;
+  max-width: 220px;
+}
+.av-route-loading,
+.av-route-error {
+  margin-block: 25px;
+}
+.av-route-error h1 {
+  font-family: Georgia, serif;
+  font-size: 36px;
+  margin-block: 20px;
+}

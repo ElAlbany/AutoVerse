@@ -4,6 +4,7 @@ import { useAuth } from "@clerk/nextjs";
 import { useEffect, useState } from "react";
 import { Moon, Sun, Menu, X, ArrowUpRight } from "lucide-react";
 import { usePathname } from "next/navigation";
+import CompareNavLink from "./CompareNavLink";
 import { signInUrl } from "@/lib/sign-in";
 
 export default function Navbar() {
@@ -30,6 +31,7 @@ export default function Navbar() {
         </Link>
         <div className="av-nav-links">
           <Link href="/#discover">Our collection</Link>
+          <CompareNavLink />
           <Link href="/how-it-works">How it works</Link>
           <Link href="/rental-policy">Rental guide</Link>
         </div>
@@ -75,11 +77,10 @@ export default function Navbar() {
             <Link href="/#discover" onClick={() => setOpen(false)}>
               Our collection
             </Link>
-            <Link href="/compare">Compare cars</Link>
+            <CompareNavLink />
             <Link href="/how-it-works">How it works</Link>
             <Link href="/rental-policy">Rental guide</Link>
             <Link href="/profile/favorites">Saved cars</Link>
-            <Link href="/compare">Compare cars</Link>
           </div>
         )}
       </nav>
