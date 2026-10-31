@@ -39,7 +39,13 @@ async function main() {
   }));
 
   await prisma.car.createMany({ data: carsToSeed });
-  console.log(`✅ Seeded ${carsToSeed.length} cars`);
+  const cars = await prisma.car.findMany({ select: { id: true } });
+  await prisma.vehicleUnit.createMany({
+    data: cars.map((car) => ({ carId: car.id, code: `AV-${car.id}` })),
+  });
+  console.log(
+    `Seeded ${carsToSeed.length} cars and one initial unit per listing.`,
+  );
 }
 
 main()

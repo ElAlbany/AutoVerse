@@ -21,6 +21,7 @@ model User {
   orders        Order[]
   reviews       Review[]
   chatAnalytics ChatAnalytic[]
+  favorites     Favorite[]
 }
 
 model Car {
@@ -42,6 +43,13 @@ model Car {
   description     String?
   available       Boolean  @default(true)
   featured        Boolean  @default(false)
+  archived        Boolean  @default(false)
+  seats           Int?
+  luggage         Int?
+  features        String[] @default([])
+  location        String   @default("Main collection point")
+  units           VehicleUnit[]
+  favorites       Favorite[]
   orders          Order[]
   reviews         Review[]
   createdAt       DateTime @default(now())
@@ -62,9 +70,25 @@ model Order {
   status     OrderStatus @default(PENDING)
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
-  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  car        Car         @relation(fields: [carId], references: [id], onDelete: Cascade)
+  requestKey String?     @unique
+  inventoryConflict Boolean @default(false)
+  expiresAt  DateTime?
+  currency   String      @default("usd")
+  dailyRate  Decimal?    @db.Decimal(10, 2)
+  vehicleName String?
+  policy     Json?
+  paymentStatus PaymentStatus @default(UNPAID)
+  stripeSessionId String? @unique
+  stripePaymentIntentId String? @unique
+  user       User        @relation(fields: [userId], references: [id], onDelete: Restrict)
+  car        Car         @relation(fields: [carId], references: [id], onDelete: Restrict)
   review     Review?
+  reservation VehicleReservation?
+  events     OrderEvent[]
+
+  @@index([userId, createdAt])
+  @@index([status, expiresAt])
+  @@index([carId, startDate, endDate])
 }
 
 model Review {
@@ -75,9 +99,89 @@ model Review {
   rating    Int
   comment   String?
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  hidden    Boolean @default(false)
+  moderationReason String?
+  reported  Boolean @default(false)
   order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   car       Car      @relation(fields: [carId], references: [id], onDelete: Cascade)
+
+  @@index([carId, hidden, createdAt])
+}
+
+model VehicleUnit {
+  id         String @id @default(uuid())
+  carId      String
+  code       String @unique
+  enabled    Boolean @default(true)
+  createdAt  DateTime @default(now())
+  car        Car @relation(fields: [carId], references: [id], onDelete: Restrict)
+  reservations VehicleReservation[]
+  @@index([carId, enabled])
+}
+
+// Bookings and maintenance share one schedule so the database protects both.
+model VehicleReservation {
+  id         String @id @default(uuid())
+  unitId     String
+  orderId    String? @unique
+  startDate  DateTime
+  endDate    DateTime
+  active     Boolean @default(true)
+  reason     String @default("Rental")
+  unit       VehicleUnit @relation(fields: [unitId], references: [id], onDelete: Restrict)
+  order      Order? @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  @@index([unitId, active, startDate, endDate])
+}
+
+model Favorite {
+  userId String
+  carId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  car Car @relation(fields: [carId], references: [id], onDelete: Cascade)
+  @@id([userId, carId])
+}
+
+model OrderEvent {
+  id String @id @default(uuid())
+  orderId String
+  actorId String?
+  message String
+  createdAt DateTime @default(now())
+  order Order @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  @@index([orderId, createdAt])
+}
+
+model WebhookEvent {
+  id String @id
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id String @id @default(uuid())
+  key String @unique
+  payload Json
+  attempts Int @default(0)
+  sentAt DateTime?
+  nextAttemptAt DateTime @default(now())
+  createdAt DateTime @default(now())
+  @@index([sentAt, nextAttemptAt])
+}
+
+model RateLimit {
+  key String @id
+  count Int @default(1)
+  resetAt DateTime
+  @@index([resetAt])
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+  REFUND_PENDING
+  REFUNDED
+  FAILED
 }
 
 model ChatAnalytic {

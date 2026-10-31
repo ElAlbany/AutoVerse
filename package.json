@@ -1,12 +1,15 @@
 {
-  "name": "carhub",
+  "name": "autoverse",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "tsx --test tests/rental-policy.test.ts",
+    "test:inventory": "node --conditions=react-server --env-file=.env --import tsx --test tests/inventory.integration.test.ts tests/payments.integration.test.ts",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.6.4",
@@ -17,19 +20,23 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
     "autoprefixer": "10.4.14",
+    "lucide-react": "^1.66.0",
     "next": "^16.2.12",
-    "postcss": "8.4.23",
+    "postcss": "^8.5.32",
     "prisma": "^6.19.3",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "resend": "^6.18.1",
+    "stripe": "^23.1.0",
     "tailwindcss": "3.3.2"
   },
   "devDependencies": {
     "tsx": "^4.23.1",
     "typescript": "^6.0.3"
   },
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
+  "overrides": {
+    "@prisma/config": {
+      "deepmerge-ts": "^8.0.0"
+    }
   }
 }
