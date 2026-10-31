@@ -71,7 +71,7 @@ model Order {
   userId     String
   carId      String
   startDate  DateTime
-  branchId   String? 
+  branchId   String?
   branch     Branch? @relation(fields: [branchId], references: [id], onDelete: Restrict)
   endDate    DateTime
   totalPrice Decimal     @db.Decimal(10, 2)

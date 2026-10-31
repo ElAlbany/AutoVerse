@@ -11,6 +11,7 @@ export type CompareCar = {
   luggage?: number | null;
   transmission: string;
   fuel: string;
+  usageTags?: string[];
 };
 export const COMPARE_KEY = "autoverse-compare";
 export default function CompareButton({ car }: { car: CompareCar }) {
@@ -22,9 +23,9 @@ export default function CompareButton({ car }: { car: CompareCar }) {
         setSelected(
           (
             JSON.parse(
-              localStorage.getItem(COMPARE_KEY) || "[]"
+              localStorage.getItem(COMPARE_KEY) || "[]",
             ) as CompareCar[]
-          ).some((c) => c.id === car.id)
+          ).some((c) => c.id === car.id),
         );
       } catch {}
     };
@@ -39,7 +40,7 @@ export default function CompareButton({ car }: { car: CompareCar }) {
         onClick={() => {
           try {
             const current: CompareCar[] = JSON.parse(
-              localStorage.getItem(COMPARE_KEY) || "[]"
+              localStorage.getItem(COMPARE_KEY) || "[]",
             );
             if (!selected && current.length >= 3) {
               setMessage("Compare up to three cars. Remove one first.");
@@ -50,8 +51,8 @@ export default function CompareButton({ car }: { car: CompareCar }) {
               JSON.stringify(
                 selected
                   ? current.filter((c) => c.id !== car.id)
-                  : [...current, car]
-              )
+                  : [...current, car],
+              ),
             );
             window.dispatchEvent(new Event("autoverse-compare"));
             setMessage("");
@@ -63,7 +64,7 @@ export default function CompareButton({ car }: { car: CompareCar }) {
         <Columns2 size={14} />
         {selected ? "Added to comparison" : "Compare"}
       </button>
-      {selected && <a href="/compare">View comparison →</a>}
+      {selected && <a href="/compare">View comparison â†’</a>}
       {message && <small role="status">{message}</small>}
     </div>
   );

@@ -1,4 +1,5 @@
 "use server";
+import { validateVehicleUses } from "@/lib/vehicle-use";
 import { randomUUID } from "node:crypto";
 import { OrderStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
@@ -150,12 +151,12 @@ function carData(form: FormData) {
   const seats = num("seats"),
     luggage = text("luggage") ? num("luggage") : null;
   if (!Number.isInteger(seats) || seats < 1 || seats > 20)
-    throw new Error("Seats must be 1â€“20.");
+    throw new Error("Seats must be 1Ã¢â‚¬â€œ20.");
   if (
     luggage !== null &&
     (!Number.isInteger(luggage) || luggage < 0 || luggage > 20)
   )
-    throw new Error("Luggage capacity must be 0â€“20.");
+    throw new Error("Luggage capacity must be 0Ã¢â‚¬â€œ20.");
   const images = text("images", 4000)
     .split(/\r?\n/)
     .map((v) => v.trim())
@@ -181,7 +182,31 @@ function carData(form: FormData) {
   const transmission = text("transmission");
   if (!["a", "m"].includes(transmission))
     throw new Error("Choose a valid transmission.");
+  const groundClearanceMm = text("groundClearanceMm")
+    ? num("groundClearanceMm")
+    : null;
+  if (
+    groundClearanceMm !== null &&
+    (!Number.isInteger(groundClearanceMm) ||
+      groundClearanceMm < 50 ||
+      groundClearanceMm > 600)
+  )
+    throw new Error(
+      "Ground clearance must be 50–600 mm, or blank if unverified.",
+    );
+  const capabilities = {
+    groundClearanceMm,
+    lowRange4x4: form.get("lowRange4x4") === "on",
+    suitableTyres: form.get("suitableTyres") === "on",
+    roughRoadApproved: form.get("roughRoadApproved") === "on",
+  };
+  const usageTags = validateVehicleUses(
+    form.getAll("usageTags").map(String),
+    capabilities,
+  );
   return {
+    ...capabilities,
+    usageTags,
     make,
     model,
     year,

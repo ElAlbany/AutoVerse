@@ -1,5 +1,6 @@
 "use client";
 
+import { VEHICLE_USES } from "@/lib/vehicle-use";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -16,6 +17,11 @@ type CarFormProps = {
   action: (formData: FormData) => Promise<void>;
   initialData?: {
     id?: string;
+    usageTags?: string[];
+    groundClearanceMm?: number | null;
+    lowRange4x4?: boolean;
+    suitableTyres?: boolean;
+    roughRoadApproved?: boolean;
     seats?: number | null;
     luggage?: number | null;
     location?: string;
@@ -397,7 +403,7 @@ export default function CarForm({
               <option value="">Select a branch</option>
               {branches.map((b) => (
                 <option value={b.id} key={b.id}>
-                  {b.name} · {b.city}
+                  {b.name} Â· {b.city}
                 </option>
               ))}
             </select>
@@ -419,7 +425,7 @@ export default function CarForm({
           />
         </label>
         <label className="av-field">
-          Approved image URLs Â· one HTTPS URL per line
+          Approved image URLs Ã‚Â· one HTTPS URL per line
           <textarea
             name="images"
             rows={4}
@@ -438,6 +444,79 @@ export default function CarForm({
         </p>
       </fieldset>
 
+      <fieldset className="av-panel space-y-5">
+        <legend className="px-2">
+          Driving suitability · verify this exact vehicle
+        </legend>
+        <p className="av-muted">
+          These tags describe recommended journeys, not permission to drive on
+          every road. City driving does not mean city-only. Confirm terrain,
+          weather, rental permission and equipment before recommending a route.
+        </p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {VEHICLE_USES.map((tag) => (
+            <label key={tag.id} className="flex items-start gap-3">
+              <input
+                type="checkbox"
+                name="usageTags"
+                value={tag.id}
+                defaultChecked={initialData?.usageTags?.includes(tag.id)}
+                className="mt-1"
+              />
+              <span>
+                <strong>{tag.label}</strong>
+                <small className="av-muted block">{tag.description}</small>
+              </span>
+            </label>
+          ))}
+        </div>
+        <label className="av-field">
+          Verified ground clearance (mm)
+          <input
+            name="groundClearanceMm"
+            type="number"
+            min="50"
+            max="600"
+            defaultValue={initialData?.groundClearanceMm ?? ""}
+          />
+        </label>
+        <div className="space-y-3">
+          {[
+            {
+              name: "lowRange4x4",
+              label: "Verified 4WD with low-range gearing",
+            },
+            {
+              name: "suitableTyres",
+              label: "Tyres verified for the intended conditions",
+            },
+            {
+              name: "roughRoadApproved",
+              label:
+                "Operator approves rough-road use under the rental agreement",
+            },
+          ].map((item) => (
+            <label key={item.name} className="flex gap-3">
+              <input
+                name={item.name}
+                type="checkbox"
+                defaultChecked={Boolean(
+                  initialData?.[
+                    item.name as
+                      "lowRange4x4" | "suitableTyres" | "roughRoadApproved"
+                  ],
+                )}
+              />
+              {item.label}
+            </label>
+          ))}
+        </div>
+        <p className="av-muted">
+          AutoVerse requires all three checks and at least 205 mm verified
+          clearance for its rough-road tag. This screening rule is not a safety
+          guarantee. AWD and SUV body style alone do not qualify.
+        </p>
+      </fieldset>
       {/* Actions */}
       <div className="flex flex-col-reverse sm:flex-row sm:items-center gap-3 pt-4 border-t border-gray-100 dark:border-dark-border sm:border-t-0 sm:pt-4">
         <button

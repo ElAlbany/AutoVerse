@@ -1,3 +1,4 @@
+import { VEHICLE_USES } from "@/lib/vehicle-use";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -37,7 +38,7 @@ export default async function CarDetailsPage({
   const branches = await publicBranches(id);
   const collection =
     branches
-      .map((b) => `${b.name}${b.city !== b.name ? ` · ${b.city}` : ""}`)
+      .map((b) => `${b.name}${b.city !== b.name ? ` Â· ${b.city}` : ""}`)
       .join(", ") || "No active collection branch";
   const stats = await prisma.review.aggregate({
     where: { carId: id, hidden: false },
@@ -111,12 +112,33 @@ export default async function CarDetailsPage({
                 : `Explore the ${car.year} ${car.make} ${car.model}. Check the specifications and collection terms, then choose your dates to see whether a vehicle is available for your entire trip.`}
             </p>
           </section>
+          {!!car.usageTags.length && (
+            <section className="av-details-section">
+              <h2>Made for your kind of journey.</h2>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {VEHICLE_USES.filter((tag) =>
+                  car.usageTags.includes(tag.id),
+                ).map((tag) => (
+                  <div key={tag.id}>
+                    <h3 className="text-lg">{tag.label}</h3>
+                    <p>{tag.description}</p>
+                  </div>
+                ))}
+              </div>
+              <p className="av-muted mt-5">
+                Recommendations apply to this rental configuration. Road
+                condition, weather, tyres and rental permission must be checked
+                for your route. A driving tag never guarantees safe access to
+                difficult terrain.
+              </p>
+            </section>
+          )}
           {car.features.length > 0 && (
             <section className="av-details-section">
               <h2>The useful details.</h2>
               <ul>
                 {car.features.map((f) => (
-                  <li key={f}>âœ“ {f}</li>
+                  <li key={f}>Ã¢Å“â€œ {f}</li>
                 ))}
               </ul>
             </section>
@@ -141,7 +163,7 @@ export default async function CarDetailsPage({
             id="reviews"
             className="av-details-section av-detail-reviews"
           >
-            <h2>From the driverâ€™s seat.</h2>
+            <h2>From the driverÃ¢â‚¬â„¢s seat.</h2>
             <p>
               {stats._count.id
                 ? `${stats._avg.rating?.toFixed(1)} / 5 from ${stats._count.id} verified rentals`
@@ -150,14 +172,14 @@ export default async function CarDetailsPage({
             {car.reviews.map((r) => (
               <article key={r.id}>
                 <span className="av-rating">
-                  {"â˜…".repeat(r.rating)} Â· Verified rental
+                  {"Ã¢Ëœâ€¦".repeat(r.rating)} Ã‚Â· Verified rental
                 </span>
                 <p>{r.comment || "Rating only"}</p>
                 <small>
-                  {r.user.firstName || "AutoVerse driver"} Â·{" "}
+                  {r.user.firstName || "AutoVerse driver"} Ã‚Â·{" "}
                   {r.createdAt.toLocaleDateString("en-GB")}
                   {r.updatedAt.getTime() - r.createdAt.getTime() > 60000
-                    ? " Â· Edited"
+                    ? " Ã‚Â· Edited"
                     : ""}
                 </small>
                 <div className="mt-3">
@@ -180,7 +202,7 @@ export default async function CarDetailsPage({
             </strong>
             <span className="av-muted"> / day</span>
           </p>
-          <p className="av-muted">Starting daily rate Â· {collection}</p>
+          <p className="av-muted">Starting daily rate Ã‚Â· {collection}</p>
           <hr className="my-6 border-[var(--border-color)]" />
           <p className="av-muted">
             Choose your dates for an exact quote and an availability check. One

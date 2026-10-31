@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { COMPARE_KEY, CompareCar } from "./CompareButton";
+import { useLabel } from "@/lib/vehicle-use";
 import { money } from "@/lib/rental-policy";
 export default function Comparison() {
   const [cars, setCars] = useState<CompareCar[]>([]);
@@ -43,6 +44,7 @@ export default function Comparison() {
                     const next = cars.filter((x) => x.id !== c.id);
                     setCars(next);
                     localStorage.setItem(COMPARE_KEY, JSON.stringify(next));
+                    window.dispatchEvent(new Event("autoverse-compare"));
                   }}
                 >
                   Remove
@@ -59,10 +61,16 @@ export default function Comparison() {
             [
               "Transmission",
               ...cars.map((c) =>
-                c.transmission === "a" ? "Automatic" : "Manual"
+                c.transmission === "a" ? "Automatic" : "Manual",
               ),
             ],
             ["Fuel", ...cars.map((c) => c.fuel)],
+            [
+              "Recommended journeys",
+              ...cars.map(
+                (c) => c.usageTags?.map(useLabel).join(", ") || "Ask the team",
+              ),
+            ],
           ].map((row) => (
             <tr key={row[0]}>
               <th scope="row">{row[0]}</th>

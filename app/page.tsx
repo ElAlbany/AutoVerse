@@ -1,3 +1,4 @@
+import { VEHICLE_USES } from "@/lib/vehicle-use";
 import Link from "next/link";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
@@ -46,6 +47,8 @@ export default async function Home({
       { model: { contains: search, mode: "insensitive" } },
       { description: { contains: search, mode: "insensitive" } },
     ];
+  if (VEHICLE_USES.some((tag) => tag.id === value("use")))
+    where.usageTags = { has: value("use") };
   if (category) where.class = { contains: category, mode: "insensitive" };
   if (value("fuel"))
     where.fuel_type = { equals: value("fuel"), mode: "insensitive" };
@@ -209,7 +212,7 @@ export default async function Home({
             id="car-search"
             name="search"
             defaultValue={search}
-            placeholder="Make, model, or a little inspirationâ€¦"
+            placeholder="Make, model, or a little inspirationÃ¢â‚¬Â¦"
           />
           <label>
             <span className="sr-only">Category</span>
@@ -277,6 +280,17 @@ export default async function Home({
                 />
               </label>
               <label>
+                Recommended journey
+                <select name="use" defaultValue={value("use")}>
+                  <option value="">Any journey</option>
+                  {VEHICLE_USES.map((tag) => (
+                    <option value={tag.id} key={tag.id}>
+                      {tag.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
                 Fuel
                 <select name="fuel" defaultValue={value("fuel")}>
                   <option value="">Any fuel</option>
@@ -309,7 +323,7 @@ export default async function Home({
                     ...car,
                     location:
                       [...new Set(car.units.map((u) => u.branch.name))].join(
-                        " · ",
+                        " Â· ",
                       ) || "No active collection branch",
                     pricePerDay: Number(car.pricePerDay),
                     rating: rating?._avg.rating,
@@ -384,7 +398,7 @@ export default async function Home({
                 icon: KeyRound,
                 n: "02",
                 title: "Choose your companion",
-                text: "Compare the details, read the terms, and sign in when youâ€™re ready to book.",
+                text: "Compare the details, read the terms, and sign in when youÃ¢â‚¬â„¢re ready to book.",
               },
               {
                 icon: Route,
@@ -406,14 +420,14 @@ export default async function Home({
         </div>
       </section>
       <section className="av-shell av-reviews-section">
-        <p className="av-eyebrow">From the driverâ€™s seat</p>
+        <p className="av-eyebrow">From the driverÃ¢â‚¬â„¢s seat</p>
         <h2>Good journeys leave a story.</h2>
         {latestReviews.length ? (
           <div className="av-review-grid">
             {latestReviews.map((r) => (
               <blockquote key={r.id}>
                 <span className="av-rating">
-                  {"â˜…".repeat(r.rating)} Â· Verified rental
+                  {"Ã¢Ëœâ€¦".repeat(r.rating)} Ã‚Â· Verified rental
                 </span>
                 <p>{r.comment || "A rated AutoVerse rental."}</p>
                 <footer>

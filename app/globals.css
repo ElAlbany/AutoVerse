@@ -4,7 +4,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ─── CSS Variables ─── */
+/* â”€â”€â”€ CSS Variables â”€â”€â”€ */
 :root {
   --bg-primary: #ffffff;
   --bg-secondary: #f8fafc;
@@ -43,7 +43,7 @@
   );
 }
 
-/* ─── Base ─── */
+/* â”€â”€â”€ Base â”€â”€â”€ */
 * {
   margin: 0;
   padding: 0;
@@ -63,7 +63,7 @@ body {
     color 0.5s ease;
 }
 
-/* ─── Custom Scrollbar ─── */
+/* â”€â”€â”€ Custom Scrollbar â”€â”€â”€ */
 ::-webkit-scrollbar {
   width: 8px;
 }
@@ -78,7 +78,7 @@ body {
   background: #64748b;
 }
 
-/* ─── General Utilities ─── */
+/* â”€â”€â”€ General Utilities â”€â”€â”€ */
 .max-width {
   @apply max-w-[1440px] mx-auto;
 }
@@ -103,7 +103,7 @@ body {
   @apply flex flex-row relative justify-center items-center py-3 px-6 outline-none;
 }
 
-/* ─── Hero Styles ─── */
+/* â”€â”€â”€ Hero Styles â”€â”€â”€ */
 .hero {
   @apply flex xl:flex-row flex-col gap-5 relative z-0 max-w-[1440px] mx-auto;
 }
@@ -128,7 +128,7 @@ body {
 .hero__image-overlay {
   @apply absolute xl:-top-24 xl:-right-1/2 -right-1/4 bg-repeat-round -z-10 w-full xl:h-screen h-[590px] overflow-hidden;
 }
-/* ─── VERO Chat Animations ─── */
+/* â”€â”€â”€ VERO Chat Animations â”€â”€â”€ */
 @keyframes vero-bounce {
   0%,
   80%,
@@ -176,7 +176,7 @@ body {
   }
 }
 
-/* ─── Aurora Background ─── */
+/* â”€â”€â”€ Aurora Background â”€â”€â”€ */
 .aurora-bg {
   position: absolute;
   inset: 0;
@@ -210,7 +210,7 @@ body {
   background-size: 400% 400%;
 }
 
-/* ─── Floating Particles ─── */
+/* â”€â”€â”€ Floating Particles â”€â”€â”€ */
 .particles-container {
   position: absolute;
   inset: 0;
@@ -422,7 +422,7 @@ body {
   background: linear-gradient(135deg, #8b5cf6, #ec4899);
 }
 
-/* ─── Home Styles ─── */
+/* â”€â”€â”€ Home Styles â”€â”€â”€ */
 .home__text-container {
   @apply flex flex-col items-start justify-start gap-y-2.5;
   color: var(--text-primary);
@@ -444,7 +444,7 @@ body {
   @apply mt-16 flex justify-center items-center flex-col gap-2;
 }
 
-/* ─── Car Card Styles ─── */
+/* â”€â”€â”€ Car Card Styles â”€â”€â”€ */
 .car-card {
   @apply flex flex-col p-6 justify-center items-start rounded-3xl transition-all duration-500 ease-out;
   background-color: var(--bg-card);
@@ -507,7 +507,7 @@ body {
   @apply hidden group-hover:flex absolute bottom-0 w-full z-10;
 }
 
-/* ─── Car Details Styles ─── */
+/* â”€â”€â”€ Car Details Styles â”€â”€â”€ */
 .car-details__dialog-panel {
   @apply relative w-full max-w-lg max-h-[90vh] overflow-y-auto transform rounded-2xl p-6 text-left shadow-xl transition-all flex flex-col gap-5;
   background-color: var(--bg-card);
@@ -522,7 +522,7 @@ body {
   @apply relative w-full h-40 bg-cover bg-center rounded-lg;
 }
 
-/* ─── Custom Filter Styles ─── */
+/* â”€â”€â”€ Custom Filter Styles â”€â”€â”€ */
 .custom-filter__btn {
   @apply relative w-full min-w-[127px] flex justify-between items-center cursor-default rounded-lg py-2 px-3 text-left shadow-md sm:text-sm border transition-all duration-300;
   background-color: var(--bg-card);
@@ -536,7 +536,7 @@ body {
   border: 1px solid var(--border-color);
 }
 
-/* ─── Footer Styles ─── */
+/* â”€â”€â”€ Footer Styles â”€â”€â”€ */
 .footer {
   @apply flex flex-col mt-5 border-t;
   border-color: var(--border-color);
@@ -568,7 +568,7 @@ body {
   @apply flex-1 flex sm:justify-end justify-center max-sm:mt-4 gap-10;
 }
 
-/* ─── Searchbar Styles ─── */
+/* â”€â”€â”€ Searchbar Styles â”€â”€â”€ */
 .searchbar {
   @apply flex items-center justify-start max-sm:flex-col w-full relative max-sm:gap-4 max-w-3xl;
 }
@@ -593,7 +593,7 @@ body {
   box-shadow: 0 0 0 3px rgba(43, 89, 255, 0.1);
 }
 
-/* ─── Search Manufacturer Styles ─── */
+/* â”€â”€â”€ Search Manufacturer Styles â”€â”€â”€ */
 .search-manufacturer {
   @apply flex-1 max-sm:w-full flex justify-start items-center;
 }
@@ -624,7 +624,7 @@ body {
   background-color: rgba(43, 89, 255, 0.1);
 }
 
-/* ─── Theme Toggle Button ─── */
+/* â”€â”€â”€ Theme Toggle Button â”€â”€â”€ */
 .theme-toggle {
   @apply relative w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ease-out cursor-pointer;
   background-color: var(--bg-secondary);
@@ -637,7 +637,7 @@ body {
   border-color: rgba(43, 89, 255, 0.3);
 }
 
-/* ─── Animations ─── */
+/* â”€â”€â”€ Animations â”€â”€â”€ */
 @keyframes aurora {
   0% {
     background-position: 0% 50%;
@@ -680,7 +680,7 @@ body {
   }
 }
 
-/* ─── Logo Glow ─── */
+/* â”€â”€â”€ Logo Glow â”€â”€â”€ */
 .logo-glow {
   filter: drop-shadow(0 0 8px rgba(43, 89, 255, 0.4));
   transition: filter 0.3s ease;
@@ -698,7 +698,7 @@ body {
   filter: drop-shadow(0 0 20px rgba(6, 182, 212, 0.7));
 }
 
-/* ─── Glass Effect ─── */
+/* â”€â”€â”€ Glass Effect â”€â”€â”€ */
 .glass {
   background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(20px);
@@ -709,7 +709,7 @@ body {
   background: rgba(17, 24, 39, 0.7);
 }
 
-/* ─── Section Divider ─── */
+/* â”€â”€â”€ Section Divider â”€â”€â”€ */
 .section-divider {
   height: 1px;
   background: linear-gradient(
@@ -2245,3 +2245,6 @@ a.bg-gradient-to-r {
   font-size: 36px;
   margin-block: 20px;
 }
+
+.av-use-tags { display:flex; flex-wrap:wrap; gap:6px; margin:16px 0 0; padding:0; list-style:none; }
+.av-use-tags li { font-size:11px; padding:5px 8px; border:1px solid var(--border-color); border-radius:4px; color:var(--text-secondary); }

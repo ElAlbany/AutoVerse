@@ -1,3 +1,4 @@
+import { useLabel } from "@/lib/vehicle-use";
 import Link from "next/link";
 import { ArrowUpRight, Users, Briefcase, Gauge, Star } from "lucide-react";
 import { CarProps } from "@types";
@@ -10,6 +11,8 @@ import CompareButton from "./CompareButton";
 export type ListingCard = CarProps & {
   pricePerDay?: number;
   images?: string[];
+  usageTags?: string[];
+  imageSource?: string;
   seats?: number | null;
   luggage?: number | null;
   location?: string;
@@ -40,7 +43,7 @@ export default function CarCard({ car }: { car: ListingCard }) {
         <span className="av-photo-label">
           {hasCarPhoto(car)
             ? "Vehicle photography"
-            : "Illustration · photos coming soon"}
+            : "Illustration Â· photos coming soon"}
         </span>
       </div>
       <div className="av-car-body">
@@ -75,6 +78,13 @@ export default function CarCard({ car }: { car: ListingCard }) {
             {car.transmission === "a" ? "Automatic" : "Manual"}
           </span>
         </div>
+        {!!car.usageTags?.length && (
+          <ul className="av-use-tags" aria-label="Recommended journeys">
+            {car.usageTags.slice(0, 3).map((tag) => (
+              <li key={tag}>{useLabel(tag)}</li>
+            ))}
+          </ul>
+        )}
         <div className="av-car-availability">
           <span
             className={
@@ -119,6 +129,7 @@ export default function CarCard({ car }: { car: ListingCard }) {
               luggage: car.luggage,
               transmission: car.transmission,
               fuel: car.fuel_type,
+              usageTags: car.usageTags,
             }}
           />
         )}
