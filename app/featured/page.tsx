@@ -11,7 +11,7 @@ export default async function FeaturedPage() {
   const [cars, session] = await Promise.all([
     prisma.car.findMany({
       where: { featured: true, available: true, archived: false },
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ createdAt: "desc" }, { id: "asc" }],
       take: 48,
     }),
     auth(),

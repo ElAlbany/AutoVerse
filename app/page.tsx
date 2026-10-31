@@ -20,7 +20,12 @@ export default async function Home({
   const search = value("search").slice(0, 100),
     category = value("class"),
     sort = value("sort");
-  const limit = Math.max(12, Math.min(96, Number(value("limit")) || 12));
+  const page = Math.max(
+    1,
+    Math.min(10000, Math.floor(Number(value("page")) || 1)),
+  );
+  const pageSize = 12;
+  const offset = (page - 1) * pageSize;
   const start = new Date(value("start")),
     end = new Date(value("end"));
   let period = false;
@@ -74,11 +79,12 @@ export default async function Home({
       where,
       orderBy:
         sort === "price-low"
-          ? { pricePerDay: "asc" }
+          ? [{ pricePerDay: "asc" }, { id: "asc" }]
           : sort === "price-high"
-            ? { pricePerDay: "desc" }
-            : [{ featured: "desc" }, { createdAt: "desc" }],
-      take: limit,
+            ? [{ pricePerDay: "desc" }, { id: "asc" }]
+            : [{ featured: "desc" }, { createdAt: "desc" }, { id: "asc" }],
+      take: pageSize,
+      skip: offset,
       include: {
         _count: {
           select: {
@@ -122,7 +128,11 @@ export default async function Home({
     ? `?${new URLSearchParams({ start: start.toISOString(), end: end.toISOString() })}`
     : "";
   const more = new URLSearchParams(query);
-  more.set("limit", String(limit + 12));
+  more.delete("limit");
+  more.set("page", String(page + 1));
+  const previous = new URLSearchParams(query);
+  previous.delete("limit");
+  previous.set("page", String(page - 1));
   return (
     <main>
       <Hero
@@ -300,14 +310,27 @@ export default async function Home({
             </Link>
           </div>
         )}
-        {total > limit && (
+        {(total > offset + pageSize || page > 1) && (
           <div className="av-load-more">
-            <Link
-              className="av-button av-button-outline"
-              href={`/?${more}#discover`}
-            >
-              Explore more cars <ArrowUpRight size={18} />
-            </Link>
+            {page > 1 && (
+              <Link
+                className="av-button av-button-outline"
+                href={`/?${previous}#discover`}
+              >
+                Previous cars
+              </Link>
+            )}
+            <span className="av-muted px-5">
+              Page {page} of {Math.max(1, Math.ceil(total / pageSize))}
+            </span>
+            {total > offset + pageSize && (
+              <Link
+                className="av-button av-button-outline"
+                href={`/?${more}#discover`}
+              >
+                Next cars <ArrowUpRight size={18} />
+              </Link>
+            )}
           </div>
         )}
       </section>
