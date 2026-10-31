@@ -15,8 +15,9 @@ export default function Guide() {
             Browsing and availability checks are public. Booking, saving cars,
             and posting reviews require an account. Online payments in this
             edition use Stripe sandbox credentials only and do not move real
-            money. A booking request is not a confirmed reservation until staff
-            approve it. Unconfirmed requests expire after 24 hours.
+            money. With pay-at-collection, an available vehicle is allocated and
+            confirmed immediately. Stripe bookings are confirmed after payment
+            verification; unpaid checkout holds expire automatically.
           </p>
         </section>
         <section>

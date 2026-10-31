@@ -429,7 +429,7 @@ export default async function Home({
             ],
             [
               "Will I be charged real money?",
-              "This edition uses Stripe sandbox payments only. Where payments are not configured, send a booking request for the team to review.",
+              "This edition uses Stripe sandbox payments only. Where online payments are not configured, an available car is confirmed immediately with payment due at collection.",
             ],
           ].map(([q, a]) => (
             <details key={q}>

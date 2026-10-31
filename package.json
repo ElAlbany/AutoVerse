@@ -7,7 +7,7 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "tsx --test tests/rental-policy.test.ts",
+    "test": "tsx --test tests/rental-policy.test.ts tests/rental-dates.test.ts",
     "test:inventory": "node --conditions=react-server --env-file=.env --import tsx --test tests/inventory.integration.test.ts tests/payments.integration.test.ts",
     "typecheck": "tsc --noEmit"
   },

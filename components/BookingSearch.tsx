@@ -1,6 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import RentalDateFields from "./RentalDateFields";
 import { ArrowUpRight, MapPin } from "lucide-react";
 
 export default function BookingSearch({
@@ -54,28 +55,13 @@ export default function BookingSearch({
           maxLength={100}
         />
       </label>
-      <label>
-        <span>Pickup · your local time</span>
-        <input
-          type="datetime-local"
-          name="start"
-          value={from}
-          onChange={(e) => setFrom(e.target.value)}
-          aria-label="Pickup date and time"
-          required
-        />
-      </label>
-      <label>
-        <span>Return · your local time</span>
-        <input
-          type="datetime-local"
-          name="end"
-          value={until}
-          onChange={(e) => setUntil(e.target.value)}
-          aria-label="Return date and time"
-          required
-        />
-      </label>
+      <RentalDateFields
+        start={from}
+        end={until}
+        onStart={setFrom}
+        onEnd={setUntil}
+        compact
+      />
       <button className="av-button" type="submit">
         Find a car <ArrowUpRight size={18} />
       </button>

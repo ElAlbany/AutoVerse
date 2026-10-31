@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createOrder } from "@/app/actions/order";
 import { signInUrl } from "@/lib/sign-in";
 import { money, canCancel } from "@/lib/rental-policy";
+import RentalDateFields from "./RentalDateFields";
 import { ArrowUpRight, ShieldCheck } from "lucide-react";
 
 type Quote = { days: number; total: number };
@@ -63,7 +64,7 @@ export default function RentForm({
       try {
         const result = await fetch(
           `/api/availability?${new URLSearchParams({ carId: car.id, start: a.toISOString(), end: b.toISOString() })}`,
-          { signal: controller.signal }
+          { signal: controller.signal },
         );
         const data = await result.json();
         if (!result.ok) throw new Error(data.error);
@@ -74,7 +75,7 @@ export default function RentForm({
           setError(
             e instanceof Error
               ? e.message
-              : "Availability could not be checked."
+              : "Availability could not be checked.",
           );
       } finally {
         if (!controller.signal.aborted) setChecking(false);
@@ -116,31 +117,19 @@ export default function RentForm({
           setError(
             e instanceof Error
               ? e.message
-              : "Booking could not be completed. Please try again."
+              : "Booking could not be completed. Please try again.",
           );
           setLoading(false);
         }
       }}
     >
       <div className="av-form-row">
-        <label className="av-field">
-          Pickup · your local time
-          <input
-            type="datetime-local"
-            value={start}
-            onChange={(e) => setStart(e.target.value)}
-            required
-          />
-        </label>
-        <label className="av-field">
-          Return · your local time
-          <input
-            type="datetime-local"
-            value={end}
-            onChange={(e) => setEnd(e.target.value)}
-            required
-          />
-        </label>
+        <RentalDateFields
+          start={start}
+          end={end}
+          onStart={setStart}
+          onEnd={setEnd}
+        />
       </div>
       <div aria-live="polite">
         {checking ? (
@@ -177,12 +166,12 @@ export default function RentForm({
         <ShieldCheck size={17} className="inline mr-2" />
         {paymentEnabled
           ? "Stripe sandbox · no real money is charged."
-          : "Booking request · no online payment is collected."}
+          : "Instant confirmation · pay at collection."}
       </div>
       <p className="av-muted">
         {paymentEnabled
           ? "Payment confirms your rental if the vehicle hold is still valid."
-          : "The team has 24 hours to confirm your request. Until then, your rental is not confirmed."}{" "}
+          : "An available vehicle is reserved and your rental is confirmed immediately. No staff approval is needed."}{" "}
         {late
           ? "This is a last-minute rental. Confirmed bookings cannot be cancelled within 48 hours of pickup."
           : "Confirmed bookings can be cancelled more than 48 hours before pickup."}
@@ -231,7 +220,7 @@ export default function RentForm({
             ? "Sign in to continue"
             : paymentEnabled
               ? "Continue to demo payment"
-              : "Request this rental"}
+              : "Confirm this rental"}
         <ArrowUpRight size={17} />
       </button>
       <p className="av-muted text-center">

@@ -75,12 +75,11 @@ export async function book(input: BookingInput) {
           policy: {
             ...RENTAL_POLICY,
             location: car.location,
-            payment: input.payment ? "stripe-sandbox" : "request",
+            payment: input.payment ? "stripe-sandbox" : "pay-at-collection",
           },
           requestKey: input.requestKey,
-          expiresAt: new Date(
-            Date.now() + (input.payment ? 31 : 24 * 60) * 60000,
-          ),
+          status: input.payment ? "PENDING" : "CONFIRMED",
+          expiresAt: input.payment ? new Date(Date.now() + 31 * 60000) : null,
           reservation: {
             create: {
               unitId: unit.id,
@@ -93,7 +92,7 @@ export async function book(input: BookingInput) {
               actorId: user.id,
               message: input.payment
                 ? "Vehicle held while sandbox checkout is completed."
-                : "Booking requested. The rental team has 24 hours to respond.",
+                : "Vehicle allocated. Rental automatically confirmed; payment is due at collection.",
             },
           },
         },

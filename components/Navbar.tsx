@@ -53,7 +53,7 @@ export default function Navbar() {
               if (!isSignedIn) {
                 e.preventDefault();
                 window.location.assign(
-                  signInUrl(window.location.pathname + window.location.search)
+                  signInUrl(window.location.pathname + window.location.search),
                 );
               }
             }}
@@ -75,6 +75,7 @@ export default function Navbar() {
             <Link href="/#discover" onClick={() => setOpen(false)}>
               Our collection
             </Link>
+            <Link href="/compare">Compare cars</Link>
             <Link href="/how-it-works">How it works</Link>
             <Link href="/rental-policy">Rental guide</Link>
             <Link href="/profile/favorites">Saved cars</Link>

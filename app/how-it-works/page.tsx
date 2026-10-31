@@ -27,8 +27,8 @@ export default function Guide() {
             Sign in only when you are ready to book. Your selected vehicle and
             dates stay in the return link. Review the quote and cancellation
             terms. With demo payments configured, a valid Stripe sandbox payment
-            confirms your rental. Otherwise, the team reviews your booking
-            request within 24 hours.
+            confirms your rental. Otherwise, your available vehicle is confirmed
+            immediately and payment is due at collection.
           </p>
         </section>
         <section>
