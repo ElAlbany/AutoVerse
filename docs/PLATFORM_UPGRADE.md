@@ -8,7 +8,7 @@ Implemented 31 October 2026 in the existing Next.js application. No hosted deplo
 - Public catalogue, vehicle pages, comparisons, quotes and availability. Booking, saving, reviewing, reporting and VERO require authentication. Booking dates survive the sign-in return URL. Protected server mutations independently check ownership or administrator role.
 - Physical `VehicleUnit` inventory behind each public `Car` listing. Maintenance and bookings share `VehicleReservation`. A PostgreSQL exclusion constraint rejects overlapping active reservations for the same unit. Per-listing row locks serialize allocation, cancellation, maintenance, reassignment, and staff status changes across server instances.
 - Exact server-side daily pricing, future/range validation, a 90-day online limit, half-open schedule intervals, and a 60-minute preparation buffer. Prices, vehicle names, currency and policy are stored with each booking. Retrying the same request does not create another booking.
-- Two explicit paths: a 24-hour staff-reviewed booking request when Stripe is absent, or sandbox Checkout with expiring inventory holds. A verified payment confirms the rental only if the hold remains valid. Late payments enter the refund queue.
+- Two explicit paths: immediate confirmation with payment due at collection when Stripe is absent, or sandbox Checkout with expiring inventory holds. A verified payment confirms the rental only if the hold remains valid. Late payments enter the refund queue.
 - Signed Stripe webhooks, event deduplication, stable Checkout/refund idempotency keys, cancellation/refund states and a resumable checkout link. Live Stripe keys and events are rejected.
 - Staff fleet timeline and schedule, physical unit management, maintenance blocks, legacy conflict reconciliation, archive instead of destructive car deletion, and staff-recorded collection/return. Overdue active vehicles are excluded from new allocation until staff record a return.
 - Completed-rental reviews, 1–5 rating validation, one review per booking, a 14-day editing window, averages/counts, reports and moderation reasons. Unreviewed cars never receive fabricated ratings.
@@ -33,7 +33,7 @@ In **Admin → Fleet calendar**, add only audited physical inventory and assign 
 7. Configure a scheduler to call `GET /api/maintenance` every five minutes with `Authorization: Bearer <CRON_SECRET>`. Use a long, randomly generated secret. This releases expired holds, retries queued notifications and refunds, and clears stale rate-limit rows. Local allocation also releases expired holds before checking stock.
 8. Configure Resend and an approved sending domain through `EMAIL_FROM`. Outbox jobs remain queued if email is unavailable. Staff-recorded completion emails invite the customer to leave a verified review.
 
-Stripe credentials and an external scheduler were not present during implementation. The manual request path is available without them. No real payment was attempted and no Stripe account was created on the user's behalf.
+Stripe credentials and an external scheduler were not present during implementation. The instant-confirmation/pay-at-collection path is available without them. No real payment was attempted and no Stripe account was created on the user's behalf.
 
 ## Company deployment
 
@@ -45,7 +45,7 @@ This is a single-operator application with many customer accounts and shared fle
 - Configure trusted proxy/IP headers at the hosting edge for rate limiting. Do not trust arbitrary public forwarding headers in a self-hosted reverse proxy.
 - Add monitoring for failed webhooks, long-lived `REFUND_PENDING`, failed email attempts, unresolved legacy assignments and late vehicle returns. Load-test the expected booking traffic against a staging environment before committing to capacity targets.
 - Replace operational placeholders with company-specific pickup locations, licensed fleet photography, verified capacities, fuel/mileage/deposit terms, protection arrangements, support details, tax treatment and legal/privacy policies.
-- Image URLs are entered by staff. HTTPS images are optimized by Next.js with local IP access disabled and limited redirects. Configure an explicit image-host allowlist for the company's storage provider before deployment.
+- Real image URLs and uploaded photos are controlled by staff. HTTPS photos are optimized by Next.js with local IP access disabled and limited redirects; provider illustrations are loaded directly from IMAGIN.studio. Configure an explicit image-host allowlist for the company's storage provider before deployment.
 - Customer and staff access must continue to be checked on every server action and API route. Public browsing must remain possible without an account.
 - Going live with real payments is a separate release: remove the explicit sandbox-only guard only after real payment/refund policies, identity checks, taxes and operational readiness are reviewed and tested.
 
@@ -77,7 +77,7 @@ The original growth ideas remain a roadmap, not claims about functionality alrea
 
 ## Image provenance
 
-The homepage editorial photograph is by Dave Pullis, downloaded from https://unsplash.com/photos/black-porsche-911-parked-in-a-parking-lot-_BdlUN_3YiY under the Unsplash license (https://unsplash.com/license). The source page's description identifies the vehicle as a Mercedes GT. It is an editorial scene, not evidence that this exact vehicle is in the rental fleet. Listing placeholders are original SVG illustrations, explicitly labeled. Watermarked Imagin demo images are not displayed as approved fleet photographs.
+The homepage editorial photograph is by Dave Pullis, downloaded from https://unsplash.com/photos/black-porsche-911-parked-in-a-parking-lot-_BdlUN_3YiY under the Unsplash license (https://unsplash.com/license). The source page's description identifies the vehicle as a Mercedes GT. It is an editorial scene, not evidence that this exact vehicle is in the rental fleet. Model listings now use the original IMAGIN.studio API with multiple viewpoints and an explicit illustration label. Operators can switch to their own uploaded vehicle photography. Original SVG placeholders remain a fallback if an image cannot load. A demo API customer is not a commercial licence. See [image configuration and storage](BRANCHES_IMAGES_AND_USAGE.md).
 
 ## Preview artifacts and final checks
 
@@ -88,7 +88,7 @@ The homepage editorial photograph is by Dave Pullis, downloaded from https://uns
 
 The browser verified a guest search, three-day server quote, comparison without login, sign-in at the booking action, and a protected favorites redirect preserving the destination. At a 390 × 844 mobile viewport, both home and booking layouts had content width equal to viewport width. Desktop and mobile themes were inspected visually.
 
-The test suite passed five policy/redirect tests and three database/payment integration tests. HTTP smoke checks rejected anonymous chat and scheduled-job calls (401) and an unsigned Stripe webhook (400). The production build completed with the catalogue, featured collection, details, booking and private pages rendered dynamically, and the guide pages statically generated.
+The original checkpoint passed five policy/redirect tests and three database/payment integration tests. The follow-up tests and UI changes are recorded in [Branches, imagery & driving suitability](BRANCHES_IMAGES_AND_USAGE.md). HTTP smoke checks rejected anonymous chat and scheduled-job calls (401) and an unsigned Stripe webhook (400). The production build completed with the catalogue, featured collection, details, booking and private pages rendered dynamically, and the guide pages statically generated.
 
 Post-test counts remained 49 listings, 49 initial vehicle units and 16 original orders, with two legacy orders flagged for reconciliation. No integration fixtures remained and no email or payment API was invoked by these tests.
 

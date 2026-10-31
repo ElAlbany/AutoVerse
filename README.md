@@ -2,7 +2,7 @@
 
 A Next.js car rental application with public browsing, a considered light/dark design, physical fleet inventory, verified rental reviews, staff operations and optional Stripe sandbox checkout.
 
-This repository is a development demonstration. Company rollout requirements and remaining product work are documented in [Platform upgrade & deployment](docs/PLATFORM_UPGRADE.md).
+This repository is a development demonstration. Branch operations, image storage and driving-tag rules are documented in [Branches, imagery & driving suitability](docs/BRANCHES_IMAGES_AND_USAGE.md). Company rollout requirements and remaining product work are documented in [Platform upgrade & deployment](docs/PLATFORM_UPGRADE.md).
 
 ## Run locally
 
@@ -20,10 +20,12 @@ Open [localhost:3000](http://localhost:3000). A production preview uses `npm run
 - Browse, filter, compare cars and check date-specific availability without an account.
 - Sign in when booking, saving a car, submitting/reporting a review, or using VERO. Selected booking dates survive the return through sign-in.
 - Server-calculated quotes use started 24-hour rental periods. Each listing owns individual physical vehicle units; a booking reserves one unit for the entire trip, plus a preparation buffer.
-- Without Stripe configuration, submit a booking request for staff review. Requests expire after 24 hours.
+- Without Stripe configuration, an available car is allocated and confirmed immediately, with payment due at collection.
 - With Stripe test credentials and webhooks configured, a temporary vehicle hold leads to sandbox Checkout. The server verifies payment before confirming the rental. Real Stripe keys and events are rejected.
 - Manage rental activity, cancellation, refund status, and verified reviews from the account. Reviews are available after staff record the vehicle return.
-- Save favorites to the account; compare up to three cars in the browser.
+- Save favorites to the account; compare up to three cars in the browser, using the persistent Compare cars navigation link.
+- Choose an operator-managed collection branch. Searches and bookings use that branch’s actual stock.
+- Every listing has a required seat count, operator-selected journey tags and either a multi-angle API gallery or uploaded vehicle photos.
 
 ## Staff operations
 
@@ -41,11 +43,12 @@ Stripe events go to `POST /api/stripe/webhook`. Local forwarding requires the St
 
 - `npm run typecheck`
 - `npm test`
+- `npm run test:media`
 - `npm run build`
 - `npm audit`
 - With `RUN_DB_TESTS=1` against an authorized development database: `npm run test:inventory`
 
-The integration suite creates isolated random fixtures, verifies concurrent stock allocation, database overlap rejection, preparation boundaries, fragmented availability, signed webhook handling, payment amount validation and replay safety, then removes only its own fixtures. It does not charge cards or send emails.
+The integration suite creates isolated random fixtures, verifies concurrent stock allocation, database overlap rejection, preparation boundaries, fragmented availability, signed webhook handling, payment amount validation and replay safety, then removes only its own fixtures. It also verifies branch isolation, cancellation, return preparation and closed branches. It does not charge cards or send emails.
 
 The inherited `npm run lint` script invokes `next lint`, which Next.js 16 does not support. It is not a verification check.
 
