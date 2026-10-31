@@ -1,6 +1,6 @@
 "use client";
 
-import { useOptimistic, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { cancelOrder } from "@/app/actions/order";
 import OrderCard from "./OrderCard";
 
@@ -32,19 +32,12 @@ interface OrderListProps {
 export default function OrderList({ orders }: OrderListProps) {
   const [isPending, startTransition] = useTransition();
 
-  const [optimisticOrders, addOptimisticOrder] = useOptimistic<
-    SerializedOrder[],
-    string
-  >(orders, (currentOrders: SerializedOrder[], orderId: string) =>
-    currentOrders.map((order: SerializedOrder) =>
-      order.id === orderId ? { ...order, status: "CANCELLED" } : order,
-    ),
-  );
-
+  const optimisticOrders = orders;
+  const [error, setError] = useState("");
   const handleCancel = (orderId: string) => {
     startTransition(async () => {
-      addOptimisticOrder(orderId);
-      await cancelOrder(orderId);
+      const result = await cancelOrder(orderId);
+      setError(result.success ? "" : result.message);
     });
   };
 
@@ -73,6 +66,11 @@ export default function OrderList({ orders }: OrderListProps) {
 
   return (
     <div className="space-y-4">
+      {error && (
+        <p className="av-alert" role="alert">
+          {error}
+        </p>
+      )}
       {optimisticOrders.map((order: SerializedOrder) => (
         <OrderCard
           key={order.id}

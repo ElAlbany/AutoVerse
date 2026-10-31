@@ -14,15 +14,10 @@ export default function OrderCancelButton({
 }) {
   const [pending, startTransition] = useTransition();
 
-  const canCancel = (() => {
-    if (status === "CANCELLED" || status === "COMPLETED") return false;
-    const now = new Date();
-    const start = new Date(startDate);
-    start.setHours(0, 0, 0, 0);
-    const cutoff = new Date(start);
-    cutoff.setDate(cutoff.getDate() - 2);
-    return now < cutoff;
-  })();
+  const canCancel =
+    status === "PENDING" ||
+    (status === "CONFIRMED" &&
+      new Date(startDate).getTime() - Date.now() > 48 * 3600000);
 
   const handleClick = () => {
     if (!canCancel) return;

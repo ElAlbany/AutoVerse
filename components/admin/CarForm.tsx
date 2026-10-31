@@ -16,6 +16,11 @@ type CarFormProps = {
   action: (formData: FormData) => Promise<void>;
   initialData?: {
     id?: string;
+    seats?: number | null;
+    luggage?: number | null;
+    location?: string;
+    images?: string[];
+    features?: string[];
     make: string;
     model: string;
     year: number;
@@ -59,6 +64,7 @@ export default function CarForm({ action, initialData, mode }: CarFormProps) {
       const formData = new FormData(e.currentTarget);
       await action(formData);
     } catch (err: any) {
+      if (err.message === "NEXT_REDIRECT") return;
       setError(err.message || "Something went wrong");
       setPending(false);
     }
@@ -353,21 +359,66 @@ export default function CarForm({ action, initialData, mode }: CarFormProps) {
         </label>
       </div>
 
-      {mode === "edit" && (
-        <label className="flex items-center gap-3 cursor-pointer">
-          <div className="relative">
+      <fieldset className="av-panel space-y-5">
+        <legend className="px-2">Rental details & approved photography</legend>
+        <div className="av-form-row">
+          <label className="av-field">
+            Actual seat capacity
             <input
-              type="checkbox"
-              name="regenerateImages"
-              className="sr-only peer"
+              type="number"
+              name="seats"
+              min="1"
+              max="20"
+              defaultValue={initialData?.seats ?? ""}
             />
-            <div className="w-11 h-6 bg-gray-200 dark:bg-dark-border peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-blue/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-blue transition-colors duration-500"></div>
-          </div>
-          <span className="text-sm font-medium text-gray-700 dark:text-dark-text">
-            Regenerate images (if make/model/year changed)
-          </span>
+          </label>
+          <label className="av-field">
+            Luggage capacity (bags)
+            <input
+              type="number"
+              name="luggage"
+              min="0"
+              max="20"
+              defaultValue={initialData?.luggage ?? ""}
+            />
+          </label>
+        </div>
+        <label className="av-field">
+          Collection point
+          <input
+            name="location"
+            maxLength={200}
+            defaultValue={initialData?.location || "Main collection point"}
+          />
         </label>
-      )}
+        <label className="av-field">
+          Features (comma separated)
+          <input
+            name="features"
+            maxLength={1500}
+            defaultValue={initialData?.features?.join(", ") || ""}
+            placeholder="Apple CarPlay, Heated seats, Parking sensors"
+          />
+        </label>
+        <label className="av-field">
+          Approved image URLs · one HTTPS URL per line
+          <textarea
+            name="images"
+            rows={4}
+            defaultValue={
+              initialData?.images
+                ?.filter((v) => !v.includes("imagin.studio"))
+                .join("\n") || ""
+            }
+            placeholder="https://your-image-host.example/car-front.jpg"
+          />
+        </label>
+        <p className="av-muted">
+          Use licensed photographs of this vehicle. Without approved photos, the
+          listing displays a labeled illustration. Physical fleet quantities are
+          managed in Fleet calendar.
+        </p>
+      </fieldset>
 
       {/* Actions */}
       <div className="flex flex-col-reverse sm:flex-row sm:items-center gap-3 pt-4 border-t border-gray-100 dark:border-dark-border sm:border-t-0 sm:pt-4">

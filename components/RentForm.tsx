@@ -1,199 +1,241 @@
 "use client";
-
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { useAuth } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
 import { createOrder } from "@/app/actions/order";
+import { signInUrl } from "@/lib/sign-in";
+import { money, canCancel } from "@/lib/rental-policy";
+import { ArrowUpRight, ShieldCheck } from "lucide-react";
 
-export default function RentForm({ car }: { car: any }) {
-  const { isSignedIn } = useAuth();
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+type Quote = { days: number; total: number };
+export default function RentForm({
+  car,
+  paymentEnabled = false,
+  initialStart = "",
+  initialEnd = "",
+}: {
+  car: { id: string; pricePerDay: number; available: boolean };
+  paymentEnabled?: boolean;
+  initialStart?: string;
+  initialEnd?: string;
+}) {
+  const { isSignedIn, isLoaded } = useAuth();
   const router = useRouter();
-
-  const pricePerDay = Number(car.pricePerDay);
-  const days =
-    startDate && endDate
-      ? Math.max(
-          1,
-          Math.ceil(
-            (new Date(endDate).getTime() - new Date(startDate).getTime()) /
-              (1000 * 60 * 60 * 24),
-          ),
-        )
-      : 0;
-  const totalPrice = days * pricePerDay;
-
-  // Last-minute = within 2 days of pick-up → no cancellation
-  const isLastMinute = (() => {
-    if (!startDate) return false;
-    const now = new Date();
-    const start = new Date(startDate);
-    start.setHours(0, 0, 0, 0);
-    const cutoff = new Date(start);
-    cutoff.setDate(cutoff.getDate() - 2);
-    return now >= cutoff;
-  })();
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // Redirect to sign-in if not authenticated
-    if (!isSignedIn) {
-      router.push("/sign-in");
+  const [start, setStart] = useState("");
+  const [end, setEnd] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const [error, setError] = useState("");
+  const [quote, setQuote] = useState<Quote | null>(null);
+  const [count, setCount] = useState<number | null>(null);
+  const [accepted, setAccepted] = useState(false);
+  const [requestKey, setRequestKey] = useState("");
+  useEffect(() => {
+    const local = (v: string) => {
+      const d = new Date(v);
+      return Number.isFinite(d.getTime())
+        ? new Date(d.getTime() - d.getTimezoneOffset() * 60000)
+            .toISOString()
+            .slice(0, 16)
+        : "";
+    };
+    setStart(local(initialStart));
+    setEnd(local(initialEnd));
+  }, [initialStart, initialEnd]);
+  useEffect(() => {
+    setRequestKey(crypto.randomUUID());
+    setAccepted(false);
+  }, [start, end]);
+  useEffect(() => {
+    setQuote(null);
+    setCount(null);
+    setError("");
+    if (!start || !end) return;
+    const controller = new AbortController();
+    const a = new Date(start),
+      b = new Date(end);
+    if (b <= a || a <= new Date()) {
+      setError("Choose a future pickup time and a later return time.");
       return;
     }
-
-    if (!startDate || !endDate) return;
-
-    setLoading(true);
-    setError("");
-    try {
-      await createOrder(
-        car.id,
-        new Date(startDate),
-        new Date(endDate),
-        totalPrice,
-      );
-      router.push("/profile/orders");
-    } catch (err: any) {
-      setError(err.message || "Booking failed. Try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
+    setChecking(true);
+    const timer = setTimeout(async () => {
+      try {
+        const result = await fetch(
+          `/api/availability?${new URLSearchParams({ carId: car.id, start: a.toISOString(), end: b.toISOString() })}`,
+          { signal: controller.signal }
+        );
+        const data = await result.json();
+        if (!result.ok) throw new Error(data.error);
+        setQuote(data.quote);
+        setCount(data.available);
+      } catch (e) {
+        if (!controller.signal.aborted)
+          setError(
+            e instanceof Error
+              ? e.message
+              : "Availability could not be checked."
+          );
+      } finally {
+        if (!controller.signal.aborted) setChecking(false);
+      }
+    }, 300);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [start, end, car.id]);
+  const late = start && !canCancel(new Date(start));
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
-          {error}
-        </div>
-      )}
-
-      <div className="grid md:grid-cols-2 gap-6">
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Pick-up Date
-          </label>
-          <div className="relative">
-            <input
-              type="date"
-              value={startDate}
-              min={new Date().toISOString().split("T")[0]}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue transition-all"
-              required
-            />
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Return Date
-          </label>
-          <div className="relative">
-            <input
-              type="date"
-              value={endDate}
-              min={startDate || new Date().toISOString().split("T")[0]}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue transition-all"
-              required
-            />
-          </div>
-        </div>
+    <form
+      className="av-booking-form"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        if (!start || !end) return;
+        const params = new URLSearchParams({
+          carId: car.id,
+          start: new Date(start).toISOString(),
+          end: new Date(end).toISOString(),
+        });
+        if (!isSignedIn) {
+          router.push(signInUrl(`/rent?${params}`));
+          return;
+        }
+        setLoading(true);
+        setError("");
+        try {
+          const result = await createOrder({
+            carId: car.id,
+            start: new Date(start).toISOString(),
+            end: new Date(end).toISOString(),
+            requestKey,
+            payment: paymentEnabled,
+          });
+          window.location.assign(result.url);
+        } catch (e) {
+          setError(
+            e instanceof Error
+              ? e.message
+              : "Booking could not be completed. Please try again."
+          );
+          setLoading(false);
+        }
+      }}
+    >
+      <div className="av-form-row">
+        <label className="av-field">
+          Pickup · your local time
+          <input
+            type="datetime-local"
+            value={start}
+            onChange={(e) => setStart(e.target.value)}
+            required
+          />
+        </label>
+        <label className="av-field">
+          Return · your local time
+          <input
+            type="datetime-local"
+            value={end}
+            onChange={(e) => setEnd(e.target.value)}
+            required
+          />
+        </label>
       </div>
-
-      {days > 0 && (
-        <div className="bg-gray-50 rounded-2xl p-6 space-y-3 border border-gray-100">
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600">
-              ${pricePerDay} × {days} days
-            </span>
-            <span className="font-medium text-gray-900">${totalPrice}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Insurance & Fees</span>
-            <span className="font-medium text-emerald-600">Included</span>
-          </div>
-          <div className="border-t border-gray-200 pt-3 flex justify-between items-center">
-            <span className="text-gray-900 font-bold">Total</span>
-            <span className="text-3xl font-bold text-primary-blue">
-              ${totalPrice}
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* Cancellation Policy Warning */}
-      {isLastMinute && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex gap-3">
-          <span className="text-red-500 text-xl">⚠️</span>
-          <div>
-            <p className="text-sm font-bold text-red-800">
-              No Cancellation or Refund
-            </p>
-            <p className="text-xs text-red-700 mt-0.5">
-              Your pick-up date is within 2 days. By confirming, you acknowledge
-              that this booking <strong>cannot be cancelled</strong> and is{" "}
-              <strong>non-refundable</strong>.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {!isLastMinute && startDate && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex gap-3">
-          <span className="text-amber-500 text-xl">ℹ️</span>
-          <div>
-            <p className="text-sm font-bold text-amber-800">
-              Cancellation Policy
-            </p>
-            <p className="text-xs text-amber-700 mt-0.5">
-              You can cancel this order for a full refund up to{" "}
-              <strong>2 days before</strong> the pick-up date.
-            </p>
-          </div>
-        </div>
-      )}
-
-      <button
-        type="submit"
-        disabled={loading || days === 0}
-        className="w-full py-4 rounded-full bg-primary-blue text-white font-bold text-lg transition-all duration-300 ease-in-out hover:bg-blue-700 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
-      >
-        {loading ? (
-          <span className="flex items-center justify-center gap-2">
-            <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-                fill="none"
-              />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              />
-            </svg>
-            Processing...
-          </span>
-        ) : !isSignedIn ? (
-          "Sign in to Book"
+      <div aria-live="polite">
+        {checking ? (
+          <p className="av-muted">Checking the fleet for your dates…</p>
         ) : (
-          "Confirm Booking"
+          count != null && (
+            <p className="av-muted">
+              {count
+                ? `${count} vehicle${count === 1 ? "" : "s"} available for this entire period.`
+                : "No vehicles available for these dates. Please try another period."}
+            </p>
+          )
         )}
+      </div>
+      {quote && (
+        <div className="av-quote">
+          <div>
+            <span>
+              {money(car.pricePerDay)} × {quote.days} rental days
+            </span>
+            <span>{money(quote.total)}</span>
+          </div>
+          <p className="av-muted">
+            Each started 24-hour period is one rental day. Vehicle preparation
+            time is reserved separately.
+          </p>
+          <div className="av-quote-total">
+            <span>Booking total</span>
+            <strong>{money(quote.total)}</strong>
+          </div>
+        </div>
+      )}
+      <div className="av-muted">
+        <ShieldCheck size={17} className="inline mr-2" />
+        {paymentEnabled
+          ? "Stripe sandbox · no real money is charged."
+          : "Booking request · no online payment is collected."}
+      </div>
+      <p className="av-muted">
+        {paymentEnabled
+          ? "Payment confirms your rental if the vehicle hold is still valid."
+          : "The team has 24 hours to confirm your request. Until then, your rental is not confirmed."}{" "}
+        {late
+          ? "This is a last-minute rental. Confirmed bookings cannot be cancelled within 48 hours of pickup."
+          : "Confirmed bookings can be cancelled more than 48 hours before pickup."}
+      </p>
+      <label className="av-muted flex gap-3 items-start">
+        <input
+          type="checkbox"
+          checked={accepted}
+          onChange={(e) => setAccepted(e.target.checked)}
+          required
+          className="mt-1"
+        />
+        <span>
+          I have read the{" "}
+          <a
+            className="underline"
+            href="/rental-policy"
+            target="_blank"
+            rel="noreferrer"
+          >
+            rental terms
+          </a>
+          , including the cancellation cutoff and collection requirements.
+        </span>
+      </label>
+      {error && (
+        <p className="av-alert" role="alert">
+          {error}
+        </p>
+      )}
+      <button
+        className="av-button"
+        disabled={
+          !isLoaded ||
+          loading ||
+          checking ||
+          !quote ||
+          count === 0 ||
+          !accepted ||
+          !car.available
+        }
+      >
+        {loading
+          ? "Preparing your rental…"
+          : !isSignedIn
+            ? "Sign in to continue"
+            : paymentEnabled
+              ? "Continue to demo payment"
+              : "Request this rental"}
+        <ArrowUpRight size={17} />
       </button>
-
-      <p className="text-center text-xs text-gray-400">
-        By confirming, you agree to our Terms of Service and Rental Policy.
+      <p className="av-muted text-center">
+        You can browse and compare cars without signing in.
       </p>
     </form>
   );

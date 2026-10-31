@@ -24,7 +24,7 @@ export default function CarTable({ cars }: { cars: Car[] }) {
   const [optimisticCars, setOptimisticCars] = useOptimistic(
     cars,
     (state, updatedCar: Car) =>
-      state.map((c) => (c.id === updatedCar.id ? updatedCar : c)),
+      state.map((c) => (c.id === updatedCar.id ? updatedCar : c))
   );
   const [, startTransition] = useTransition();
 
@@ -37,7 +37,12 @@ export default function CarTable({ cars }: { cars: Car[] }) {
   };
 
   const handleDelete = (carId: string) => {
-    if (!confirm("Are you sure you want to delete this car?")) return;
+    if (
+      !confirm(
+        "Are you sure you want to archive this listing? Existing bookings are preserved."
+      )
+    )
+      return;
     startTransition(async () => {
       await deleteCar(carId);
     });
@@ -158,7 +163,7 @@ export default function CarTable({ cars }: { cars: Car[] }) {
                 onClick={() => handleDelete(car.id)}
                 className="flex-1 text-center py-2 rounded-xl text-sm font-medium bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400 transition-colors"
               >
-                Delete
+                Archive
               </button>
             </div>
           </div>
@@ -246,7 +251,7 @@ export default function CarTable({ cars }: { cars: Car[] }) {
                       onClick={() => handleDelete(car.id)}
                       className="text-sm text-red-600 dark:text-red-400 hover:underline"
                     >
-                      Delete
+                      Archive
                     </button>
                   </div>
                 </td>

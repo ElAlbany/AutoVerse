@@ -6,6 +6,7 @@ export default async function FeaturedPage() {
   const featuredCarsRaw = await prisma.car.findMany({
     where: {
       featured: true,
+      archived: false,
       available: true,
     },
     orderBy: {

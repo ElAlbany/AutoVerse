@@ -1,14 +1,15 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { clerkMiddleware } from "@clerk/nextjs/server";
+import { NextResponse } from "next/server";
 
-const isAdminRoute = createRouteMatcher(["/admin(.*)"]);
-
-export default clerkMiddleware(async (auth, req) => {
-  if (isAdminRoute(req)) {
-    const { userId } = await auth();
-    if (!userId) {
-      return Response.redirect(new URL("/sign-in", req.url));
-    }
-  }
+// Authentication is read per resource; each mutation and protected layout
+// performs its own server-side ownership or administrator check.
+export default clerkMiddleware((_auth, request) => {
+  const headers = new Headers(request.headers);
+  headers.set(
+    "x-autoverse-path",
+    request.nextUrl.pathname + request.nextUrl.search
+  );
+  return NextResponse.next({ request: { headers } });
 });
 
 export const config = {

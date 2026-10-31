@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useAuth } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
+import { signInUrl } from "@/lib/sign-in";
 
 type RecommendedCar = {
   id: string;
@@ -66,6 +69,8 @@ function TypingDots() {
 }
 
 export default function VeroChat() {
+  const { isSignedIn } = useAuth();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
   const [messages, setMessages] = useState<Message[]>([WELCOME]);
@@ -101,7 +106,7 @@ export default function VeroChat() {
     if (!hasLoaded) return;
     localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ messages, timestamp: Date.now() }),
+      JSON.stringify({ messages, timestamp: Date.now() })
     );
   }, [messages, hasLoaded]);
 
@@ -118,6 +123,10 @@ export default function VeroChat() {
   const sendMessage = useCallback(async () => {
     const text = input.trim();
     if (!text || streaming) return;
+    if (!isSignedIn) {
+      router.push(signInUrl(window.location.pathname + window.location.search));
+      return;
+    }
 
     const userMsg: Message = {
       id: Date.now().toString(),
@@ -142,7 +151,11 @@ export default function VeroChat() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: history }),
+        body: JSON.stringify({
+          messages: history.slice(-20),
+          start: new URLSearchParams(window.location.search).get("start"),
+          end: new URLSearchParams(window.location.search).get("end"),
+        }),
       });
 
       if (!res.ok) {
@@ -179,15 +192,16 @@ export default function VeroChat() {
           id: (Date.now() + 1).toString(),
           role: "assistant",
           content: isRateLimit
-            ? "⏳ I've reached my daily free limit. Please wait a minute, or ask the site owner to enable billing on the Google Cloud project for unlimited access."
-            : "Sorry, I couldn't connect right now. Please try again in a moment.",
+            ? "VERO has reached its current usage limit. Please try again later, or browse the collection."
+            : error.message ||
+              "VERO is temporarily unavailable. Please browse the collection.",
         },
       ]);
     } finally {
       setIsTyping(false);
       setStreaming(false);
     }
-  }, [input, messages, streaming]);
+  }, [input, messages, streaming, isSignedIn, router]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {

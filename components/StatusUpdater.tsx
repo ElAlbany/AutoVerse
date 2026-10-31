@@ -14,8 +14,8 @@ const ALL_STATUSES = [
 const VALID_NEXT: Record<string, string[]> = {
   PENDING: ["CONFIRMED", "CANCELLED"],
   CONFIRMED: ["ACTIVE", "CANCELLED"],
-  ACTIVE: ["COMPLETED", "CANCELLED"],
-  COMPLETED: ["CANCELLED"],
+  ACTIVE: ["COMPLETED"],
+  COMPLETED: [],
   CANCELLED: [],
 };
 
@@ -43,7 +43,7 @@ export default function StatusUpdater({
 
   const allowed = VALID_NEXT[currentStatus] || [];
   const options = ALL_STATUSES.filter(
-    (s) => s.value === currentStatus || allowed.includes(s.value),
+    (s) => s.value === currentStatus || allowed.includes(s.value)
   );
 
   return (

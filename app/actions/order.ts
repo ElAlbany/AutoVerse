@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
-import { sendOrderStatusEmail } from "@/lib/email";
+import { book, cancelBooking } from "@/lib/booking";
+import { getOrCreateUser } from "@/lib/sync-user";
 
 /* ─────────────── Get Single Order ─────────────── */
 
@@ -12,12 +13,17 @@ export async function getOrderById(orderId: string) {
   const { userId: clerkId } = await auth();
   if (!clerkId) throw new Error("Not authenticated");
 
-  const user = await prisma.user.findUnique({ where: { clerkId } });
+  const user = await getOrCreateUser();
   if (!user) throw new Error("User not found");
 
   const order = await prisma.order.findUnique({
     where: { id: orderId },
-    include: { car: true, user: true },
+    include: {
+      car: true,
+      user: true,
+      review: true,
+      events: { orderBy: { createdAt: "asc" } },
+    },
   });
 
   if (!order) throw new Error("Order not found");
@@ -27,6 +33,24 @@ export async function getOrderById(orderId: string) {
 
   return {
     id: order.id,
+    isOwner: order.userId === user.id,
+    review: order.review
+      ? {
+          rating: order.review.rating,
+          comment: order.review.comment,
+          createdAt: order.review.createdAt.toISOString(),
+        }
+      : null,
+    paymentStatus: order.paymentStatus,
+    currency: order.currency,
+    expiresAt: order.expiresAt?.toISOString() || null,
+    vehicleName: order.vehicleName,
+    policy: order.policy,
+    events: order.events.map((e) => ({
+      id: e.id,
+      message: e.message,
+      createdAt: e.createdAt.toISOString(),
+    })),
     userId: order.userId,
     carId: order.carId,
     startDate: order.startDate.toISOString(),
@@ -65,17 +89,20 @@ export async function getUserOrders() {
   const { userId: clerkId } = await auth();
   if (!clerkId) redirect("/sign-in");
 
-  const user = await prisma.user.findUnique({ where: { clerkId } });
+  const user = await getOrCreateUser();
   if (!user) redirect("/sign-in");
 
   const orders = await prisma.order.findMany({
     where: { userId: user.id },
     include: { car: true },
     orderBy: { createdAt: "desc" },
+    take: 100,
   });
 
   return orders.map((o) => ({
     id: o.id,
+    paymentStatus: o.paymentStatus,
+    currency: o.currency,
     userId: o.userId,
     carId: o.carId,
     startDate: o.startDate.toISOString(),
@@ -100,111 +127,27 @@ export async function getUserOrders() {
   }));
 }
 
-/* ─────────────── Create Order (4 positional args) ─────────────── */
-
-export async function createOrder(
-  carId: string,
-  startDate: Date,
-  endDate: Date,
-  totalPrice: number,
-) {
-  const { userId: clerkId } = await auth();
-  if (!clerkId) throw new Error("Not authenticated");
-
-  const user = await prisma.user.findUnique({ where: { clerkId } });
-  if (!user) throw new Error("User not found");
-
-  if (
-    !carId ||
-    isNaN(startDate.getTime()) ||
-    isNaN(endDate.getTime()) ||
-    isNaN(totalPrice)
-  ) {
-    throw new Error("Invalid order data");
-  }
-
-  const car = await prisma.car.findUnique({ where: { id: carId } });
-  if (!car) throw new Error("Car not found");
-  if (!car.available) throw new Error("This car is no longer available");
-
-  const order = await prisma.order.create({
-    data: {
-      userId: user.id,
-      carId,
-      startDate,
-      endDate,
-      totalPrice,
-      status: "PENDING",
-    },
-    include: { car: true },
-  });
-
-  await sendOrderStatusEmail({
-    to: user.email,
-    subject: "Order Received - Under Review",
-    orderId: order.id,
-    carName: `${car.year} ${car.make} ${car.model}`,
-    status: "PENDING",
-    startDate: order.startDate.toISOString(),
-    endDate: order.endDate.toISOString(),
-    totalPrice: Number(order.totalPrice),
-  });
-
-  revalidatePath("/profile/orders");
-}
-
-/* ─────────────── Cancel Order ─────────────── */
-
-export async function cancelOrder(orderId: string) {
-  const { userId: clerkId } = await auth();
-  if (!clerkId) return { success: false, message: "Not authenticated" };
-
-  const user = await prisma.user.findUnique({ where: { clerkId } });
-  if (!user) return { success: false, message: "User not found" };
-
-  const order = await prisma.order.findFirst({
-    where: { id: orderId, userId: user.id },
-    include: { car: true },
-  });
-
-  if (!order) return { success: false, message: "Order not found" };
-  if (order.status === "CANCELLED")
-    return { success: false, message: "Order already cancelled" };
-  if (order.status === "COMPLETED")
-    return { success: false, message: "Cannot cancel a completed order" };
-
-  const now = new Date();
-  const start = new Date(order.startDate);
-  start.setHours(0, 0, 0, 0);
-  const cutoff = new Date(start);
-  cutoff.setDate(cutoff.getDate() - 2);
-
-  if (now >= cutoff) {
-    return {
-      success: false,
-      message:
-        "Cancellation is only available up to 2 days before the rental start date.",
-    };
-  }
-
-  await prisma.order.update({
-    where: { id: orderId },
-    data: { status: "CANCELLED" },
-  });
-
-  await sendOrderStatusEmail({
-    to: user.email,
-    subject: "Order Cancelled",
-    orderId: order.id,
-    carName: `${order.car.year} ${order.car.make} ${order.car.model}`,
-    status: "CANCELLED",
-    startDate: order.startDate.toISOString(),
-    endDate: order.endDate.toISOString(),
-    totalPrice: Number(order.totalPrice),
-  });
-
+export async function createOrder(input: import("@/lib/booking").BookingInput) {
+  const result = await book(input);
   revalidatePath("/profile/orders");
   revalidatePath("/admin/orders");
+  return result;
+}
 
-  return { success: true, message: "Order cancelled successfully" };
+export async function cancelOrder(orderId: string) {
+  try {
+    await cancelBooking(orderId);
+    revalidatePath("/profile/orders");
+    revalidatePath(`/profile/orders/${orderId}`);
+    revalidatePath("/admin/orders");
+    return {
+      success: true,
+      message: "Booking cancelled. Any eligible refund is being processed.",
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Cancellation failed.",
+    };
+  }
 }

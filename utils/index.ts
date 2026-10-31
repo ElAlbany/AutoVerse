@@ -1,3 +1,4 @@
+import { carImage } from "@/lib/car-media";
 import { CarProps, FilterProps } from "@types";
 import { mockCars } from "./MockData";
 export const calculateCarRent = (city_mpg: number, year: number) => {
@@ -49,7 +50,7 @@ export async function fetchCars(filters: FilterProps) {
   // Filter by manufacturer (make)
   if (manufacturer) {
     filteredCars = filteredCars.filter(
-      (car) => car.make.toLowerCase() === manufacturer.toLowerCase(),
+      (car) => car.make.toLowerCase() === manufacturer.toLowerCase()
     );
   }
 
@@ -61,14 +62,14 @@ export async function fetchCars(filters: FilterProps) {
   // Filter by model
   if (model) {
     filteredCars = filteredCars.filter((car) =>
-      car.model.toLowerCase().includes(model.toLowerCase()),
+      car.model.toLowerCase().includes(model.toLowerCase())
     );
   }
 
   // Filter by fuel type
   if (fuel) {
     filteredCars = filteredCars.filter(
-      (car) => car.fuel_type.toLowerCase() === fuel.toLowerCase(),
+      (car) => car.fuel_type.toLowerCase() === fuel.toLowerCase()
     );
   }
 
@@ -76,17 +77,5 @@ export async function fetchCars(filters: FilterProps) {
   return filteredCars.slice(0, Number(limit) || 10);
 }
 
-export const generateCarImageUrl = (car: CarProps, angle?: string) => {
-  const url = new URL("https://cdn.imagin.studio/getimage");
-  const { make, model, year } = car;
-
-  url.searchParams.append("customer", "img");
-  url.searchParams.append("make", make);
-  url.searchParams.append("modelFamily", model.split(" ")[0]);
-  url.searchParams.append("zoomType", "fullscreen");
-  url.searchParams.append("modelYear", `${year}`);
-  // url.searchParams.append('zoomLevel', zoomLevel);
-  url.searchParams.append("angle", `${angle}`);
-
-  return `${url}`;
-};
+export const generateCarImageUrl = (car: CarProps, _angle?: string) =>
+  carImage(car);

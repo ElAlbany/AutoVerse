@@ -1,13 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "cdn.imagin.studio",
-        pathname: "/**",
-      },
-    ],
+    remotePatterns: [{ protocol: "https", hostname: "**" }],
+    dangerouslyAllowLocalIP: false,
+    maximumRedirects: 2,
   },
 };
 

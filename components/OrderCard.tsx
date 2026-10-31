@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { carImage as carPhoto } from "@/lib/car-media";
 import Link from "next/link";
 import StatusBadge from "./StatusBadge";
 import OrderProgress from "./OrderProgress";
@@ -30,19 +31,13 @@ export default function OrderCard({
   onCancel,
   isCancelling,
 }: OrderCardProps) {
-  const carImage = order.car?.images?.[0] || "/hero.png";
+  const carImage = carPhoto(order.car);
   const isActive = ["PENDING", "CONFIRMED", "ACTIVE"].includes(order.status);
 
-  const canCancel = (() => {
-    if (order.status === "CANCELLED" || order.status === "COMPLETED")
-      return false;
-    const now = new Date();
-    const start = new Date(order.startDate);
-    start.setHours(0, 0, 0, 0);
-    const cutoff = new Date(start);
-    cutoff.setDate(cutoff.getDate() - 2);
-    return now < cutoff;
-  })();
+  const canCancel =
+    order.status === "PENDING" ||
+    (order.status === "CONFIRMED" &&
+      new Date(order.startDate).getTime() - Date.now() > 48 * 3600000);
 
   return (
     <div className="group relative bg-white dark:bg-dark-card rounded-2xl p-4 sm:p-6 border border-gray-100 dark:border-dark-border transition-all duration-500 hover:shadow-lg hover:shadow-primary-blue/5 dark:hover:shadow-primary-blue/10 hover:-translate-y-1 hover:border-primary-blue/20 dark:hover:border-primary-blue/30">

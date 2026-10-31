@@ -1,135 +1,424 @@
+import Link from "next/link";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { CarCard, ShowMore, Hero, CarFilters, FeaturedCars } from "@components";
-import { getOrCreateUser } from "@/lib/sync-user";
+import Hero from "@/components/Hero";
+import CarCard from "@/components/CarCard";
+import BookingSearch from "@/components/BookingSearch";
+import { freeUnitWhere } from "@/lib/inventory";
+import { quoteRental, validatePeriod } from "@/lib/rental-policy";
+import { ArrowUpRight, CalendarDays, KeyRound, Route } from "lucide-react";
+import { auth } from "@clerk/nextjs/server";
 
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const params = await searchParams;
-
-  const manufacturer = (params.manufacturer as string) || "";
-  const year = params.year ? Number(params.year) : undefined;
-  const fuel = (params.fuel as string) || "";
-  const limit = Number(params.limit) || 10;
-  const model = (params.model as string) || "";
-  const transmission = (params.transmission as string) || "";
-  const drive = (params.drive as string) || "";
-  const classType = (params.class as string) || "";
-  const search = (params.search as string) || "";
-  const minPrice = params.minPrice ? Number(params.minPrice) : undefined;
-  const maxPrice = params.maxPrice ? Number(params.maxPrice) : undefined;
-  const sort = (params.sort as string) || "";
-
-  const where: any = {};
-  if (manufacturer)
-    where.make = { contains: manufacturer, mode: "insensitive" };
-  if (year) where.year = year;
-  if (fuel) where.fuel_type = { equals: fuel, mode: "insensitive" };
-  if (model) where.model = { contains: model, mode: "insensitive" };
-  if (transmission)
-    where.transmission = { equals: transmission, mode: "insensitive" };
-  if (drive) where.drive = { equals: drive, mode: "insensitive" };
-  if (classType) where.class = { equals: classType, mode: "insensitive" };
-
-  // Full-text search across make, model, and description
-  if (search) {
+  const raw = await searchParams;
+  const value = (key: string) =>
+    typeof raw[key] === "string" ? (raw[key] as string) : "";
+  const search = value("search").slice(0, 100),
+    category = value("class"),
+    sort = value("sort");
+  const limit = Math.max(12, Math.min(96, Number(value("limit")) || 12));
+  const start = new Date(value("start")),
+    end = new Date(value("end"));
+  let period = false;
+  let error = "";
+  if (value("start") || value("end")) {
+    try {
+      validatePeriod(start, end);
+      period = true;
+    } catch (e) {
+      error = e instanceof Error ? e.message : "Choose a valid rental period.";
+    }
+  }
+  const where: Prisma.CarWhereInput = { archived: false };
+  if (search)
     where.OR = [
       { make: { contains: search, mode: "insensitive" } },
       { model: { contains: search, mode: "insensitive" } },
       { description: { contains: search, mode: "insensitive" } },
     ];
+  if (category) where.class = { contains: category, mode: "insensitive" };
+  if (value("fuel"))
+    where.fuel_type = { equals: value("fuel"), mode: "insensitive" };
+  if (value("transmission")) where.transmission = value("transmission");
+  if (value("location"))
+    where.location = {
+      contains: value("location").slice(0, 100),
+      mode: "insensitive",
+    };
+  const seats = Number(value("seats"));
+  if (Number.isInteger(seats) && seats > 0) where.seats = { gte: seats };
+  const min = Number(value("minPrice")),
+    max = Number(value("maxPrice"));
+  if (
+    (value("minPrice") && Number.isFinite(min)) ||
+    (value("maxPrice") && Number.isFinite(max))
+  )
+    where.pricePerDay = {
+      ...(value("minPrice") && Number.isFinite(min) && min >= 0
+        ? { gte: min }
+        : {}),
+      ...(value("maxPrice") && Number.isFinite(max) && max >= 0
+        ? { lte: max }
+        : {}),
+    };
+  if (period) {
+    where.available = true;
+    where.units = { some: freeUnitWhere(start, end) };
   }
-
-  // Price range filter
-  if (minPrice !== undefined || maxPrice !== undefined) {
-    where.pricePerDay = {};
-    if (minPrice !== undefined) where.pricePerDay.gte = minPrice;
-    if (maxPrice !== undefined) where.pricePerDay.lte = maxPrice;
-  }
-
-  // Sort order
-  let orderBy: any = { createdAt: "desc" };
-  if (sort === "price-low") orderBy = { pricePerDay: "asc" };
-  if (sort === "price-high") orderBy = { pricePerDay: "desc" };
-
-  // ─── FEATURED CARS (independent of catalogue filters) ───
-  const featuredCarsRaw = await prisma.car.findMany({
-    where: {
-      featured: true,
-      available: true,
-    },
-    take: 4,
-  });
-
-  const featuredCars = featuredCarsRaw.map((car) => ({
-    ...car,
-    pricePerDay: Number(car.pricePerDay),
-    createdAt: car.createdAt.toISOString(),
-  }));
-
-  // ─── CATALOGUE CARS (filtered by URL params) ───
-  const allCarsRaw = await prisma.car.findMany({
-    where,
-    orderBy,
-    take: limit + 1,
-  });
-
-  const hasMore = allCarsRaw.length > limit;
-  const allCars = allCarsRaw.slice(0, limit).map((car) => ({
-    ...car,
-    pricePerDay: Number(car.pricePerDay),
-    createdAt: car.createdAt.toISOString(),
-  }));
-
-  await getOrCreateUser();
-
-  const isDataEmpty = !Array.isArray(allCars) || allCars.length < 1;
-
+  const [cars, total, latestReviews, session] = await Promise.all([
+    prisma.car.findMany({
+      where,
+      orderBy:
+        sort === "price-low"
+          ? { pricePerDay: "asc" }
+          : sort === "price-high"
+            ? { pricePerDay: "desc" }
+            : [{ featured: "desc" }, { createdAt: "desc" }],
+      take: limit,
+      include: {
+        _count: {
+          select: {
+            units: {
+              where: period ? freeUnitWhere(start, end) : { enabled: true },
+            },
+          },
+        },
+      },
+    }),
+    prisma.car.count({ where }),
+    prisma.review.findMany({
+      where: { hidden: false, comment: { not: "" } },
+      orderBy: { createdAt: "desc" },
+      take: 3,
+      include: {
+        user: { select: { firstName: true } },
+        car: { select: { make: true, model: true } },
+      },
+    }),
+    auth(),
+  ]);
+  const [ratings, favorites] = await Promise.all([
+    prisma.review.groupBy({
+      by: ["carId"],
+      where: { carId: { in: cars.map((c) => c.id) }, hidden: false },
+      _avg: { rating: true },
+      _count: { id: true },
+    }),
+    session.userId
+      ? prisma.favorite.findMany({
+          where: { user: { clerkId: session.userId } },
+          select: { carId: true },
+        })
+      : Promise.resolve([]),
+  ]);
+  const query = new URLSearchParams();
+  for (const [key, v] of Object.entries(raw))
+    if (typeof v === "string") query.set(key, v);
+  const bookingQuery = period
+    ? `?${new URLSearchParams({ start: start.toISOString(), end: end.toISOString() })}`
+    : "";
+  const more = new URLSearchParams(query);
+  more.set("limit", String(limit + 12));
   return (
-    <main className="overflow-hidden">
-      <Hero />
-
-      <FeaturedCars cars={featuredCars} />
-
-      <div className="section-divider max-w-[1440px] mx-auto" />
-
-      <div className="mt-12 padding-x padding-y max-width" id="discover">
-        <div className="home__text-container">
-          <h1 className="text-4xl font-extrabold">
-            Car <span className="text-gradient">Catalogue</span>
-          </h1>
-          <p className="text-gray-500 dark:text-gray-400">
-            Explore our curated collection of premium vehicles
+    <main>
+      <Hero
+        start={value("start")}
+        end={value("end")}
+        location={value("location")}
+      />
+      <div className="av-promise-strip av-shell">
+        <span>
+          01 <strong>A car for your plans</strong>
+        </span>
+        <span>
+          02 <strong>Dates checked before booking</strong>
+        </span>
+        <span>
+          03 <strong>Clear terms, from the start</strong>
+        </span>
+      </div>
+      <section id="discover" className="av-shell av-collection">
+        <div className="av-section-heading">
+          <div>
+            <p className="av-eyebrow">The AutoVerse collection</p>
+            <h2>Find your kind of drive.</h2>
+          </div>
+          <p>
+            City days. Open roads. A little more room.
+            <br />
+            Choose what fits the way you travel.
           </p>
         </div>
-
-        <div className="mt-8">
-          <CarFilters totalResults={allCars.length} />
-        </div>
-
-        {!isDataEmpty ? (
-          <section className="mt-8">
-            <div className="home__cars-wrapper">
-              {allCars?.map((car) => (
-                <CarCard key={car.id} car={car as any} />
+        {(value("start") || value("end")) && (
+          <BookingSearch
+            start={value("start")}
+            end={value("end")}
+            location={value("location")}
+          />
+        )}
+        {error && (
+          <p className="av-alert" role="alert">
+            {error}
+          </p>
+        )}
+        <form className="av-filter-bar" action="/#discover">
+          <input type="hidden" name="start" value={value("start")} />
+          <input type="hidden" name="end" value={value("end")} />
+          <input type="hidden" name="location" value={value("location")} />
+          <label className="sr-only" htmlFor="car-search">
+            Search cars
+          </label>
+          <input
+            id="car-search"
+            name="search"
+            defaultValue={search}
+            placeholder="Make, model, or a little inspiration…"
+          />
+          <label>
+            <span className="sr-only">Category</span>
+            <select name="class" defaultValue={category}>
+              <option value="">All categories</option>
+              {[
+                "SUV",
+                "Car",
+                "Coupe",
+                "Convertible",
+                "Van",
+                "Truck",
+                "Wagon",
+              ].map((v) => (
+                <option key={v}>{v}</option>
               ))}
+            </select>
+          </label>
+          <label>
+            <span className="sr-only">Transmission</span>
+            <select name="transmission" defaultValue={value("transmission")}>
+              <option value="">Any transmission</option>
+              <option value="a">Automatic</option>
+              <option value="m">Manual</option>
+            </select>
+          </label>
+          <label>
+            <span className="sr-only">Sort cars</span>
+            <select name="sort" defaultValue={sort}>
+              <option value="">Our selection</option>
+              <option value="price-low">Price: low to high</option>
+              <option value="price-high">Price: high to low</option>
+            </select>
+          </label>
+          <button className="av-button av-button-small">Apply</button>
+          <details className="av-more-filters">
+            <summary>More filters</summary>
+            <div>
+              <label>
+                Minimum seats
+                <input
+                  type="number"
+                  name="seats"
+                  min="1"
+                  max="20"
+                  defaultValue={value("seats")}
+                />
+              </label>
+              <label>
+                Daily budget from
+                <input
+                  type="number"
+                  name="minPrice"
+                  min="0"
+                  defaultValue={value("minPrice")}
+                />
+              </label>
+              <label>
+                Daily budget to
+                <input
+                  type="number"
+                  name="maxPrice"
+                  min="0"
+                  defaultValue={value("maxPrice")}
+                />
+              </label>
+              <label>
+                Fuel
+                <select name="fuel" defaultValue={value("fuel")}>
+                  <option value="">Any fuel</option>
+                  <option value="gas">Petrol</option>
+                  <option value="diesel">Diesel</option>
+                  <option value="electricity">Electric</option>
+                </select>
+              </label>
             </div>
-
-            <ShowMore pageNumber={limit / 10} isNext={hasMore} />
-          </section>
+          </details>
+        </form>
+        <div className="av-results-line">
+          <span>
+            {total} {total === 1 ? "car" : "cars"}
+            {period ? " available for your dates" : " in the collection"}
+          </span>
+          <div>
+            <Link href="/compare">Compare shortlist</Link>
+            {query.size > 0 && <Link href="/#discover">Clear filters</Link>}
+          </div>
+        </div>
+        {cars.length ? (
+          <div className="av-car-grid">
+            {cars.map((car) => {
+              const rating = ratings.find((r) => r.carId === car.id);
+              return (
+                <CarCard
+                  key={car.id}
+                  car={{
+                    ...car,
+                    pricePerDay: Number(car.pricePerDay),
+                    rating: rating?._avg.rating,
+                    reviewCount: rating?._count.id || 0,
+                    saved: favorites.some((f) => f.carId === car.id),
+                    availableCount: period ? car._count.units : undefined,
+                    tripTotal: period
+                      ? quoteRental(Number(car.pricePerDay), start, end).total
+                      : undefined,
+                    bookingQuery,
+                  }}
+                />
+              );
+            })}
+          </div>
         ) : (
-          <div className="home__error-container mt-12">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-              Oops, no results
-            </h2>
-            <p className="text-gray-500 dark:text-gray-400">
-              Try adjusting your filters to see more cars
+          <div className="av-panel av-empty">
+            <h3>A different route, perhaps?</h3>
+            <p>
+              No cars match this combination. Try another date, a wider budget,
+              or fewer filters.
             </p>
+            <Link href="/#discover" className="av-button">
+              Reset your search
+            </Link>
           </div>
         )}
-      </div>
+        {total > limit && (
+          <div className="av-load-more">
+            <Link
+              className="av-button av-button-outline"
+              href={`/?${more}#discover`}
+            >
+              Explore more cars <ArrowUpRight size={18} />
+            </Link>
+          </div>
+        )}
+      </section>
+      <section className="av-how" id="how-it-works">
+        <div className="av-shell">
+          <div className="av-section-heading">
+            <div>
+              <p className="av-eyebrow">Less to think about</p>
+              <h2>Your plans. Three simple steps.</h2>
+            </div>
+            <Link className="av-text-link" href="/how-it-works">
+              The rental guide <ArrowUpRight size={16} />
+            </Link>
+          </div>
+          <div className="av-steps">
+            {[
+              {
+                icon: CalendarDays,
+                n: "01",
+                title: "Make a little space",
+                text: "Choose your dates. We check which vehicles can be yours for the entire trip.",
+              },
+              {
+                icon: KeyRound,
+                n: "02",
+                title: "Choose your companion",
+                text: "Compare the details, read the terms, and sign in when you’re ready to book.",
+              },
+              {
+                icon: Route,
+                n: "03",
+                title: "Take the long way",
+                text: "Find your confirmed rental and collection instructions together in your account.",
+              },
+            ].map((s) => (
+              <div key={s.n}>
+                <div>
+                  <s.icon size={23} />
+                  <span>{s.n}</span>
+                </div>
+                <h3>{s.title}</h3>
+                <p>{s.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+      <section className="av-shell av-reviews-section">
+        <p className="av-eyebrow">From the driver’s seat</p>
+        <h2>Good journeys leave a story.</h2>
+        {latestReviews.length ? (
+          <div className="av-review-grid">
+            {latestReviews.map((r) => (
+              <blockquote key={r.id}>
+                <span className="av-rating">
+                  {"★".repeat(r.rating)} · Verified rental
+                </span>
+                <p>{r.comment || "A rated AutoVerse rental."}</p>
+                <footer>
+                  {r.user.firstName || "AutoVerse driver"}
+                  <small>
+                    {r.car.make} {r.car.model}
+                  </small>
+                </footer>
+              </blockquote>
+            ))}
+          </div>
+        ) : (
+          <div className="av-review-empty">
+            <p>Our next chapter starts with you.</p>
+            <span>
+              Verified reviews will appear here after completed rentals. Every
+              story comes from a real booking.
+            </span>
+          </div>
+        )}
+      </section>
+      <section className="av-shell av-faq">
+        <div>
+          <p className="av-eyebrow">Before you set off</p>
+          <h2>A few good questions.</h2>
+        </div>
+        <div>
+          {[
+            [
+              "Can I browse without an account?",
+              "Absolutely. Explore, compare, and check availability freely. Sign in when you book, save a car, or contribute a review.",
+            ],
+            [
+              "Is a particular model guaranteed?",
+              "Your booking is for the selected listing. A physical vehicle is allocated for your full rental period before the booking can be confirmed.",
+            ],
+            [
+              "What if my plans change?",
+              "You can withdraw an unconfirmed request at any time. Confirmed bookings can be cancelled more than 48 hours before pickup. Eligible sandbox payments are refunded.",
+            ],
+            [
+              "Will I be charged real money?",
+              "This edition uses Stripe sandbox payments only. Where payments are not configured, send a booking request for the team to review.",
+            ],
+          ].map(([q, a]) => (
+            <details key={q}>
+              <summary>
+                {q}
+                <span>+</span>
+              </summary>
+              <p>{a}</p>
+            </details>
+          ))}
+        </div>
+      </section>
     </main>
   );
 }
