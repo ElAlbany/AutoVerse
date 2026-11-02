@@ -279,6 +279,7 @@ export default function CarForm({
             className="w-full rounded-xl border border-gray-200 dark:border-dark-border px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue dark:bg-dark-surface dark:text-dark-text transition-colors duration-500"
           >
             <option value="">Select class</option>
+            {initialData?.class && !CAR_CLASSES.some((value) => value === initialData.class) && <option value={initialData.class}>{initialData.class}</option>}
             {CAR_CLASSES.map((c) => (
               <option key={c} value={c}>
                 {c}
@@ -298,6 +299,7 @@ export default function CarForm({
             className="w-full rounded-xl border border-gray-200 dark:border-dark-border px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue dark:bg-dark-surface dark:text-dark-text transition-colors duration-500"
           >
             <option value="">Select fuel type</option>
+            {initialData?.fuel_type && !FUEL_TYPES.some((value) => value === initialData.fuel_type) && <option value={initialData.fuel_type}>{initialData.fuel_type}</option>}
             {FUEL_TYPES.map((f) => (
               <option key={f} value={f}>
                 {f}
@@ -317,6 +319,7 @@ export default function CarForm({
             className="w-full rounded-xl border border-gray-200 dark:border-dark-border px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue dark:bg-dark-surface dark:text-dark-text transition-colors duration-500"
           >
             <option value="">Select drive type</option>
+            {initialData?.drive && !DRIVE_TYPES.some((value) => value.value === initialData.drive) && <option value={initialData.drive}>{initialData.drive}</option>}
             {DRIVE_TYPES.map((d) => (
               <option key={d.value} value={d.value}>
                 {d.label}

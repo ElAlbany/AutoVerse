@@ -216,4 +216,3 @@ export async function assignVehicle(form: FormData) {
     revalidatePath("/admin/orders");
   });
 }
-

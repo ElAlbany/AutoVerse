@@ -20,7 +20,7 @@ export default async function NewCarPage({ searchParams }: { searchParams: Promi
       </div>
 
       <div className="bg-white dark:bg-dark-card rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100 dark:border-dark-border transition-colors duration-500">
-        <CarForm action={createCar} mode="create" branches={branches} initialBranchId={params.branchId} />
+        <CarForm action={createCar} mode="create" branches={branches} initialBranchId={typeof params.branchId === "string" ? params.branchId : ""} />
       </div>
     </div>
   );
