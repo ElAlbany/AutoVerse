@@ -1,3 +1,5 @@
+import AdminPagination from "@/components/admin/AdminPagination";
+import { pageWindow, searchValue } from "@/lib/admin-query";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
@@ -7,7 +9,7 @@ import UserTable from "@/components/admin/UserTable";
 export default async function AdminUsersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ search?: string }>;
+  searchParams: Promise<{ search?: string; page?: string }>;
 }) {
   const { userId: clerkId } = await auth();
   if (!clerkId) redirect("/sign-in");
@@ -18,7 +20,7 @@ export default async function AdminUsersPage({
   if (!currentUser || currentUser.role !== "ADMIN") redirect("/");
 
   const params = await searchParams;
-  const search = params.search?.trim().toLowerCase();
+  const search = searchValue(params.search).toLowerCase();
 
   const where = search
     ? {
@@ -30,12 +32,17 @@ export default async function AdminUsersPage({
       }
     : {};
 
+  const matched = await prisma.user.count({ where });
+  const pagination = pageWindow(params.page, matched);
+
   const [users, totalUsers, adminCount, userCount, totalOrders] =
     await Promise.all([
       prisma.user.findMany({
         where,
         include: { _count: { select: { orders: true } } },
-        orderBy: { createdAt: "desc" },
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+        skip: pagination.skip,
+        take: pagination.size,
       }),
       prisma.user.count(),
       prisma.user.count({ where: { role: "ADMIN" } }),
@@ -100,12 +107,13 @@ export default async function AdminUsersPage({
             All Users
           </h2>
           <span className="text-xs text-gray-500 dark:text-dark-muted bg-gray-100 dark:bg-dark-surface px-2 py-1 rounded-lg transition-colors duration-500">
-            {serializedUsers.length} result
-            {serializedUsers.length !== 1 ? "s" : ""}
+            {matched} result
+            {matched !== 1 ? "s" : ""}
           </span>
         </div>
         <UserTable users={serializedUsers} currentUserId={currentUser.id} />
       </div>
+      <AdminPagination path="/admin/users" search={search} pagination={pagination} />
     </div>
   );
 }

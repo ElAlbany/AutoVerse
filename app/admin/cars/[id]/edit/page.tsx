@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { updateCar } from "@/app/actions/admin";
@@ -8,6 +9,7 @@ export default async function EditCarPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await requireAdmin();
   const { id } = await params;
 
   const car = await prisma.car.findUnique({

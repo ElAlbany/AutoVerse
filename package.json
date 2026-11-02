@@ -7,7 +7,7 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "tsx --test tests/rental-policy.test.ts tests/rental-dates.test.ts tests/vehicle-use.test.ts tests/car-media.test.ts tests/image-upload.test.ts tests/fleet-calendar.test.ts tests/chat-policy.test.ts tests/action-result.test.ts tests/comparison.test.ts",
+    "test": "tsx --test tests/rental-policy.test.ts tests/rental-dates.test.ts tests/vehicle-use.test.ts tests/car-media.test.ts tests/image-upload.test.ts tests/fleet-calendar.test.ts tests/chat-policy.test.ts tests/action-result.test.ts tests/comparison.test.ts tests/admin-query.test.ts",
     "test:inventory": "node --conditions=react-server --env-file-if-exists=.env --import tsx --test tests/inventory.integration.test.ts tests/payments.integration.test.ts tests/branches.integration.test.ts tests/fleet-calendar.integration.test.ts tests/rental-lifecycle.integration.test.ts",
     "test:chat": "node --conditions=react-server --import tsx --test tests/chat.integration.test.ts",
     "test:media": "node --conditions=react-server --import tsx --test tests/media-storage.test.ts",
@@ -16,7 +16,6 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1161.0",
     "@clerk/nextjs": "^7.6.4",
-    "@google/generative-ai": "^0.24.1",
     "@headlessui/react": "^2.2.10",
     "@prisma/client": "^6.19.3",
     "@types/react": "^19.2.18",

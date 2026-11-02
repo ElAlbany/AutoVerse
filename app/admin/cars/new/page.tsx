@@ -1,9 +1,11 @@
+import { requireAdmin } from "@/lib/auth";
 import { createCar } from "@/app/actions/admin";
 import CarForm from "@/components/admin/CarForm";
 
 import { publicBranches } from "@/lib/branches";
 
 export default async function NewCarPage() {
+  await requireAdmin();
   const branches = await publicBranches();
   return (
     <div className="space-y-6">
