@@ -2,7 +2,7 @@
 
 A Next.js car rental application with public browsing, a considered light/dark design, physical fleet inventory, verified rental reviews, staff operations and optional Stripe sandbox checkout.
 
-This repository is a development demonstration. Branch operations, image storage and driving-tag rules are documented in [Branches, imagery & driving suitability](docs/BRANCHES_IMAGES_AND_USAGE.md). Company rollout requirements and remaining product work are documented in [Platform upgrade & deployment](docs/PLATFORM_UPGRADE.md).
+This repository is a development demonstration. Branch operations, image storage and driving-tag rules are documented in [Branches, imagery & driving suitability](docs/BRANCHES_IMAGES_AND_USAGE.md). Company rollout requirements and remaining product work are documented in [Platform upgrade & deployment](docs/PLATFORM_UPGRADE.md). The [system review](docs/SYSTEM_REVIEW.md) records reliability fixes, test evidence, the post-merge audit and business handover.
 
 ## Run locally
 
@@ -21,7 +21,7 @@ Open [localhost:3000](http://localhost:3000). A production preview uses `npm run
 
 - Browse, filter, compare cars and check date-specific availability without an account.
 - Sign in when booking, saving a car, submitting/reporting a review, or using VERO. Selected booking dates survive the return through sign-in.
-- Server-calculated quotes use started 24-hour rental periods. Each listing owns individual physical vehicle units; a booking reserves one unit for the entire trip, plus a preparation buffer.
+- Server-calculated quotes use started 24-hour rental periods. A changed quote requires fresh confirmation. Each listing owns individual physical vehicle units; a booking reserves one unit for the entire trip, plus a preparation buffer.
 - Without Stripe configuration, an available car is allocated and confirmed immediately, with payment due at collection.
 - With Stripe test credentials and webhooks configured, a temporary vehicle hold leads to sandbox Checkout. The server verifies payment before confirming the rental. Real Stripe keys and events are rejected.
 - Manage rental activity, cancellation, refund status, and verified reviews from the account. Reviews are available after staff record the vehicle return.
@@ -32,6 +32,8 @@ Open [localhost:3000](http://localhost:3000). A production preview uses `npm run
 ## Staff operations
 
 Admin roles are stored in PostgreSQL and checked on server mutations. The admin panel includes cars, orders, fleet schedule, maintenance blocks, physical units, conflict reconciliation, review moderation and analytics. Cars are archived to preserve booking history. Staff explicitly record pickup and return; a calendar date never automatically marks a vehicle returned.
+
+Cars, users and orders use searchable, paginated admin lists. The dashboard distinguishes booked rental value from settled income.
 
 The fleet calendar now has date navigation, a timeline/list switch, filters, pagination and a focused vehicle workspace. See [Fleet calendar UX](docs/FLEET_CALENDAR_UX.md).
 

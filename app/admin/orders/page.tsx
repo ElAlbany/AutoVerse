@@ -1,3 +1,6 @@
+import AdminPagination from "@/components/admin/AdminPagination";
+import { pageWindow, searchValue } from "@/lib/admin-query";
+import { requireAdmin } from "@/lib/auth";
 import AdminTableScroll from "@/components/admin/AdminTableScroll";
 import { prisma } from "@/lib/prisma";
 import StatusBadge from "@/components/StatusBadge";
@@ -7,10 +10,11 @@ import SearchOrders from "@/components/admin/SearchOrders";
 export default async function AdminOrdersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ search?: string }>;
+  searchParams: Promise<{ search?: string; page?: string }>;
 }) {
+  await requireAdmin();
   const params = await searchParams;
-  const search = params.search?.trim();
+  const search = searchValue(params.search);
 
   const where = search
     ? {
@@ -41,10 +45,15 @@ export default async function AdminOrdersPage({
       }
     : {};
 
+  const matched = await prisma.order.count({ where });
+  const pagination = pageWindow(params.page, matched);
+
   const orders = await prisma.order.findMany({
     where,
     include: { car: true, user: true },
-    orderBy: { createdAt: "desc" },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    skip: pagination.skip,
+    take: pagination.size,
   });
 
   // Explicitly serialize every field — no spreading raw Prisma objects
@@ -220,6 +229,7 @@ export default async function AdminOrdersPage({
           </>
         )}
       </div>
+      <AdminPagination path="/admin/orders" search={search} pagination={pagination} />
     </div>
   );
 }

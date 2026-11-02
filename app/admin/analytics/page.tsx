@@ -1,3 +1,4 @@
+import { analyticsRange, pageWindow } from "@/lib/admin-query";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -28,56 +29,57 @@ export default async function AnalyticsPage({
 
   const params = await searchParams;
   const pageSize = 8;
-  const currentPage = Math.max(1, parseInt(params.page || "1", 10));
+  let rangeError = "";
 
   // ── Date filtering logic ─────────────────────────────────────
   const now = new Date();
   let startDate: Date | undefined;
-  let endDate: Date | undefined = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate(),
+  let endDate: Date | undefined = new Date(Date.UTC(
+    now.getUTCFullYear(),
+    now.getUTCMonth(),
+    now.getUTCDate(),
     23,
     59,
     59,
-  );
+    999,
+  ));
 
   switch (params.period) {
     case "today":
-      startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      startDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
       break;
     case "yesterday": {
       const y = new Date(now);
-      y.setDate(y.getDate() - 1);
-      startDate = new Date(y.getFullYear(), y.getMonth(), y.getDate());
-      endDate = new Date(
-        y.getFullYear(),
-        y.getMonth(),
-        y.getDate(),
+      y.setUTCDate(y.getUTCDate() - 1);
+      startDate = new Date(Date.UTC(y.getUTCFullYear(), y.getUTCMonth(), y.getUTCDate()));
+      endDate = new Date(Date.UTC(
+        y.getUTCFullYear(),
+        y.getUTCMonth(),
+        y.getUTCDate(),
         23,
         59,
         59,
-      );
+        999,
+      ));
       break;
     }
     case "week": {
       const w = new Date(now);
-      w.setDate(w.getDate() - 7);
+      w.setUTCDate(w.getUTCDate() - 7);
       startDate = w;
       break;
     }
     case "month":
-      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      startDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
       break;
     case "year":
-      startDate = new Date(now.getFullYear(), 0, 1);
+      startDate = new Date(Date.UTC(now.getUTCFullYear(), 0, 1));
       break;
     case "custom":
-      if (params.from) startDate = new Date(params.from);
-      if (params.to) {
-        endDate = new Date(params.to);
-        endDate.setHours(23, 59, 59, 999);
-      }
+      const range = analyticsRange(params.from, params.to);
+      startDate = range.start;
+      endDate = range.end;
+      rangeError = range.error || "";
       break;
     default:
       startDate = undefined;
@@ -99,6 +101,9 @@ export default async function AnalyticsPage({
     where: dateFilter,
     select: { createdAt: true, carsShown: true },
   });
+
+  const matchingChats = await prisma.chatAnalytic.count({ where: dateFilter });
+  const currentPage = pageWindow(params.page, matchingChats, pageSize).page;
 
   // ── Paginated feed query (only 8 rows with user join) ────────
   const [chatFeed, totalChats] = await Promise.all([
@@ -247,6 +252,7 @@ export default async function AnalyticsPage({
 
   return (
     <div className="space-y-8">
+      {rangeError && <p role="alert" className="av-alert">{rangeError}</p>}
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>

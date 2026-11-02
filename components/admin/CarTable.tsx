@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import AdminTableScroll from "@/components/admin/AdminTableScroll";
-import Image from "next/image";
-import { useOptimistic, useTransition } from "react";
+import VehicleImage from "../VehicleImage";
+import { carImage } from "@/lib/car-media";
+import { useOptimistic, useTransition, useState } from "react";
 import { deleteCar, toggleCarStatus } from "@/app/actions/admin";
 
 type Car = {
@@ -17,6 +18,7 @@ type Car = {
   drive: string;
   class: string;
   images: string[];
+  imageSource?: string;
   available: boolean;
   featured: boolean;
 };
@@ -27,13 +29,18 @@ export default function CarTable({ cars }: { cars: Car[] }) {
     (state, updatedCar: Car) =>
       state.map((c) => (c.id === updatedCar.id ? updatedCar : c)),
   );
-  const [, startTransition] = useTransition();
+  const [error, setError] = useState("");
+  const [pending, startTransition] = useTransition();
 
   const handleToggle = (car: Car, field: "available" | "featured") => {
     const updated = { ...car, [field]: !car[field] };
     startTransition(async () => {
       setOptimisticCars(updated);
-      await toggleCarStatus(car.id, field, !car[field]);
+      setError("");
+      try {
+        const result = await toggleCarStatus(car.id, field, !car[field]);
+        if (!result.ok) setError(result.error);
+      } catch { setError("Could not update this car. Please try again."); }
     });
   };
 
@@ -45,25 +52,34 @@ export default function CarTable({ cars }: { cars: Car[] }) {
     )
       return;
     startTransition(async () => {
-      await deleteCar(carId);
+      setError("");
+      try {
+        const result = await deleteCar(carId);
+        if (!result.ok) setError(result.error);
+      } catch { setError("Could not archive this car. Please try again."); }
     });
   };
 
   const Toggle = ({
     checked,
     onClick,
+    label,
   }: {
     checked: boolean;
     onClick: () => void;
+    label: string;
   }) => (
     <button
       onClick={onClick}
+      aria-label={label}
+      aria-pressed={checked}
+      disabled={pending}
       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ${
         checked ? "bg-primary-blue" : "bg-gray-200 dark:bg-dark-border"
       }`}
     >
       <span
-        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+        className={`inline-block h-4 w-4 transform rounded-full bg-[#f4f2ec] transition-transform ${
           checked ? "translate-x-6" : "translate-x-1"
         }`}
       />
@@ -72,19 +88,7 @@ export default function CarTable({ cars }: { cars: Car[] }) {
 
   const Thumb = ({ car }: { car: Car }) => (
     <div className="relative w-20 h-14 rounded-xl overflow-hidden bg-gray-100 dark:bg-dark-surface flex-shrink-0 transition-colors duration-500">
-      {car.images[0] ? (
-        <Image
-          src={car.images[0]}
-          alt={`${car.make} ${car.model}`}
-          fill
-          className="object-cover"
-          sizes="80px"
-        />
-      ) : (
-        <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-dark-muted text-[10px] transition-colors duration-500">
-          No img
-        </div>
-      )}
+      <VehicleImage src={carImage(car)} alt={`${car.make} ${car.model}`} sizes="80px" />
       {car.featured && (
         <span className="absolute top-1 left-1 flex items-center gap-0.5 bg-amber-400 text-amber-950 text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none">
           ★
@@ -103,6 +107,7 @@ export default function CarTable({ cars }: { cars: Car[] }) {
 
   return (
     <>
+      {error && <p role="alert" className="av-alert m-4">{error}</p>}
       {/* ───── Mobile / tablet card list (below lg) ───── */}
       <div className="lg:hidden divide-y divide-gray-100 dark:divide-dark-border">
         {optimisticCars.map((car) => (
@@ -138,6 +143,7 @@ export default function CarTable({ cars }: { cars: Car[] }) {
                   Available
                 </span>
                 <Toggle
+                  label={`Accept bookings for ${car.make} ${car.model}`}
                   checked={car.available}
                   onClick={() => handleToggle(car, "available")}
                 />
@@ -147,6 +153,7 @@ export default function CarTable({ cars }: { cars: Car[] }) {
                   Featured
                 </span>
                 <Toggle
+                  label={`Feature ${car.make} ${car.model}`}
                   checked={car.featured}
                   onClick={() => handleToggle(car, "featured")}
                 />
@@ -162,6 +169,7 @@ export default function CarTable({ cars }: { cars: Car[] }) {
               </Link>
               <button
                 onClick={() => handleDelete(car.id)}
+                disabled={pending}
                 className="flex-1 text-center py-2 rounded-xl text-sm font-medium bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400 transition-colors"
               >
                 Archive
@@ -227,13 +235,15 @@ export default function CarTable({ cars }: { cars: Car[] }) {
                 </td>
                 <td className="px-6 py-4">
                   <Toggle
-                    checked={car.available}
+                    label={`Accept bookings for ${car.make} ${car.model}`}
+                  checked={car.available}
                     onClick={() => handleToggle(car, "available")}
                   />
                 </td>
                 <td className="px-6 py-4">
                   <Toggle
-                    checked={car.featured}
+                    label={`Feature ${car.make} ${car.model}`}
+                  checked={car.featured}
                     onClick={() => handleToggle(car, "featured")}
                   />
                 </td>
@@ -250,6 +260,7 @@ export default function CarTable({ cars }: { cars: Car[] }) {
                     </span>
                     <button
                       onClick={() => handleDelete(car.id)}
+                disabled={pending}
                       className="text-sm text-red-600 dark:text-red-400 hover:underline"
                     >
                       Archive

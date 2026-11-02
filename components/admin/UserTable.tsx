@@ -27,7 +27,8 @@ export default function UserTable({
     (state, updatedUser: User) =>
       state.map((u) => (u.id === updatedUser.id ? updatedUser : u)),
   );
-  const [, startTransition] = useTransition();
+  const [error, setError] = useState("");
+  const [pending, startTransition] = useTransition();
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const handleRoleChange = (user: User, newRole: string) => {
@@ -38,7 +39,11 @@ export default function UserTable({
     const updated = { ...user, role: newRole };
     startTransition(async () => {
       setOptimisticUsers(updated);
-      await updateUserRole(user.id, newRole);
+      setError("");
+      try {
+        const result = await updateUserRole(user.id, newRole);
+        if (!result.ok) setError(result.error);
+      } catch { setError("Could not change this role. Please try again."); }
     });
   };
 
@@ -47,17 +52,25 @@ export default function UserTable({
       alert("You cannot delete your own account!");
       return;
     }
+    if (user._count.orders > 0) {
+      setError("Accounts with rental history must be retained. Use the company retention process.");
+      return;
+    }
     if (
       !confirm(
-        `Are you sure you want to delete ${user.firstName || ""} ${user.lastName || ""}?\n\nThis will also delete all their orders and reviews. This action cannot be undone.`,
+        `Are you sure you want to delete ${user.firstName || ""} ${user.lastName || ""}?\n\nOnly the AutoVerse profile is removed. The sign-in account remains with the identity provider. Accounts with rental history cannot be deleted.`,
       )
     ) {
       return;
     }
     setDeletingId(user.id);
     startTransition(async () => {
-      await deleteUser(user.id);
-      setDeletingId(null);
+      setError("");
+      try {
+        const result = await deleteUser(user.id);
+        if (!result.ok) setError(result.error);
+      } catch { setError("Could not delete this profile. Please try again."); }
+      finally { setDeletingId(null); }
     });
   };
 
@@ -84,9 +97,10 @@ export default function UserTable({
 
   const RoleSelect = ({ user }: { user: User }) => (
     <select
+      aria-label={`Role for ${user.email}`}
       value={user.role}
       onChange={(e) => handleRoleChange(user, e.target.value)}
-      disabled={user.id === currentUserId}
+      disabled={pending || user.id === currentUserId}
       className={`text-xs font-bold px-3 py-1.5 rounded-full border cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-1 dark:bg-dark-surface dark:text-dark-text transition-colors duration-500 ${
         user.role === "ADMIN"
           ? "bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-800 focus:ring-purple-500"
@@ -108,6 +122,7 @@ export default function UserTable({
 
   return (
     <>
+      {error && <p role="alert" className="av-alert m-4">{error}</p>}
       {/* ───── Mobile / tablet card list (below lg) ───── */}
       <div className="lg:hidden divide-y divide-gray-100 dark:divide-dark-border">
         {optimisticUsers.map((user) => (
@@ -165,7 +180,8 @@ export default function UserTable({
 
             <button
               onClick={() => handleDelete(user)}
-              disabled={user.id === currentUserId || deletingId === user.id}
+              title={user._count.orders ? "Profiles with rental history must be retained" : "Remove AutoVerse profile"}
+              disabled={pending || user.id === currentUserId || user._count.orders > 0 || deletingId === user.id}
               className={`w-full text-center py-2 rounded-xl text-sm font-medium transition-colors ${
                 user.id === currentUserId
                   ? "text-gray-300 dark:text-dark-border cursor-not-allowed bg-gray-50 dark:bg-white/5"
@@ -263,8 +279,9 @@ export default function UserTable({
                 <td className="px-6 py-4 text-right">
                   <button
                     onClick={() => handleDelete(user)}
+              title={user._count.orders ? "Profiles with rental history must be retained" : "Remove AutoVerse profile"}
                     disabled={
-                      user.id === currentUserId || deletingId === user.id
+                      pending || user.id === currentUserId || user._count.orders > 0 || deletingId === user.id
                     }
                     className={`text-sm font-medium transition-colors ${
                       user.id === currentUserId

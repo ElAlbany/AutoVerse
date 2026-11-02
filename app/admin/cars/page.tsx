@@ -1,3 +1,7 @@
+import type { Prisma } from "@prisma/client";
+import AdminPagination from "@/components/admin/AdminPagination";
+import { pageWindow, searchValue } from "@/lib/admin-query";
+import { requireAdmin } from "@/lib/auth";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import CarTable from "@/components/admin/CarTable";
@@ -6,17 +10,18 @@ import SearchCars from "@/components/admin/SearchCars";
 export default async function AdminCarsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ search?: string }>;
+  searchParams: Promise<{ search?: string; page?: string }>;
 }) {
+  await requireAdmin();
   const params = await searchParams;
-  const search = params.search?.trim().toLowerCase();
+  const search = searchValue(params.search).toLowerCase();
 
-  let where: any = { archived: false };
+  let where: Prisma.CarWhereInput = { archived: false };
   if (search) {
     const words = search.split(/\s+/).filter(Boolean);
     where = {
       AND: words.map((word) => {
-        const orConditions: any[] = [
+        const orConditions: Prisma.CarWhereInput[] = [
           { make: { contains: word, mode: "insensitive" } },
           { model: { contains: word, mode: "insensitive" } },
           { class: { contains: word, mode: "insensitive" } },
@@ -30,9 +35,14 @@ export default async function AdminCarsPage({
     };
   }
 
+  const matched = await prisma.car.count({ where: { ...where, archived: false } });
+  const pagination = pageWindow(params.page, matched);
+
   const cars = await prisma.car.findMany({
     where: { ...where, archived: false },
-    orderBy: { createdAt: "desc" },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    skip: pagination.skip,
+    take: pagination.size,
   });
 
   const serializedCars = cars.map((c) => ({
@@ -65,6 +75,7 @@ export default async function AdminCarsPage({
       <div className="bg-white dark:bg-dark-card rounded-3xl shadow-sm border border-gray-100 dark:border-dark-border overflow-hidden transition-colors duration-500">
         <CarTable cars={serializedCars} />
       </div>
+      <AdminPagination path="/admin/cars" search={search} pagination={pagination} />
     </div>
   );
 }

@@ -68,10 +68,11 @@ export default function DateRangeFilter({
     >
       <div className="flex flex-col gap-1">
         <label className="text-xs font-medium text-gray-500 dark:text-dark-muted">
-          From
+          From (UTC)
         </label>
         <input
           type="date"
+          aria-label="From date (UTC)"
           value={fromDate}
           onChange={(e) => setFromDate(e.target.value)}
           className="px-3 py-2 rounded-lg text-sm bg-gray-50 dark:bg-dark-surface border border-gray-200 dark:border-dark-border text-gray-900 dark:text-dark-text focus:outline-none focus:ring-2 focus:ring-primary-blue/20"
@@ -79,10 +80,11 @@ export default function DateRangeFilter({
       </div>
       <div className="flex flex-col gap-1">
         <label className="text-xs font-medium text-gray-500 dark:text-dark-muted">
-          To
+          To (UTC)
         </label>
         <input
           type="date"
+          aria-label="To date (UTC)"
           value={toDate}
           min={minToDate}
           onChange={(e) => setToDate(e.target.value)}

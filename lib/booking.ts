@@ -20,6 +20,7 @@ export type BookingInput = {
   end: string;
   requestKey: string;
   payment: boolean;
+  expectedTotalCents: number;
 };
 
 export async function book(input: BookingInput) {
@@ -44,6 +45,8 @@ export async function bookForUser(
     typeof input.start !== "string" ||
     typeof input.end !== "string" ||
     typeof input.payment !== "boolean" ||
+    !Number.isSafeInteger(input.expectedTotalCents) ||
+    input.expectedTotalCents <= 0 ||
     (input.branchId !== undefined &&
       (typeof input.branchId !== "string" || input.branchId.length > 100)) ||
     typeof input.requestKey !== "string" ||
@@ -65,6 +68,7 @@ export async function bookForUser(
         if (
           previous.userId !== userId ||
           previous.carId !== input.carId ||
+          Math.round(Number(previous.totalPrice) * 100) !== input.expectedTotalCents ||
           (!!input.branchId && previous.branchId !== input.branchId) ||
           previous.startDate.getTime() !== start.getTime() ||
           previous.endDate.getTime() !== end.getTime()
@@ -100,6 +104,8 @@ export async function bookForUser(
           "This collection branch is not accepting bookings.",
         );
       const quote = quoteRental(Number(car.pricePerDay), start, end);
+      if (quote.totalCents !== input.expectedTotalCents)
+        throw new RentalError("The rental rate has changed. Review the updated quote and confirm again.");
       const unit = await tx.vehicleUnit.findFirst({
         where: { carId: car.id, ...freeUnitWhere(start, end, branch.id) },
         orderBy: { code: "asc" },

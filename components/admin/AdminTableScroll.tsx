@@ -12,6 +12,7 @@ export default function AdminTableScroll({
   const viewport = useRef<HTMLDivElement>(null),
     top = useRef<HTMLDivElement>(null);
   const drag = useRef<{ x: number; left: number; moved: boolean } | null>(null);
+  const syncedTop = useRef(0);
   const [width, setWidth] = useState(0),
     [canLeft, setLeft] = useState(false),
     [canRight, setRight] = useState(false);
@@ -21,7 +22,9 @@ export default function AdminTableScroll({
       setWidth(area.scrollWidth);
       setLeft(area.scrollLeft > 1);
       setRight(area.scrollLeft + area.clientWidth < area.scrollWidth - 1);
-      if (top.current) top.current.scrollLeft = area.scrollLeft;
+      syncedTop.current = area.scrollLeft;
+      if (top.current && Math.abs(top.current.scrollLeft - area.scrollLeft) > 1)
+        top.current.scrollLeft = area.scrollLeft;
     };
     const observer = new ResizeObserver(update);
     observer.observe(area);
@@ -66,7 +69,12 @@ export default function AdminTableScroll({
         className="av-table-top-scroll"
         aria-label={`${label} horizontal scrollbar`}
         onScroll={(e) => {
-          if (viewport.current)
+          // Setting scrollLeft even to the same value cancels an in-flight
+          // smooth arrow scroll. Only synchronize genuine user movement.
+          if (
+            viewport.current &&
+            Math.abs(syncedTop.current - e.currentTarget.scrollLeft) > 1
+          )
             viewport.current.scrollLeft = e.currentTarget.scrollLeft;
         }}
       >

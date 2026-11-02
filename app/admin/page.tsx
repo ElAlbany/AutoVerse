@@ -1,35 +1,25 @@
+import { money } from "@/lib/rental-policy";
+import { requireAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-
-type ChatAnalyticItem = {
-  carsShown: string[];
-  message: string | null;
-  createdAt: Date;
-  user: { firstName: string | null; lastName: string | null } | null;
-};
-
-type TopCar = {
-  id: string;
-  name: string;
-  count: number;
-};
 
 export default async function AdminDashboard({
   searchParams,
 }: {
   searchParams: Promise<{ period?: string }>;
 }) {
+  await requireAdmin();
   const params = await searchParams;
   const period = params.period || "all";
 
   let dateFilter: Record<string, unknown> = {};
   if (period === "month") {
     const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
     dateFilter = { createdAt: { gte: startOfMonth } };
   } else if (period === "year") {
     const now = new Date();
-    const startOfYear = new Date(now.getFullYear(), 0, 1);
+    const startOfYear = new Date(Date.UTC(now.getUTCFullYear(), 0, 1));
     dateFilter = { createdAt: { gte: startOfYear } };
   }
 
@@ -46,23 +36,23 @@ export default async function AdminDashboard({
     prisma.order.count({ where: { ...dateFilter, status: "PENDING" } }),
     prisma.order.count({ where: { ...dateFilter, status: "CONFIRMED" } }),
     prisma.order.count({ where: { ...dateFilter, status: "COMPLETED" } }),
-    prisma.car.count(),
+    prisma.car.count({ where: { archived: false } }),
     prisma.user.count(),
     prisma.chatAnalytic.findMany({
+      where: dateFilter,
       take: 100,
       orderBy: { createdAt: "desc" },
       select: {
+        userId: true,
         carsShown: true,
-        message: true,
-        createdAt: true,
-        user: { select: { firstName: true, lastName: true } },
       },
-    }) as Promise<ChatAnalyticItem[]>,
+    }),
   ]);
 
-  const revenue = await prisma.order.aggregate({
-    where: { ...dateFilter, paymentStatus: "PAID" },
+  const bookingValue = await prisma.order.aggregate({
+    where: { ...dateFilter, status: { in: ["CONFIRMED", "ACTIVE", "COMPLETED"] } },
     _sum: { totalPrice: true },
+    _avg: { totalPrice: true },
   });
 
   // ── VERO Analytics: compact stats for dashboard link card ─────
@@ -71,40 +61,7 @@ export default async function AdminDashboard({
     (s, c) => s + c.carsShown.length,
     0
   );
-  const uniqueUsers = await prisma.chatAnalytic.groupBy({
-    by: ["userId"],
-    where: { userId: { not: null } },
-    _count: true,
-  });
-
-  // ── VERO Analytics: top recommended cars (mini preview) ──────
-  const carCountMap = new Map<string, number>();
-  chatAnalytics.forEach((ca: ChatAnalyticItem) => {
-    ca.carsShown.forEach((carId: string) => {
-      carCountMap.set(carId, (carCountMap.get(carId) || 0) + 1);
-    });
-  });
-
-  const topCarIds = Array.from(carCountMap.entries())
-    .sort((a: [string, number], b: [string, number]) => b[1] - a[1])
-    .slice(0, 5)
-    .map(([id]: [string, number]) => id);
-
-  const topCarDetails =
-    topCarIds.length > 0
-      ? await prisma.car.findMany({
-          where: { id: { in: topCarIds } },
-          select: { id: true, make: true, model: true, year: true },
-        })
-      : [];
-
-  const topCars: TopCar[] = topCarDetails
-    .map((car: { id: string; make: string; model: string; year: number }) => ({
-      ...car,
-      count: carCountMap.get(car.id) || 0,
-      name: `${car.year} ${car.make} ${car.model}`,
-    }))
-    .sort((a: TopCar, b: TopCar) => b.count - a.count);
+  const uniqueUsers = new Set(chatAnalytics.map((item) => item.userId).filter(Boolean));
 
   const periods = [
     { key: "all", label: "All Time" },
@@ -165,14 +122,16 @@ export default async function AdminDashboard({
           color="emerald"
           icon="🏁"
         />
-        <StatCard label="Total Cars" value={totalCars} color="cyan" icon="🚗" />
+        <StatCard label="Vehicle listings" value={totalCars} color="cyan" icon="🚗" />
         <StatCard
-          label="Revenue"
-          value={`$${Number(revenue._sum.totalPrice || 0)}`}
+          label="Booked rental value"
+          value={money(Number(bookingValue._sum.totalPrice || 0))}
           color="purple"
           icon="💰"
         />
       </div>
+
+      <p className="av-muted">Booked value includes confirmed, active and completed rentals created in this period. It is not collected revenue. Stripe payments are sandbox demonstrations; payments at collection are not recorded as settled income.</p>
 
       {/* Quick Stats */}
       <div className="bg-white dark:bg-dark-card rounded-3xl p-5 sm:p-6 shadow-sm border border-gray-100 dark:border-dark-border transition-colors duration-500">
@@ -206,13 +165,10 @@ export default async function AdminDashboard({
           </div>
           <div className="text-center">
             <p className="text-2xl sm:text-3xl font-bold text-indigo-600 dark:text-indigo-400">
-              $
-              {totalOrders
-                ? Math.round(Number(revenue._sum.totalPrice || 0) / totalOrders)
-                : 0}
+              {money(Number(bookingValue._avg.totalPrice || 0))}
             </p>
             <p className="text-xs sm:text-sm text-gray-500 dark:text-dark-muted mt-1">
-              Avg Order Value
+              Avg Booked Rental
             </p>
           </div>
         </div>
@@ -233,8 +189,7 @@ export default async function AdminDashboard({
                 VERO Analytics
               </h2>
               <p className="text-sm text-gray-500 dark:text-dark-muted mt-0.5">
-                Deep insights into AI conversations, recommendations & customer
-                behavior
+                Summary of up to 100 latest chat messages in this period. Open the full analytics report for all matching activity.
               </p>
             </div>
           </div>
@@ -256,7 +211,7 @@ export default async function AdminDashboard({
         <div className="mt-4 flex gap-6 text-sm">
           <div>
             <span className="text-gray-400 dark:text-dark-muted text-xs uppercase tracking-wider font-semibold">
-              Total Chats
+              Recent chats
             </span>
             <p className="text-xl font-bold text-gray-900 dark:text-dark-text mt-0.5">
               {totalChats}
@@ -275,7 +230,7 @@ export default async function AdminDashboard({
               Unique Users
             </span>
             <p className="text-xl font-bold text-gray-900 dark:text-dark-text mt-0.5">
-              {uniqueUsers.length}
+              {uniqueUsers.size}
             </p>
           </div>
         </div>
