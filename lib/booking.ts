@@ -78,6 +78,8 @@ export async function bookForUser(
           throw new RentalError(
             "This checkout has expired. Start a new booking.",
           );
+        if ((previous.policy as { payment?: string } | null)?.payment !== (input.payment ? "stripe-sandbox" : "pay-at-collection"))
+          throw new RentalError("An existing booking uses a different payment method. Check your bookings before starting another checkout.");
         return previous;
       }
       const car = await tx.car.findUnique({ where: { id: input.carId } });

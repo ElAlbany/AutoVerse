@@ -36,6 +36,7 @@ test("booking, staff return, review and checkout lifecycles", { skip: process.en
       const request = input(30);
       const [first, retry] = await Promise.all([bookForUser(request, owner), bookForUser(request, owner)]);
       assert.equal(first.orderId, retry.orderId);
+      await assert.rejects(bookForUser({ ...request, payment: true }, owner, { stripe: {} as Stripe }), /different payment method/);
       const order = await prisma.order.findUniqueOrThrow({ where: { id: first.orderId } });
       assert.equal(order.status, "CONFIRMED");
       assert.equal(order.expiresAt, null);

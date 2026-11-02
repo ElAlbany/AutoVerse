@@ -2358,3 +2358,11 @@ body:has(.av-fleet-dialog[open]) { overflow:hidden; }
 .av-branch-order { padding-bottom: 1rem; border-bottom: 1px solid var(--border-color); }
 @media (max-width: 1100px) { .av-branch-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); } .av-branch-stock-search { grid-template-columns: 1fr 1fr; } .av-branch-stock-row { grid-template-columns: 1fr; } }
 @media (max-width: 640px) { .av-branch-grid { grid-template-columns: 1fr; } .av-branch-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .av-branch-detail-heading { align-items: start; flex-direction: column; } .av-branch-stock-search { grid-template-columns: 1fr; } .av-branch-stock-row dl { flex-wrap: wrap; } }
+
+.av-payment-methods { display: grid; gap: .75rem; border: 0; padding: 0; }
+.av-payment-methods legend { font-weight: 600; margin-bottom: .75rem; }
+.av-payment-choice { display: flex; align-items: flex-start; gap: .75rem; border: 1px solid var(--border-color); border-radius: .25rem; padding: 1rem; cursor: pointer; }
+.av-payment-choice:has(input:checked) { border-color: var(--av-accent); }
+.av-payment-choice input { margin-top: .25rem; accent-color: var(--av-accent); }
+.av-payment-choice strong, .av-payment-choice small { display: block; }
+.av-payment-choice small { color: var(--text-secondary); margin-top: .4rem; line-height: 1.6; }
