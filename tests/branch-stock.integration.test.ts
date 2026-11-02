@@ -79,6 +79,10 @@ test(
       assert.equal(await prisma.car.count({ where: { branchId: b } }), 2);
       assert.equal(first.quantity, 3);
       assert.equal(second.quantity, 5);
+    await saveBranchListing({ id: second.id, branchId: b, quantity: 5, data: { ...details, pricePerDay: 75 } });
+    assert.equal(Number((await prisma.car.findUniqueOrThrow({ where: { id: first.id } })).pricePerDay), 50, "Editing Tirana pricing preserves Frankfurt pricing");
+    assert.equal(Number((await prisma.car.findUniqueOrThrow({ where: { id: second.id } })).pricePerDay), 75);
+
       await saveBranchListing({
         id: first.id,
         branchId: a,
