@@ -1,5 +1,5 @@
 "use server";
-import { runAction } from "@/lib/action-result";
+import { RentalError, runAction } from "@/lib/action-result";
 import { writeReview } from "@/lib/reviews";
 import { prisma } from "@/lib/prisma";
 import { requireUser, requireAdmin } from "@/lib/auth";
@@ -22,9 +22,11 @@ export async function saveReview(
 }
 
 export async function reportReview(id: string) {
-  const user = await requireUser();
-  await rateLimit(`review-report:${user.id}`, 5);
-  await prisma.review.update({ where: { id }, data: { reported: true } });
+  return runAction(async () => {
+    const user = await requireUser();
+    await rateLimit(`review-report:${user.id}`, 5);
+    await prisma.review.update({ where: { id }, data: { reported: true } });
+  });
 }
 
 export async function moderateReview(
@@ -32,16 +34,20 @@ export async function moderateReview(
   hidden: boolean,
   reason: string,
 ) {
-  await requireAdmin();
-  if (hidden && reason.trim().length < 10)
-    throw new Error(
-      "Provide a specific moderation reason of at least 10 characters.",
-    );
-  const review = await prisma.review.update({
-    where: { id },
-    data: { hidden, moderationReason: reason.trim(), reported: false },
+  return runAction(async () => {
+    await requireAdmin();
+    if (typeof hidden !== "boolean" || typeof reason !== "string" || reason.length > 500)
+      throw new RentalError("Provide a valid moderation reason under 500 characters.");
+    if (hidden && reason.trim().length < 10)
+      throw new RentalError(
+        "Provide a specific moderation reason of at least 10 characters.",
+      );
+    const review = await prisma.review.update({
+      where: { id },
+      data: { hidden, moderationReason: reason.trim(), reported: false },
+    });
+    revalidatePath(`/car-details/${review.carId}`);
+    revalidatePath("/admin/reviews");
+    revalidatePath("/");
   });
-  revalidatePath(`/car-details/${review.carId}`);
-  revalidatePath("/admin/reviews");
-  revalidatePath("/");
 }

@@ -1,3 +1,4 @@
+import { RentalError } from "./action-result";
 export const VEHICLE_USES = [
   {
     id: "CITY",
@@ -53,7 +54,7 @@ export function validateVehicleUses(
   },
 ) {
   if (tags.some((tag) => !VEHICLE_USES.some((option) => option.id === tag)))
-    throw new Error("Choose only supported driving tags.");
+    throw new RentalError("Choose only supported driving tags.");
   if (
     tags.includes("ROUGH_ROAD") &&
     (!capabilities.roughRoadApproved ||
@@ -61,7 +62,7 @@ export function validateVehicleUses(
       !capabilities.suitableTyres ||
       (capabilities.groundClearanceMm || 0) < 205)
   )
-    throw new Error(
+    throw new RentalError(
       "Rough-road tagging needs operator approval, verified low-range 4WD, suitable tyres and at least 205 mm ground clearance. AWD alone is insufficient.",
     );
   return [...new Set(tags)];

@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import { updateOrderStatus } from "@/app/actions/admin";
 
 const ALL_STATUSES = [
@@ -26,6 +26,7 @@ export default function StatusUpdater({
   orderId: string;
   currentStatus: string;
 }) {
+  const [error, setError] = useState("");
   const [pending, startTransition] = useTransition();
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -33,11 +34,12 @@ export default function StatusUpdater({
     if (!newStatus || newStatus === currentStatus) return;
 
     startTransition(async () => {
+      setError("");
       try {
         const result = await updateOrderStatus(orderId, newStatus);
         if (!result.ok) throw new Error(result.error);
       } catch (err: any) {
-        alert(err.message);
+        setError(err instanceof Error ? err.message : "Could not update rental status.");
       }
     });
   };
@@ -48,7 +50,9 @@ export default function StatusUpdater({
   );
 
   return (
+    <div>
     <select
+      aria-label="Rental status"
       value={currentStatus}
       onChange={handleChange}
       disabled={pending || options.length <= 1}
@@ -64,5 +68,7 @@ export default function StatusUpdater({
         </option>
       ))}
     </select>
+    {error && <p role="alert" className="av-card-error mt-2">{error}</p>}
+    </div>
   );
 }

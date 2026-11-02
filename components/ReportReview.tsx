@@ -19,7 +19,8 @@ export default function ReportReview({ id }: { id: string }) {
           return;
         }
         try {
-          await reportReview(id);
+          const result = await reportReview(id);
+          if (!result.ok) throw new Error(result.error);
           setMessage("Reported to the team");
         } catch (e) {
           setMessage(e instanceof Error ? e.message : "Try again later");

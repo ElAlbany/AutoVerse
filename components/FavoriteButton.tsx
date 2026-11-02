@@ -35,7 +35,9 @@ export default function FavoriteButton({
           }
           start(async () => {
             try {
-              await setFavorite(carId, !saved);
+              setError("");
+              const result = await setFavorite(carId, !saved);
+              if (!result.ok) throw new Error(result.error);
               setSaved(!saved);
             } catch (e) {
               setError(e instanceof Error ? e.message : "Could not save car");

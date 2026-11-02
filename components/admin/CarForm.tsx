@@ -1,5 +1,6 @@
 "use client";
 
+import type { ActionResult } from "@/lib/action-result";
 import CarMediaEditor from "./CarMediaEditor";
 import { VEHICLE_USES } from "@/lib/vehicle-use";
 import { useState } from "react";
@@ -15,7 +16,7 @@ import {
 } from "@/lib/car-options";
 
 type CarFormProps = {
-  action: (formData: FormData) => Promise<void>;
+  action: (formData: FormData) => Promise<void | ActionResult>;
   initialData?: {
     id?: string;
     usageTags?: string[];
@@ -84,7 +85,8 @@ export default function CarForm({
 
     try {
       const formData = new FormData(e.currentTarget);
-      await action(formData);
+      const result = await action(formData);
+      if (result && !result.ok) { setError(result.error); setPending(false); }
     } catch (err: any) {
       if (err.message === "NEXT_REDIRECT") return;
       setError(err.message || "Something went wrong");

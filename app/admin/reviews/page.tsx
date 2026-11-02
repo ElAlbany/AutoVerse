@@ -30,7 +30,7 @@ export default async function ReviewsAdmin() {
             label={r.hidden ? "Restore review" : "Hide with reason"}
             action={async (form) => {
               "use server";
-              await moderateReview(
+              return moderateReview(
                 r.id,
                 !r.hidden,
                 String(form.get("reason") || "Restored after review")
