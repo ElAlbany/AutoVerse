@@ -47,6 +47,7 @@ This pass started after PR #2 merged into `main` at `c3735f8`. It reviewed the m
 - Cars, orders and users now load 20 records per page, with stable ordering, retained search filters, result counts and bounded page input. Invalid analytics dates and malformed page URLs no longer cause database query failures. Analytics date filters use UTC consistently.
 - Admin dashboard, car listing, order listing, and car edit/create pages authorize before their own queries, in addition to the layout and mutation checks.
 - Car, branch, profile, favorite and review moderation mutations return safe business errors. Staff toggles roll back and display failures; role/profile actions recover pending state. Rental status errors appear inline. Successful car save redirects remain outside error handling.
+- Role changes and profile deletions lock administrator rows in a consistent order and recheck the actor after waiting. Concurrent administrators cannot revoke each other into an empty staff account set. Database tests exercise simultaneous demotions and deletions, self-protection and rental-history retention.
 - The profile-deletion text now matches the server: rental history is retained, profiles with orders cannot be deleted, and deleting an application profile does not revoke its Clerk identity.
 - Dashboard booked value and average booked rental exclude pending/cancelled orders. The UI explains that booked value is not settled revenue and that Stripe activity is sandbox-only. Archived cars are excluded from listing totals. Recent chat statistics identify their 100-message sample and respect the selected period. Unused top-car queries and an unused Gemini SDK dependency were removed.
 - Admin car thumbnails use the same image selection/fallback as customer listings. A global dark-theme rule no longer darkens the toggle knob into its background.
@@ -54,7 +55,7 @@ This pass started after PR #2 merged into `main` at `c3735f8`. It reviewed the m
 
 ### Engineering verification and limits
 
-The expanded suite has 29 unit/policy tests, 5 chat workflow tests, 1 media integration test and 11 PostgreSQL integration test results: **46 passing results**, with none skipped in the authorized database run. Type checking and the production build were repeated for the final code. No migration, seed reset, actual charge or email delivery was needed for this pass.
+The expanded suite has 29 unit/policy tests, 5 chat workflow tests, 1 media integration test and 12 PostgreSQL integration test results: **47 passing results**, with none skipped in the authorized database run. Type checking and the production build were repeated for the final code. No migration, seed reset, actual charge or email delivery was needed for this pass.
 
 Admin component QA used an isolated, development-only page containing synthetic data. It verified desktop scrolling, error display and optimistic rollback when authorization is denied, retained pagination search links, disabled deletion for a profile with rental history, and mobile cards in both themes. At 390 px, document width stayed within the viewport. The temporary page was removed before the final build; it never read customer data or bypassed staff authentication. Authenticated end-to-end acceptance testing remains a release check for the operator's configured accounts.
 
