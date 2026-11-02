@@ -21,7 +21,7 @@ export default async function RentPage({
     !!process.env.STRIPE_SECRET_KEY?.startsWith("sk_test_") &&
     !!process.env.STRIPE_WEBHOOK_SECRET;
   return (
-    <main className="av-shell av-page">
+    <main className="av-shell av-page" data-autoverse-branch={car.branchId}>
       <nav className="av-breadcrumb" aria-label="Breadcrumb">
         <Link href="/#discover">Collection</Link>
         <span>/</span>

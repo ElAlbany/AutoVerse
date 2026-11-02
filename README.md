@@ -17,16 +17,18 @@ Use Node.js 24 or later.
 
 Open [localhost:3000](http://localhost:3000). A production preview uses `npm run build` followed by `npm start`.
 
+See [branch ownership and numeric stock](docs/BRANCH_OWNERSHIP.md) for the current branch-specific catalogue, quantity editor and migration.
+
 ## Customer experience
 
 - Browse, filter, compare cars and check date-specific availability without an account.
 - Sign in when booking, saving a car, submitting/reporting a review, or using VERO. Selected booking dates survive the return through sign-in.
 - Server-calculated quotes use started 24-hour rental periods. A changed quote requires fresh confirmation. Each listing owns individual physical vehicle units; a booking reserves one unit for the entire trip, plus a preparation buffer.
 - Without Stripe configuration, an available car is allocated and confirmed immediately, with payment due at collection.
-- With Stripe test credentials and webhooks configured, a temporary vehicle hold leads to sandbox Checkout. The server verifies payment before confirming the rental. Real Stripe keys and events are rejected.
+- With Stripe test credentials and webhooks configured, customers can choose pay at collection or sandbox Checkout. A temporary vehicle hold leads to sandbox Checkout. The server verifies payment before confirming the rental. Real Stripe keys and events are rejected.
 - Manage rental activity, cancellation, refund status, and verified reviews from the account. Reviews are available after staff record the vehicle return.
 - Save favorites to the account; compare up to three cars in the browser, using the persistent Compare cars navigation link.
-- Choose an operator-managed collection branch. Searches and bookings use that branch’s actual stock.
+- Browse one branch’s own catalogue at a time, defaulting to Frankfurt International Airport. Searches and bookings use only that branch’s stock.
 - Every listing has a required seat count, operator-selected journey tags and either a multi-angle API gallery or uploaded vehicle photos.
 
 ## Staff operations
@@ -34,6 +36,8 @@ Open [localhost:3000](http://localhost:3000). A production preview uses `npm run
 Admin roles are stored in PostgreSQL and checked on server mutations. The admin panel includes cars, orders, fleet schedule, maintenance blocks, physical units, conflict reconciliation, review moderation and analytics. Cars are archived to preserve booking history. Staff explicitly record pickup and return; a calendar date never automatically marks a vehicle returned.
 
 Cars, users and orders use searchable, paginated admin lists. The dashboard distinguishes booked rental value from settled income.
+
+Branches have overview cards and individual detail pages. Car management edits a single branch listing and its numeric fleet quantity.
 
 The fleet calendar now has date navigation, a timeline/list switch, filters, pagination and a focused vehicle workspace. See [Fleet calendar UX](docs/FLEET_CALENDAR_UX.md).
 

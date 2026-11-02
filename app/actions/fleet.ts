@@ -10,7 +10,7 @@ import { revalidatePath } from "next/cache";
 export async function addVehicle(form: FormData) {
   return runAction(async () => {
     await requireAdmin();
-    const branchId = String(form.get("branchId") || "");
+    const requestedBranch = String(form.get("branchId") || "");
     const carId = String(form.get("carId") || "");
     const code = String(form.get("code") || "").trim();
     if (!/^[a-zA-Z0-9-]{2,40}$/.test(code))
@@ -19,7 +19,10 @@ export async function addVehicle(form: FormData) {
       );
     await prisma.$transaction(async (tx) => {
       await lockCar(tx, carId);
-      await tx.car.findUniqueOrThrow({ where: { id: carId } });
+      const car = await tx.car.findUniqueOrThrow({ where: { id: carId } });
+      const branchId = car.branchId;
+      if (requestedBranch && car.branchId !== requestedBranch)
+        throw new RentalError("Add this vehicle to the listing’s own branch. Create another listing for a different branch.");
       await tx.$queryRaw`SELECT id FROM "Branch" WHERE id = ${branchId} FOR SHARE`;
       if (
         !(await tx.branch.findFirst({ where: { id: branchId, active: true } }))
@@ -211,42 +214,5 @@ export async function assignVehicle(form: FormData) {
     });
     revalidatePath("/admin/fleet");
     revalidatePath("/admin/orders");
-  });
-}
-
-export async function transferVehicle(form: FormData) {
-  return runAction(async () => {
-    await requireAdmin();
-    const id = String(form.get("unitId"));
-    const branchId = String(form.get("branchId"));
-    const unit = await prisma.vehicleUnit.findUniqueOrThrow({ where: { id } });
-    await prisma.$transaction(async (tx) => {
-      await lockCar(tx, unit.carId);
-      await expireHolds(tx, unit.carId);
-      await tx.$queryRaw`SELECT id FROM "Branch" WHERE id = ${branchId} FOR SHARE`;
-      if (
-        !(await tx.branch.findFirst({ where: { id: branchId, active: true } }))
-      )
-        throw new RentalError("Choose an active branch.");
-      if (
-        await tx.vehicleReservation.count({
-          where: {
-            unitId: id,
-            active: true,
-            OR: [
-              { endDate: { gt: new Date() } },
-              { order: { status: "ACTIVE" } },
-            ],
-          },
-        })
-      )
-        throw new RentalError(
-          "Finish or reassign all active and upcoming reservations before transferring a vehicle.",
-        );
-      await tx.vehicleUnit.update({ where: { id }, data: { branchId } });
-    });
-    revalidatePath("/admin/fleet");
-    revalidatePath("/admin/branches");
-    revalidatePath("/");
   });
 }

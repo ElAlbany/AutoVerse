@@ -1,14 +1,15 @@
 import Link from "next/link";
 import type { pageWindow } from "@/lib/admin-query";
 
-export default function AdminPagination({ path, search = "", pagination }: {
+export default function AdminPagination({ path, search = "", filters = {}, pagination }: {
   path: string;
   search?: string;
+  filters?: Record<string, string>;
   pagination: ReturnType<typeof pageWindow>;
 }) {
   const { page, pages, skip, size, total } = pagination;
   const href = (next: number) => {
-    const params = new URLSearchParams({ page: String(next) });
+    const params = new URLSearchParams({ ...filters, page: String(next) });
     if (search) params.set("search", search);
     return `${path}?${params}`;
   };

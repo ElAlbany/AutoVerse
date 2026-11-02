@@ -1,3 +1,4 @@
+import { currentFreeUnitWhere } from "@/lib/inventory";
 import { requireAdmin } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -18,6 +19,8 @@ export default async function EditCarPage({
 
   if (!car) notFound();
 
+  const branches = await prisma.branch.findMany({ where: { id: car.branchId }, select: { id: true, name: true, city: true } });
+  const availableNow = car.available ? await prisma.vehicleUnit.count({ where: { carId: car.id, ...currentFreeUnitWhere(car.branchId) } }) : 0;
   const serializedCar = {
     ...car,
     pricePerDay: Number(car.pricePerDay),
@@ -35,7 +38,7 @@ export default async function EditCarPage({
       </div>
 
       <div className="bg-white dark:bg-dark-card rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100 dark:border-dark-border transition-colors duration-500">
-        <CarForm action={updateCar} initialData={serializedCar} mode="edit" />
+        <CarForm action={updateCar} initialData={serializedCar} mode="edit" branches={branches} availableNow={availableNow} />
       </div>
     </div>
   );

@@ -50,7 +50,7 @@ export default async function CarDetailsPage({
   if (query.start) rentQuery.set("start", query.start);
   if (query.end) rentQuery.set("end", query.end);
   return (
-    <main className="av-shell av-page">
+    <main className="av-shell av-page" data-autoverse-branch={car.branchId}>
       <nav className="av-breadcrumb" aria-label="Breadcrumb">
         <Link href="/#discover">Our collection</Link>
         <span>

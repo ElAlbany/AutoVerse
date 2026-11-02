@@ -175,7 +175,7 @@ export default function VeroChat() {
           signal: controller.signal,
           body: JSON.stringify({
             messages: history,
-            branchId: query.get("branchId"),
+            branchId: query.get("branchId") || document.querySelector<HTMLElement>("[data-autoverse-branch]")?.dataset.autoverseBranch,
             start: query.get("start"),
             end: query.get("end"),
           }),

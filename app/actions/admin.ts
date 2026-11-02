@@ -1,7 +1,8 @@
 "use server";
 import { validCarImageUrl } from "@/lib/car-media";
 import { validateVehicleUses } from "@/lib/vehicle-use";
-import { randomUUID } from "node:crypto";
+import { stockQuantity } from "@/lib/stock-policy";
+import { saveBranchListing } from "@/lib/car-stock";
 import { RentalError, runAction } from "@/lib/action-result";
 import { changeUserRole, deleteUserProfile } from "@/lib/user-administration";
 import { transitionRental } from "@/lib/rental-lifecycle";
@@ -146,20 +147,10 @@ export async function createCar(form: FormData) {
     await requireAdmin();
     const data = carData(form);
     const branchId = String(form.get("branchId") || "");
-    await prisma.$transaction(async (tx) => {
-      await tx.$queryRaw`SELECT id FROM "Branch" WHERE id = ${branchId} FOR SHARE`;
-      const branch = await tx.branch.findFirst({
-        where: { id: branchId, active: true },
-      });
-      if (!branch) throw new RentalError("Choose an active collection branch.");
-      await tx.car.create({
-        data: {
-          ...data,
-          location: branch.name,
-          units: { create: { code: `AV-${randomUUID().slice(0, 8)}`, branchId } },
-        },
-      });
-    });
+    await saveBranchListing({ branchId, quantity: stockQuantity(form.get("quantity")), data });
+    revalidatePath(`/admin/branches/${branchId}`);
+    revalidatePath("/admin/branches");
+    revalidatePath("/admin/fleet");
     revalidatePath("/");
     revalidatePath("/admin/cars");
   });
@@ -171,23 +162,11 @@ export async function updateCar(form: FormData) {
     await requireAdmin();
     const id = String(form.get("id"));
     const data = carData(form);
-    await prisma.$transaction(async (tx) => {
-      await lockCar(tx, id);
-      if (
-        data.available &&
-        (await tx.order.count({
-          where: {
-            carId: id,
-            inventoryConflict: true,
-            status: { in: ["PENDING", "CONFIRMED", "ACTIVE"] },
-          },
-        }))
-      )
-        throw new RentalError(
-          "Resolve legacy assignments in Fleet before enabling this listing.",
-        );
-      await tx.car.update({ where: { id }, data });
-    });
+    const branchId = String(form.get("branchId") || "");
+    await saveBranchListing({ id, branchId, quantity: stockQuantity(form.get("quantity")), data });
+    revalidatePath(`/admin/branches/${branchId}`);
+    revalidatePath("/admin/branches");
+    revalidatePath("/admin/fleet");
     revalidatePath("/");
     revalidatePath(`/car-details/${id}`);
     revalidatePath("/admin/cars");

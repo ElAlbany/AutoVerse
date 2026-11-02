@@ -2,16 +2,18 @@
 
 Follow-up implementation, 31 October 2026. Each completed feature is committed and pushed on `rental-platform-upgrade`.
 
+Current branch ownership and numeric quantity behavior is documented in [Branch-owned car catalogues](BRANCH_OWNERSHIP.md); that update supersedes the former shared-listing/transfer approach below.
+
 ## Booking and availability
 
 - Pay-at-collection bookings confirm automatically when one physical vehicle can be allocated for the whole rental. No new 24-hour staff-review hold is created. Stripe sandbox bookings still require verified payment before confirmation, with a temporary checkout hold.
 - Pickup rejects past times. Choosing a pickup automatically selects the following day for return if the previous return would be invalid. Return has a minimum later than pickup. Both browser and server validate dates; browser inputs use the customer's local timezone and requests use ISO instants.
 - `Branch` stores the operator-controlled name, city, address and whether it accepts new rentals. Each `VehicleUnit` belongs to one branch; bookings record that branch and snapshot collection details. Public browsing remains available without signing in.
-- The public branch combo filters listings by physical stock at that branch. With dates selected, the same unit must be available throughout the trip. A vehicle at Tirana cannot fulfil a booking at Brussels.
+- The public branch combo displays the selected branch’s own car listings, defaulting to Frankfurt. With dates selected, the same unit must be available throughout the trip. A vehicle at Tirana cannot fulfil a booking at Brussels.
 - Availability is derived, not an editable counter. Confirmed/active rentals, maintenance and preparation block allocation. Cancellation releases the reservation. Staff-recorded return leaves the preparation interval blocked, then the vehicle can be allocated again. Overdue active vehicles remain excluded until staff record return.
 - Per-listing transaction locks and the PostgreSQL overlap exclusion remain authoritative under concurrent requests. Branch closure synchronizes with allocation through a branch row lock. An availability quote can change before submission; submission always checks again.
 - Admin → Branches & stock creates/edits branches and shows per-model physical, in-service and date-available quantities. Close branches instead of deleting history. Existing bookings remain operational when a branch closes.
-- Admin → Fleet calendar adds physical cars to branches, schedules maintenance, reassigns bookings within their booked branch, and transfers units only when no current/upcoming reservation or overdue rental remains. Existing legacy conflicts still need staff reconciliation; no stock is invented to resolve them.
+- Admin → Fleet calendar adds physical cars to branches, schedules maintenance, reassigns bookings within their booked branch, and updates in-service quantities. Listings stay with their own branch; cross-branch unit transfers have been replaced by managing separate branch listings. Existing legacy conflicts still need staff reconciliation; no stock is invented to resolve them.
 
 ## Why keep the fleet calendar?
 

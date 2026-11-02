@@ -21,6 +21,9 @@ type Car = {
   imageSource?: string;
   available: boolean;
   featured: boolean;
+  quantity?: number;
+  availableNow?: number;
+  branchName?: string;
 };
 
 export default function CarTable({ cars }: { cars: Car[] }) {
@@ -137,10 +140,12 @@ export default function CarTable({ cars }: { cars: Car[] }) {
               </div>
             </div>
 
+            <p className="av-muted">{car.branchName} · Fleet quantity: {car.quantity ?? 0} · Available now: {car.availableNow ?? 0}</p>
+
             <div className="flex items-center justify-between gap-3 bg-gray-50 dark:bg-dark-surface rounded-xl px-4 py-2.5 transition-colors duration-500">
               <div className="flex items-center gap-2">
                 <span className="text-xs font-medium text-gray-600 dark:text-dark-muted">
-                  Available
+                  Accept bookings
                 </span>
                 <Toggle
                   label={`Accept bookings for ${car.make} ${car.model}`}
@@ -187,6 +192,7 @@ export default function CarTable({ cars }: { cars: Car[] }) {
               <th className="px-6 py-4 font-semibold text-gray-700 dark:text-dark-text">
                 Car
               </th>
+              <th className="px-6 py-4 font-semibold">Branch & stock</th>
               <th className="px-6 py-4 font-semibold text-gray-700 dark:text-dark-text">
                 Specs
               </th>
@@ -194,7 +200,7 @@ export default function CarTable({ cars }: { cars: Car[] }) {
                 Price/Day
               </th>
               <th className="px-6 py-4 font-semibold text-gray-700 dark:text-dark-text">
-                Available
+                Accept bookings
               </th>
               <th className="px-6 py-4 font-semibold text-gray-700 dark:text-dark-text">
                 Featured
@@ -223,6 +229,7 @@ export default function CarTable({ cars }: { cars: Car[] }) {
                     </div>
                   </div>
                 </td>
+                <td className="px-6 py-4"><p>{car.branchName}</p><p className="av-muted">{car.quantity ?? 0} in fleet · {car.availableNow ?? 0} available now</p></td>
                 <td className="px-6 py-4 text-gray-500 dark:text-dark-muted text-xs space-y-0.5">
                   <p>
                     {car.fuel_type} •{" "}

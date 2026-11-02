@@ -24,7 +24,6 @@ import {
   assignVehicle,
   releaseBlock,
   setVehicleEnabled,
-  transferVehicle,
 } from "@/app/actions/fleet";
 import {
   bookingIsOverdue,
@@ -969,31 +968,7 @@ export default function FleetWorkspace({ data }: { data: FleetWorkspaceData }) {
                     />
                   </ActionForm>
                 </section>
-                <section className="av-fleet-settings-transfer">
-                  <h3 className="text-xl">Transfer branch</h3>
-                  <p className="av-muted my-3">
-                    Move a physical vehicle only after all active and upcoming
-                    reservations are finished or reassigned.
-                  </p>
-                  <ActionForm action={transferVehicle} label="Transfer vehicle">
-                    <input type="hidden" name="unitId" value={unit.id} />
-                    <label className="av-field">
-                      Destination branch
-                      <select name="branchId" required defaultValue="">
-                        <option value="" disabled>
-                          Choose another branch
-                        </option>
-                        {data.branches
-                          .filter((b) => b.active && b.id !== unit.branchId)
-                          .map((b) => (
-                            <option key={b.id} value={b.id}>
-                              {b.name} · {b.city}
-                            </option>
-                          ))}
-                      </select>
-                    </label>
-                  </ActionForm>
-                </section>
+                <section><h3 className="text-xl">Branch-owned listing</h3><p className="av-muted my-3">This vehicle belongs to {unit.branch.name}. Manage quantities on this branch’s car listing. To offer the model elsewhere, add a separate listing there.</p><Link className="av-text-link" href={`/admin/cars/${unit.carId}/edit`}>Edit listing & quantity →</Link></section>
               </div>
             )}
           </>
@@ -1007,7 +982,7 @@ export default function FleetWorkspace({ data }: { data: FleetWorkspaceData }) {
       >
         <p className="av-muted mb-5">
           One entry represents one actual car. For three identical cars, add
-          three unique fleet codes to the same listing.
+          three unique fleet codes to the same branch listing, or set its numeric quantity in car management.
         </p>
         <ActionForm action={addVehicle} label="Add vehicle to fleet">
           <label className="av-field">
@@ -1018,28 +993,9 @@ export default function FleetWorkspace({ data }: { data: FleetWorkspaceData }) {
               </option>
               {data.cars.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.year} {c.make} {c.model}
+                  {c.year} {c.make} {c.model} · {data.branches.find((branch) => branch.id === c.branchId)?.name}
                 </option>
               ))}
-            </select>
-          </label>
-          <label className="av-field">
-            Collection branch
-            <select
-              name="branchId"
-              defaultValue={data.filters.branchId || ""}
-              required
-            >
-              <option value="" disabled>
-                Choose a branch
-              </option>
-              {data.branches
-                .filter((b) => b.active)
-                .map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.name} · {b.city}
-                  </option>
-                ))}
             </select>
           </label>
           <label className="av-field">

@@ -5,15 +5,17 @@ import { useRouter } from "next/navigation";
 
 export default function SearchCars({
   initialSearch,
+  branchId = "",
 }: {
   initialSearch: string;
+  branchId?: string;
 }) {
   const router = useRouter();
   const [search, setSearch] = useState(initialSearch);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const params = new URLSearchParams();
+    const params = new URLSearchParams({ branchId });
     if (search.trim()) params.set("search", search.trim());
     router.push(`/admin/cars?${params.toString()}`);
   };
@@ -47,7 +49,7 @@ export default function SearchCars({
             type="button"
             onClick={() => {
               setSearch("");
-              router.push("/admin/cars");
+              router.push(`/admin/cars?branchId=${branchId}`);
             }}
             className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-sm text-gray-600 dark:text-dark-muted hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
           >

@@ -11,6 +11,7 @@ export type CompareCar = {
   transmission: string;
   fuel: string;
   usageTags?: string[];
+  branchName?: string;
 };
 export const COMPARE_KEY = "autoverse-compare";
 
@@ -29,6 +30,7 @@ export function parseComparison(raw: string | null): CompareCar[] {
       result.push({
         id: car.id, make: car.make, model: car.model, price: car.price,
         transmission: car.transmission, fuel: car.fuel,
+        branchName: text(car.branchName) ? car.branchName : undefined,
         image: text(car.image, 2000) && validCarImageUrl(car.image) ? car.image : "/vehicle-placeholder.svg",
         seats: capacity(car.seats), luggage: capacity(car.luggage),
         usageTags: Array.isArray(car.usageTags) ? car.usageTags.filter((tag): tag is string => text(tag, 60)).slice(0, 10) : [],

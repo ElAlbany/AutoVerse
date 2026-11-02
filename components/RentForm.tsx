@@ -9,7 +9,12 @@ import { suggestedReturn } from "@/lib/rental-dates";
 import RentalDateFields from "./RentalDateFields";
 import { ArrowUpRight, ShieldCheck } from "lucide-react";
 
-type Quote = { days: number; total: number; dailyCents: number; totalCents: number };
+type Quote = {
+  days: number;
+  total: number;
+  dailyCents: number;
+  totalCents: number;
+};
 export default function RentForm({
   car,
   paymentEnabled = false,
@@ -30,10 +35,16 @@ export default function RentForm({
   const [branchId, setBranchId] = useState(
     branches.some((b) => b.id === initialBranch)
       ? initialBranch
-      : initialBranch ? "" : branches[0]?.id || "",
+      : initialBranch
+        ? ""
+        : branches[0]?.id || "",
   );
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<"collection" | "stripe">(
+    "collection",
+  );
+  const useStripe = paymentEnabled && paymentMethod === "stripe";
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(false);
   const [refresh, setRefresh] = useState(0);
@@ -105,13 +116,26 @@ export default function RentForm({
       controller.abort();
     };
   }, [start, end, car.id, branchId, signature, refresh]);
+  useEffect(() => setAccepted(false), [useStripe]);
   const late = start && !canCancel(new Date(start));
   return (
     <form
       className="av-booking-form"
       onSubmit={async (e) => {
         e.preventDefault();
-        if (!start || !end || !branchId || !quoteIsCurrent || !quote || !count || !accepted || loading || checking || !car.available) return;
+        if (
+          !start ||
+          !end ||
+          !branchId ||
+          !quoteIsCurrent ||
+          !quote ||
+          !count ||
+          !accepted ||
+          loading ||
+          checking ||
+          !car.available
+        )
+          return;
         const params = new URLSearchParams({
           carId: car.id,
           branchId,
@@ -132,14 +156,16 @@ export default function RentForm({
             start: new Date(start).toISOString(),
             end: new Date(end).toISOString(),
             requestKey,
-            payment: paymentEnabled,
+            payment: useStripe,
             expectedTotalCents: quote.totalCents,
           });
           if (!result.ok) throw new Error(result.error);
           window.location.assign(result.url);
         } catch (e) {
           setBookingError(
-            e instanceof Error ? e.message : "Booking could not be completed. Please try again.",
+            e instanceof Error
+              ? e.message
+              : "Booking could not be completed. Please try again.",
           );
           setAccepted(false);
           setQuoteFor("");
@@ -166,9 +192,13 @@ export default function RentForm({
           ))}
         </select>
       </label>
-      {initialBranch && !branches.some((branch) => branch.id === initialBranch) && (
-        <p className="av-muted">This car is not offered at the requested branch. Choose an available collection branch.</p>
-      )}
+      {initialBranch &&
+        !branches.some((branch) => branch.id === initialBranch) && (
+          <p className="av-muted">
+            This car is not offered at the requested branch. Choose an available
+            collection branch.
+          </p>
+        )}
       <div className="av-form-row">
         <RentalDateFields
           start={start}
@@ -181,7 +211,8 @@ export default function RentForm({
         {checking ? (
           <p className="av-muted">Checking the fleet for your dates…</p>
         ) : (
-          quoteIsCurrent && count != null && (
+          quoteIsCurrent &&
+          count != null && (
             <p className="av-muted">
               {count
                 ? `${count} vehicle${count === 1 ? "" : "s"} available for this entire period.`
@@ -209,14 +240,50 @@ export default function RentForm({
           </div>
         </div>
       )}
+      {paymentEnabled && (
+        <fieldset className="av-payment-methods" disabled={loading}>
+          <legend>Payment method</legend>
+          <label className="av-payment-choice">
+            <input
+              type="radio"
+              name="paymentMethod"
+              value="collection"
+              checked={!useStripe}
+              onChange={() => setPaymentMethod("collection")}
+            />
+            <span>
+              <strong>Pay at collection</strong>
+              <small>
+                Confirm your available car now and pay when you collect it.
+              </small>
+            </span>
+          </label>
+          <label className="av-payment-choice">
+            <input
+              type="radio"
+              name="paymentMethod"
+              value="stripe"
+              checked={useStripe}
+              onChange={() => setPaymentMethod("stripe")}
+            />
+            <span>
+              <strong>Demo card payment · Stripe</strong>
+              <small>
+                Secure sandbox checkout. Test cards only; no real money is
+                charged.
+              </small>
+            </span>
+          </label>
+        </fieldset>
+      )}
       <div className="av-muted">
         <ShieldCheck size={17} className="inline mr-2" />
-        {paymentEnabled
+        {useStripe
           ? "Stripe sandbox · no real money is charged."
           : "Instant confirmation · pay at collection."}
       </div>
       <p className="av-muted">
-        {paymentEnabled
+        {useStripe
           ? "Payment confirms your rental if the vehicle hold is still valid."
           : "An available vehicle is reserved and your rental is confirmed immediately. No staff approval is needed."}{" "}
         {late
@@ -267,7 +334,7 @@ export default function RentForm({
           ? "Preparing your rental…"
           : !isSignedIn
             ? "Sign in to continue"
-            : paymentEnabled
+            : useStripe
               ? "Continue to demo payment"
               : "Confirm this rental"}
         <ArrowUpRight size={17} />
