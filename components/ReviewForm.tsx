@@ -21,11 +21,12 @@ export default function ReviewForm({
         e.preventDefault();
         start(async () => {
           try {
-            await saveReview(orderId, rating, comment);
+            const result = await saveReview(orderId, rating, comment);
+            if (!result.ok) throw new Error(result.error);
             setMessage("Your verified review has been saved.");
           } catch (e) {
             setMessage(
-              e instanceof Error ? e.message : "Could not save review."
+              e instanceof Error ? e.message : "Could not save review.",
             );
           }
         });

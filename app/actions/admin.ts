@@ -2,125 +2,23 @@
 import { validCarImageUrl } from "@/lib/car-media";
 import { validateVehicleUses } from "@/lib/vehicle-use";
 import { randomUUID } from "node:crypto";
-import { OrderStatus } from "@prisma/client";
+import { runAction } from "@/lib/action-result";
+import { transitionRental } from "@/lib/rental-lifecycle";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
-import { lockCar, expireHolds } from "@/lib/inventory";
-import { queueOrderEmail } from "@/lib/notifications";
-import { refundOrder } from "@/lib/payments";
+import { lockCar } from "@/lib/inventory";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-const TRANSITIONS: Record<string, string[]> = {
-  PENDING: ["CONFIRMED", "CANCELLED"],
-  CONFIRMED: ["ACTIVE", "CANCELLED"],
-  ACTIVE: ["COMPLETED"],
-  COMPLETED: [],
-  CANCELLED: [],
-};
 export async function updateOrderStatus(orderId: string, status: string) {
-  const admin = await requireAdmin();
-  if (!Object.values(OrderStatus).includes(status as OrderStatus))
-    throw new Error("Invalid status.");
-  const found = await prisma.order.findUniqueOrThrow({
-    where: { id: orderId },
+  return runAction(async () => {
+    const admin = await requireAdmin();
+    await transitionRental(orderId, status, admin.id);
+    revalidatePath("/admin/orders");
+    revalidatePath("/admin/fleet");
+    revalidatePath("/profile/orders");
+    revalidatePath(`/profile/orders/${orderId}`);
   });
-  await prisma.$transaction(async (tx) => {
-    await lockCar(tx, found.carId);
-    await expireHolds(tx, found.carId);
-    const order = await tx.order.findUniqueOrThrow({
-      where: { id: orderId },
-      include: { reservation: { include: { unit: true } } },
-    });
-    if (status === order.status) return;
-    if (!TRANSITIONS[order.status]?.includes(status))
-      throw new Error("This status change is not allowed.");
-    if (["CONFIRMED", "ACTIVE"].includes(status)) {
-      if (
-        order.inventoryConflict ||
-        !order.reservation?.active ||
-        !order.reservation.unit.enabled
-      )
-        throw new Error(
-          "Resolve the vehicle assignment in Fleet before confirming this rental.",
-        );
-      if (
-        (order.policy as { payment?: string } | null)?.payment ===
-          "stripe-sandbox" &&
-        order.paymentStatus !== "PAID"
-      )
-        throw new Error("Sandbox checkout must be paid before confirmation.");
-      if (status === "CONFIRMED" && order.endDate <= new Date())
-        throw new Error("An expired rental cannot be confirmed.");
-      if (status === "ACTIVE" && order.startDate > new Date())
-        throw new Error(
-          "Collection cannot be recorded before the scheduled pickup time.",
-        );
-    }
-    await tx.order.update({
-      where: { id: orderId },
-      data: {
-        status: status as OrderStatus,
-        expiresAt: null,
-        inventoryConflict:
-          status === "CANCELLED" ? false : order.inventoryConflict,
-        paymentStatus:
-          status === "CANCELLED" && order.paymentStatus === "PAID"
-            ? "REFUND_PENDING"
-            : order.paymentStatus,
-      },
-    });
-    if (status === "CANCELLED")
-      await tx.vehicleReservation.updateMany({
-        where: { orderId },
-        data: { active: false },
-      });
-    if (status === "COMPLETED" && order.reservation) {
-      const returned = new Date();
-      const preparationEnd = new Date(returned.getTime() + 60 * 60000);
-      if (
-        await tx.vehicleReservation.count({
-          where: {
-            unitId: order.reservation.unitId,
-            active: true,
-            OR: [{ orderId: null }, { orderId: { not: orderId } }],
-            startDate: { lt: preparationEnd },
-            endDate: { gt: returned },
-          },
-        })
-      )
-        throw new Error(
-          "Return preparation overlaps the next reservation. Reassign that booking in Fleet before recording this return.",
-        );
-      if (preparationEnd > order.reservation.startDate)
-        await tx.vehicleReservation.update({
-          where: { orderId },
-          data: { endDate: preparationEnd },
-        });
-    }
-    await tx.orderEvent.create({
-      data: {
-        orderId,
-        actorId: admin.id,
-        message:
-          status === "ACTIVE"
-            ? "Vehicle collection recorded by staff."
-            : status === "COMPLETED"
-              ? "Vehicle return recorded by staff. A verified review is now available."
-              : `Rental ${status.toLowerCase()} by staff.`,
-      },
-    });
-    await queueOrderEmail(tx, orderId);
-  });
-  try {
-    await refundOrder(orderId);
-  } catch {
-    /* Queued refunds are retried by maintenance. */
-  }
-  revalidatePath("/admin/orders");
-  revalidatePath("/admin/fleet");
-  revalidatePath("/profile/orders");
-  revalidatePath(`/profile/orders/${orderId}`);
 }
 
 function carData(form: FormData) {

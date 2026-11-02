@@ -1,3 +1,4 @@
+import { RentalError } from "./action-result";
 const DAY = 86400000;
 export type FleetWindow = {
   date: string;
@@ -125,7 +126,7 @@ export function parseFleetDateTime(value: string) {
     !Number.isFinite(date.getTime()) ||
     date.toISOString().slice(0, 16) !== value
   )
-    throw new Error("Choose a valid date and time in UTC.");
+    throw new RentalError("Choose a valid date and time in UTC.");
   return date;
 }
 export function fleetDate(value: string, withTime = true) {

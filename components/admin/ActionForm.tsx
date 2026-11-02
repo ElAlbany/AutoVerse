@@ -1,11 +1,12 @@
 "use client";
+import type { ActionResult } from "@/lib/action-result";
 import { useState, useTransition } from "react";
 export default function ActionForm({
   action,
   children,
   label,
 }: {
-  action: (form: FormData) => Promise<void>;
+  action: (form: FormData) => Promise<void | ActionResult>;
   children: React.ReactNode;
   label: string;
 }) {
@@ -19,7 +20,8 @@ export default function ActionForm({
         const data = new FormData(e.currentTarget);
         start(async () => {
           try {
-            await action(data);
+            const result = await action(data);
+            if (result && !result.ok) throw new Error(result.error);
             setMessage("Saved.");
           } catch (e) {
             setMessage(e instanceof Error ? e.message : "Could not save.");

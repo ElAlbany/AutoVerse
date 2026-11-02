@@ -49,6 +49,7 @@ export async function refundOrder(orderId: string) {
 export async function settleCheckout(
   session: Stripe.Checkout.Session,
   eventId: string,
+  issueRefund: typeof refundOrder = refundOrder,
 ) {
   if (session.livemode) throw new Error("Live payments are disabled.");
   const order = await prisma.order.findUnique({
@@ -115,5 +116,5 @@ export async function settleCheckout(
     }
     await tx.webhookEvent.create({ data: { id: eventId } });
   });
-  await refundOrder(order.id);
+  await issueRefund(order.id);
 }

@@ -1,3 +1,4 @@
+import { RentalError, actionError } from "@/lib/action-result";
 import { createHash } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { availableUnits } from "@/lib/inventory";
@@ -32,12 +33,10 @@ export async function GET(request: Request) {
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (e) {
+    const limited = e instanceof RentalError && e.message.startsWith("Too many requests");
     return Response.json(
-      {
-        error:
-          e instanceof Error ? e.message : "Availability could not be checked.",
-      },
-      { status: 400 },
+      { error: actionError(e, "Availability is temporarily unavailable. Please try again.") },
+      { status: limited ? 429 : e instanceof RentalError ? 400 : 503, headers: { "Cache-Control": "no-store", ...(limited ? { "Retry-After": "600" } : {}) } },
     );
   }
 }

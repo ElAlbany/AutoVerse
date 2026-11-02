@@ -30,7 +30,7 @@ export default function RentForm({
   const [branchId, setBranchId] = useState(
     branches.some((b) => b.id === initialBranch)
       ? initialBranch
-      : branches[0]?.id || "",
+      : initialBranch ? "" : branches[0]?.id || "",
   );
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
@@ -38,6 +38,9 @@ export default function RentForm({
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState("");
   const [quote, setQuote] = useState<Quote | null>(null);
+  const [quoteFor, setQuoteFor] = useState("");
+  const signature = `${car.id}|${branchId}|${start}|${end}`;
+  const quoteIsCurrent = quoteFor === signature;
   const [count, setCount] = useState<number | null>(null);
   const [accepted, setAccepted] = useState(false);
   const [requestKey, setRequestKey] = useState("");
@@ -79,6 +82,8 @@ export default function RentForm({
         );
         const data = await result.json();
         if (!result.ok) throw new Error(data.error);
+        if (controller.signal.aborted) return;
+        setQuoteFor(signature);
         setQuote(data.quote);
         setCount(data.available);
       } catch (e) {
@@ -96,14 +101,14 @@ export default function RentForm({
       clearTimeout(timer);
       controller.abort();
     };
-  }, [start, end, car.id, branchId]);
+  }, [start, end, car.id, branchId, signature]);
   const late = start && !canCancel(new Date(start));
   return (
     <form
       className="av-booking-form"
       onSubmit={async (e) => {
         e.preventDefault();
-        if (!start || !end || !branchId) return;
+        if (!start || !end || !branchId || !quoteIsCurrent || !quote || !count || !accepted || loading || checking || !car.available) return;
         const params = new URLSearchParams({
           carId: car.id,
           branchId,
@@ -125,6 +130,7 @@ export default function RentForm({
             requestKey,
             payment: paymentEnabled,
           });
+          if (!result.ok) throw new Error(result.error);
           window.location.assign(result.url);
         } catch (e) {
           setError(
@@ -154,6 +160,9 @@ export default function RentForm({
           ))}
         </select>
       </label>
+      {initialBranch && !branches.some((branch) => branch.id === initialBranch) && (
+        <p className="av-muted">This car is not offered at the requested branch. Choose an available collection branch.</p>
+      )}
       <div className="av-form-row">
         <RentalDateFields
           start={start}
@@ -166,7 +175,7 @@ export default function RentForm({
         {checking ? (
           <p className="av-muted">Checking the fleet for your dates…</p>
         ) : (
-          count != null && (
+          quoteIsCurrent && count != null && (
             <p className="av-muted">
               {count
                 ? `${count} vehicle${count === 1 ? "" : "s"} available for this entire period.`
@@ -175,7 +184,7 @@ export default function RentForm({
           )
         )}
       </div>
-      {quote && (
+      {quoteIsCurrent && quote && (
         <div className="av-quote">
           <div>
             <span>
@@ -240,7 +249,9 @@ export default function RentForm({
           !isLoaded ||
           loading ||
           checking ||
+          !quoteIsCurrent ||
           !quote ||
+          !count ||
           count === 0 ||
           !accepted ||
           !car.available

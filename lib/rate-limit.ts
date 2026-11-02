@@ -1,3 +1,4 @@
+import { RentalError } from "./action-result";
 import "server-only";
 import { prisma } from "./prisma";
 
@@ -8,5 +9,5 @@ export async function rateLimit(key: string, limit: number, minutes = 10) {
     "resetAt" = CASE WHEN "RateLimit"."resetAt" < NOW() THEN NOW() + ${minutes} * INTERVAL '1 minute' ELSE "RateLimit"."resetAt" END
     RETURNING count`;
   if (rows[0].count > limit)
-    throw new Error("Too many requests. Please try again shortly.");
+    throw new RentalError("Too many requests. Please try again shortly.");
 }

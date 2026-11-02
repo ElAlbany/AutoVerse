@@ -1,5 +1,6 @@
 "use server";
 
+import { actionError } from "@/lib/action-result";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
@@ -130,10 +131,20 @@ export async function getUserOrders() {
 }
 
 export async function createOrder(input: import("@/lib/booking").BookingInput) {
-  const result = await book(input);
-  revalidatePath("/profile/orders");
-  revalidatePath("/admin/orders");
-  return result;
+  try {
+    const result = await book(input);
+    revalidatePath("/profile/orders");
+    revalidatePath("/admin/orders");
+    return { ok: true as const, ...result };
+  } catch (error) {
+    return {
+      ok: false as const,
+      error: actionError(
+        error,
+        "Your booking could not be completed. Please check availability and try again.",
+      ),
+    };
+  }
 }
 
 export async function cancelOrder(orderId: string) {
@@ -149,7 +160,10 @@ export async function cancelOrder(orderId: string) {
   } catch (error) {
     return {
       success: false,
-      message: error instanceof Error ? error.message : "Cancellation failed.",
+      message: actionError(
+        error,
+        "Cancellation could not be completed. Please try again.",
+      ),
     };
   }
 }

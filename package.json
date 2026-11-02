@@ -7,8 +7,8 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "tsx --test tests/rental-policy.test.ts tests/rental-dates.test.ts tests/vehicle-use.test.ts tests/car-media.test.ts tests/image-upload.test.ts tests/fleet-calendar.test.ts tests/chat-policy.test.ts",
-    "test:inventory": "node --conditions=react-server --env-file=.env --import tsx --test tests/inventory.integration.test.ts tests/payments.integration.test.ts tests/branches.integration.test.ts tests/fleet-calendar.integration.test.ts",
+    "test": "tsx --test tests/rental-policy.test.ts tests/rental-dates.test.ts tests/vehicle-use.test.ts tests/car-media.test.ts tests/image-upload.test.ts tests/fleet-calendar.test.ts tests/chat-policy.test.ts tests/action-result.test.ts",
+    "test:inventory": "node --conditions=react-server --env-file=.env --import tsx --test tests/inventory.integration.test.ts tests/payments.integration.test.ts tests/branches.integration.test.ts tests/fleet-calendar.integration.test.ts tests/rental-lifecycle.integration.test.ts",
     "test:chat": "node --conditions=react-server --import tsx --test tests/chat.integration.test.ts",
     "test:media": "node --conditions=react-server --import tsx --test tests/media-storage.test.ts",
     "typecheck": "tsc --noEmit"

@@ -1,7 +1,7 @@
 import "server-only";
+import { RentalError } from "./action-result";
 import { randomUUID } from "node:crypto";
 import { prisma } from "./prisma";
-import { requireUser } from "./auth";
 import { expireHolds, freeUnitWhere, lockCar } from "./inventory";
 import {
   bufferedEnd,
@@ -23,13 +23,36 @@ export type BookingInput = {
 };
 
 export async function book(input: BookingInput) {
+  const { requireUser } = await import("./auth");
   const user = await requireUser();
-  await rateLimit(`booking:${user.id}`, 15);
-  if (!input.carId || !/^[a-zA-Z0-9-]{16,100}$/.test(input.requestKey))
-    throw new Error("Invalid booking request.");
+  return bookForUser(input, user.id);
+}
+
+// Internal server service. The public action obtains the user from Clerk; the
+// caller cannot supply an account ID through the browser.
+export async function bookForUser(
+  input: BookingInput,
+  userId: string,
+  runtime: { stripe?: ReturnType<typeof getStripe> } = {},
+) {
+  await rateLimit(`booking:${userId}`, 15);
+  if (
+    !input ||
+    typeof input.carId !== "string" ||
+    !input.carId ||
+    input.carId.length > 100 ||
+    typeof input.start !== "string" ||
+    typeof input.end !== "string" ||
+    typeof input.payment !== "boolean" ||
+    (input.branchId !== undefined &&
+      (typeof input.branchId !== "string" || input.branchId.length > 100)) ||
+    typeof input.requestKey !== "string" ||
+    !/^[a-zA-Z0-9-]{16,100}$/.test(input.requestKey)
+  )
+    throw new RentalError("Invalid booking request.");
   const start = new Date(input.start);
   const end = new Date(input.end);
-  const stripe = input.payment ? getStripe() : null;
+  const stripe = input.payment ? (runtime.stripe ?? getStripe()) : null;
   const origin = input.payment ? appUrl() : "";
   const order = await prisma.$transaction(
     async (tx) => {
@@ -40,20 +63,22 @@ export async function book(input: BookingInput) {
       });
       if (previous) {
         if (
-          previous.userId !== user.id ||
+          previous.userId !== userId ||
           previous.carId !== input.carId ||
           (!!input.branchId && previous.branchId !== input.branchId) ||
           previous.startDate.getTime() !== start.getTime() ||
           previous.endDate.getTime() !== end.getTime()
         )
-          throw new Error("This request belongs to a different rental.");
+          throw new RentalError("This request belongs to a different rental.");
         if (previous.status === "CANCELLED")
-          throw new Error("This checkout has expired. Start a new booking.");
+          throw new RentalError(
+            "This checkout has expired. Start a new booking.",
+          );
         return previous;
       }
       const car = await tx.car.findUnique({ where: { id: input.carId } });
       if (!car || car.archived || !car.available)
-        throw new Error("This car is not currently accepting bookings.");
+        throw new RentalError("This car is not currently accepting bookings.");
       let branchId = input.branchId;
       if (!branchId) {
         const choices = await tx.vehicleUnit.findMany({
@@ -63,7 +88,7 @@ export async function book(input: BookingInput) {
           take: 2,
         });
         if (choices.length !== 1)
-          throw new Error("Select a collection branch before booking.");
+          throw new RentalError("Select a collection branch before booking.");
         branchId = choices[0].branchId;
       }
       await tx.$queryRaw`SELECT id FROM "Branch" WHERE id = ${branchId} FOR SHARE`;
@@ -71,20 +96,22 @@ export async function book(input: BookingInput) {
         where: { id: branchId, active: true },
       });
       if (!branch)
-        throw new Error("This collection branch is not accepting bookings.");
+        throw new RentalError(
+          "This collection branch is not accepting bookings.",
+        );
       const quote = quoteRental(Number(car.pricePerDay), start, end);
       const unit = await tx.vehicleUnit.findFirst({
         where: { carId: car.id, ...freeUnitWhere(start, end, branch.id) },
         orderBy: { code: "asc" },
       });
       if (!unit)
-        throw new Error(
+        throw new RentalError(
           "No vehicle is available for the entire period. Try different dates or another car.",
         );
       const created = await tx.order.create({
         data: {
           id: randomUUID(),
-          userId: user.id,
+          userId: userId,
           carId: car.id,
           branchId: branch.id,
           startDate: start,
@@ -111,7 +138,7 @@ export async function book(input: BookingInput) {
           },
           events: {
             create: {
-              actorId: user.id,
+              actorId: userId,
               message: input.payment
                 ? "Vehicle held while sandbox checkout is completed."
                 : "Vehicle allocated. Rental automatically confirmed; payment is due at collection.",
@@ -161,13 +188,41 @@ export async function book(input: BookingInput) {
     },
     { idempotencyKey: `checkout:${order.id}` },
   );
-  await prisma.order.update({
-    where: { id: order.id },
-    data: {
-      stripeSessionId: session.id,
-      expiresAt: new Date(session.expires_at * 1000),
-    },
+  const attached = await prisma.$transaction(async (tx) => {
+    await lockCar(tx, order.carId);
+    const fresh = await tx.order.findUniqueOrThrow({
+      where: { id: order.id },
+      include: { reservation: true },
+    });
+    if (
+      fresh.status !== "PENDING" ||
+      !fresh.reservation?.active ||
+      !fresh.expiresAt ||
+      fresh.expiresAt <= new Date()
+    ) {
+      await tx.order.update({
+        where: { id: order.id },
+        data: { stripeSessionId: session.id },
+      });
+      return false;
+    }
+    await tx.order.update({
+      where: { id: order.id },
+      data: {
+        stripeSessionId: session.id,
+        expiresAt: new Date(session.expires_at * 1000),
+      },
+    });
+    return true;
   });
+  if (!attached) {
+    try {
+      await stripe.checkout.sessions.expire(session.id);
+    } catch {
+      /* A late payment is reconciled by webhook delivery. */
+    }
+    return { orderId: order.id, url: `/profile/orders/${order.id}` };
+  }
   return {
     orderId: order.id,
     url: session.url || `/profile/orders/${order.id}`,
@@ -175,19 +230,31 @@ export async function book(input: BookingInput) {
 }
 
 export async function cancelBooking(orderId: string) {
+  const { requireUser } = await import("./auth");
   const user = await requireUser();
+  return cancelBookingForUser(orderId, user.id);
+}
+export async function cancelBookingForUser(
+  orderId: string,
+  userId: string,
+  effects: {
+    refund?: (id: string) => Promise<void>;
+    expire?: (id: string) => Promise<unknown>;
+  } = {},
+) {
   const found = await prisma.order.findFirst({
-    where: { id: orderId, userId: user.id },
+    where: { id: orderId, userId: userId },
   });
-  if (!found) throw new Error("Booking not found.");
+  if (!found) throw new RentalError("Booking not found.");
   const order = await prisma.$transaction(async (tx) => {
     await lockCar(tx, found.carId);
     const fresh = await tx.order.findUniqueOrThrow({ where: { id: orderId } });
+    if (fresh.status === "CANCELLED") return fresh;
     if (!["PENDING", "CONFIRMED"].includes(fresh.status))
-      throw new Error("This rental cannot be cancelled.");
+      throw new RentalError("This rental cannot be cancelled.");
     // Unconfirmed requests and unpaid checkout holds may always be withdrawn.
     if (fresh.status !== "PENDING" && !canCancel(fresh.startDate))
-      throw new Error("Cancellation closes 48 hours before pickup.");
+      throw new RentalError("Cancellation closes 48 hours before pickup.");
     await tx.vehicleReservation.updateMany({
       where: { orderId },
       data: { active: false },
@@ -205,7 +272,7 @@ export async function cancelBooking(orderId: string) {
     await tx.orderEvent.create({
       data: {
         orderId,
-        actorId: user.id,
+        actorId: userId,
         message: "Customer cancelled the booking.",
       },
     });
@@ -214,13 +281,16 @@ export async function cancelBooking(orderId: string) {
   });
   if (order.stripeSessionId && order.paymentStatus === "UNPAID") {
     try {
-      await getStripe().checkout.sessions.expire(order.stripeSessionId);
+      await (
+        effects.expire ||
+        ((id: string) => getStripe().checkout.sessions.expire(id))
+      )(order.stripeSessionId);
     } catch {
       /* A late payment is refunded by webhook settlement. */
     }
   }
   try {
-    await refundOrder(orderId);
+    await (effects.refund || refundOrder)(orderId);
   } catch {
     /* Durable REFUND_PENDING is retried by maintenance. */
   }

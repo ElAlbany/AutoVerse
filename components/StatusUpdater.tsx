@@ -34,7 +34,8 @@ export default function StatusUpdater({
 
     startTransition(async () => {
       try {
-        await updateOrderStatus(orderId, newStatus);
+        const result = await updateOrderStatus(orderId, newStatus);
+        if (!result.ok) throw new Error(result.error);
       } catch (err: any) {
         alert(err.message);
       }
@@ -43,7 +44,7 @@ export default function StatusUpdater({
 
   const allowed = VALID_NEXT[currentStatus] || [];
   const options = ALL_STATUSES.filter(
-    (s) => s.value === currentStatus || allowed.includes(s.value)
+    (s) => s.value === currentStatus || allowed.includes(s.value),
   );
 
   return (
