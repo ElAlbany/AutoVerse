@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import AdminTableScroll from "@/components/admin/AdminTableScroll";
 import Image from "next/image";
 import { useOptimistic, useTransition } from "react";
 import { deleteCar, toggleCarStatus } from "@/app/actions/admin";
@@ -37,7 +38,12 @@ export default function CarTable({ cars }: { cars: Car[] }) {
   };
 
   const handleDelete = (carId: string) => {
-    if (!confirm("Are you sure you want to delete this car?")) return;
+    if (
+      !confirm(
+        "Are you sure you want to archive this listing? Existing bookings are preserved.",
+      )
+    )
+      return;
     startTransition(async () => {
       await deleteCar(carId);
     });
@@ -158,7 +164,7 @@ export default function CarTable({ cars }: { cars: Car[] }) {
                 onClick={() => handleDelete(car.id)}
                 className="flex-1 text-center py-2 rounded-xl text-sm font-medium bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400 transition-colors"
               >
-                Delete
+                Archive
               </button>
             </div>
           </div>
@@ -166,7 +172,7 @@ export default function CarTable({ cars }: { cars: Car[] }) {
       </div>
 
       {/* ───── Desktop table (lg and up) ───── */}
-      <div className="hidden lg:block overflow-x-auto">
+      <AdminTableScroll label="Cars table">
         <table className="w-full text-left text-sm">
           <thead className="bg-gray-50 dark:bg-dark-surface border-b border-gray-100 dark:border-dark-border transition-colors duration-500">
             <tr>
@@ -246,7 +252,7 @@ export default function CarTable({ cars }: { cars: Car[] }) {
                       onClick={() => handleDelete(car.id)}
                       className="text-sm text-red-600 dark:text-red-400 hover:underline"
                     >
-                      Delete
+                      Archive
                     </button>
                   </div>
                 </td>
@@ -254,7 +260,7 @@ export default function CarTable({ cars }: { cars: Car[] }) {
             ))}
           </tbody>
         </table>
-      </div>
+      </AdminTableScroll>
     </>
   );
 }

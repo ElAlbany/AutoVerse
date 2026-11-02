@@ -1,0 +1,56 @@
+name: Verify
+
+on:
+  push:
+    branches: [main, rental-platform-upgrade]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: Types, policies and PostgreSQL integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: autoverse
+          POSTGRES_PASSWORD: fixture-only
+          POSTGRES_DB: autoverse_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://autoverse:fixture-only@localhost:5432/autoverse_test
+      DIRECT_URL: postgresql://autoverse:fixture-only@localhost:5432/autoverse_test
+      RUN_DB_TESTS: "1"
+      APP_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - name: Apply the complete migration chain to a fresh test database
+        run: npx prisma migrate deploy
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run test:chat
+      - run: npm run test:media
+      - run: npm run test:inventory

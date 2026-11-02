@@ -16,7 +16,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" data-scroll-behavior="smooth" suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
@@ -24,7 +24,7 @@ export default function RootLayout({
               (function() {
                 try {
                   const cookie = document.cookie.match(/theme=([^;]+)/);
-                  const theme = cookie ? cookie[1] : 'dark';
+                  const theme = cookie ? cookie[1] : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
                   if (theme === 'dark') {
                     document.documentElement.classList.add('dark');
                   } else {
@@ -37,7 +37,15 @@ export default function RootLayout({
         />
       </head>
       <body className="relative" suppressHydrationWarning>
-        <ClerkProvider afterSignOutUrl="/">
+        <ClerkProvider
+          afterSignOutUrl="/"
+          signInUrl="/sign-in"
+          signUpUrl="/sign-up"
+        >
+          <a href="#main-content" className="av-skip">
+            Skip to content
+          </a>
+          <div id="main-content" tabIndex={-1} />
           <NavBar />
           {children}
           <Footer />

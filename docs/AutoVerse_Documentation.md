@@ -1,3 +1,5 @@
+> Historical reference for the application before the platform upgrade. For current booking, inventory, deletion and deployment behavior, use [Platform upgrade](PLATFORM_UPGRADE.md) and [Branches, imagery and driving suitability](BRANCHES_IMAGES_AND_USAGE.md).
+
 # AutoVerse — Project Documentation
 
 Last updated: 2026-10-29

@@ -16,10 +16,10 @@ module.exports = {
       colors: {
         "black-100": "#2B2C35",
         "primary-blue": {
-          DEFAULT: "#2B59FF",
-          100: "#F5F8FF",
-          200: "#1E3FE0",
-          300: "#4D7CFF",
+          DEFAULT: "#234B3A",
+          100: "#F4F2EC",
+          200: "#193A2B",
+          300: "#88AA8D",
         },
         "secondary-orange": "#f79761",
         "light-white": {
@@ -29,24 +29,24 @@ module.exports = {
         grey: "#747A88",
         // Dark theme colors
         dark: {
-          bg: "#0a0f1e",
-          surface: "#111827",
-          card: "#1a2236",
-          border: "#1f2937",
-          text: "#f1f5f9",
-          muted: "#94a3b8",
+          bg: "#141917",
+          surface: "#1B221E",
+          card: "#202823",
+          border: "#364139",
+          text: "#F2F1E9",
+          muted: "#ADB8AE",
         },
         accent: {
-          cyan: "#06b6d4",
-          purple: "#8b5cf6",
-          pink: "#ec4899",
+          cyan: "#9FBC9B",
+          purple: "#829784",
+          pink: "#B8986C",
         },
       },
       backgroundImage: {
         pattern: "url('/pattern.png')",
         "hero-bg": "url('/hero-bg.png')",
         "aurora-dark":
-          "linear-gradient(135deg, #0a0f1e 0%, #111827 25%, #1a1b4b 50%, #111827 75%, #0a0f1e 100%)",
+          "linear-gradient(135deg, #141917 0%, #1B221E 25%, #1a1b4b 50%, #1B221E 75%, #141917 100%)",
         "aurora-light":
           "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 25%, #dbeafe 50%, #e2e8f0 75%, #f8fafc 100%)",
       },
@@ -118,14 +118,14 @@ module.exports = {
       addUtilities({
         ".text-gradient": {
           background:
-            "linear-gradient(135deg, #2B59FF 0%, #06b6d4 50%, #8b5cf6 100%)",
+            "linear-gradient(135deg, #234B3A 0%, #9FBC9B 50%, #829784 100%)",
           "-webkit-background-clip": "text",
           "-webkit-text-fill-color": "transparent",
           "background-clip": "text",
         },
         ".bg-gradient-aurora": {
           background:
-            "linear-gradient(-45deg, #0a0f1e, #1a1b4b, #111827, #0f172a, #1e1b4b)",
+            "linear-gradient(-45deg, #141917, #1a1b4b, #1B221E, #0f172a, #1e1b4b)",
           "background-size": "400% 400%",
         },
         ".bg-gradient-aurora-light": {

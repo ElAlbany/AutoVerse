@@ -4,8 +4,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const navItems = [
+  { href: "/admin/branches", label: "Branches & stock", icon: "⌖" },
   { href: "/admin", label: "Dashboard", icon: "📊" },
   { href: "/admin/analytics", label: "Analytics", icon: "📊" },
+  { href: "/admin/fleet", label: "Fleet calendar", icon: "▦" },
+  { href: "/admin/reviews", label: "Reviews", icon: "☆" },
   { href: "/admin/orders", label: "Orders", icon: "📋" },
   { href: "/admin/cars", label: "Cars", icon: "🚗" },
   { href: "/admin/users", label: "Users", icon: "👥" },

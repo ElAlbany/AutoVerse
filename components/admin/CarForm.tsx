@@ -1,5 +1,7 @@
 "use client";
 
+import CarMediaEditor from "./CarMediaEditor";
+import { VEHICLE_USES } from "@/lib/vehicle-use";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -16,6 +18,17 @@ type CarFormProps = {
   action: (formData: FormData) => Promise<void>;
   initialData?: {
     id?: string;
+    usageTags?: string[];
+    groundClearanceMm?: number | null;
+    lowRange4x4?: boolean;
+    suitableTyres?: boolean;
+    roughRoadApproved?: boolean;
+    seats?: number | null;
+    luggage?: number | null;
+    location?: string;
+    images?: string[];
+    imageSource?: string;
+    features?: string[];
     make: string;
     model: string;
     year: number;
@@ -33,14 +46,27 @@ type CarFormProps = {
     available: boolean;
     featured: boolean;
   };
+  branches?: { id: string; name: string; city: string }[];
   mode: "create" | "edit";
 };
 
-export default function CarForm({ action, initialData, mode }: CarFormProps) {
+export default function CarForm({
+  action,
+  initialData,
+  mode,
+  branches = [],
+}: CarFormProps) {
   const router = useRouter();
-  const [make, setMake] = useState(initialData?.make || "");
+  const [make, setMake] = useState(
+    CAR_MAKES.find(
+      (m) => m.toLowerCase() === initialData?.make.toLowerCase(),
+    ) ||
+      initialData?.make ||
+      "",
+  );
   const [models, setModels] = useState<string[]>(CAR_MODELS[make] || []);
   const [selectedModel, setSelectedModel] = useState(initialData?.model || "");
+  const [uploading, setUploading] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
 
@@ -52,6 +78,7 @@ export default function CarForm({ action, initialData, mode }: CarFormProps) {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (uploading) return;
     setPending(true);
     setError("");
 
@@ -59,6 +86,7 @@ export default function CarForm({ action, initialData, mode }: CarFormProps) {
       const formData = new FormData(e.currentTarget);
       await action(formData);
     } catch (err: any) {
+      if (err.message === "NEXT_REDIRECT") return;
       setError(err.message || "Something went wrong");
       setPending(false);
     }
@@ -90,6 +118,9 @@ export default function CarForm({ action, initialData, mode }: CarFormProps) {
             className="w-full rounded-xl border border-gray-200 dark:border-dark-border px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue/20 focus:border-primary-blue dark:bg-dark-surface dark:text-dark-text transition-colors duration-500"
           >
             <option value="">Select make</option>
+            {make && !CAR_MAKES.some((m) => m === make) && (
+              <option value={make}>{make}</option>
+            )}
             {CAR_MAKES.map((m) => (
               <option key={m} value={m}>
                 {m}
@@ -114,6 +145,9 @@ export default function CarForm({ action, initialData, mode }: CarFormProps) {
             <option value="">
               {make ? "Select model" : "Select make first"}
             </option>
+            {selectedModel && !models.includes(selectedModel) && (
+              <option value={selectedModel}>{selectedModel}</option>
+            )}
             {models.map((m) => (
               <option key={m} value={m}>
                 {m}
@@ -353,22 +387,139 @@ export default function CarForm({ action, initialData, mode }: CarFormProps) {
         </label>
       </div>
 
-      {mode === "edit" && (
-        <label className="flex items-center gap-3 cursor-pointer">
-          <div className="relative">
+      <fieldset className="av-panel space-y-5">
+        <legend className="px-2">Rental details & approved photography</legend>
+        <div className="av-form-row">
+          <label className="av-field">
+            Actual seat capacity
             <input
-              type="checkbox"
-              name="regenerateImages"
-              className="sr-only peer"
+              type="number"
+              name="seats"
+              required
+              min="1"
+              max="20"
+              defaultValue={initialData?.seats ?? ""}
             />
-            <div className="w-11 h-6 bg-gray-200 dark:bg-dark-border peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-blue/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-blue transition-colors duration-500"></div>
-          </div>
-          <span className="text-sm font-medium text-gray-700 dark:text-dark-text">
-            Regenerate images (if make/model/year changed)
-          </span>
+          </label>
+          <label className="av-field">
+            Luggage capacity (bags)
+            <input
+              type="number"
+              name="luggage"
+              min="0"
+              max="20"
+              defaultValue={initialData?.luggage ?? ""}
+            />
+          </label>
+        </div>
+        {mode === "create" && (
+          <label className="av-field">
+            Initial physical vehicle's branch
+            <select name="branchId" required>
+              <option value="">Select a branch</option>
+              {branches.map((b) => (
+                <option value={b.id} key={b.id}>
+                  {b.name} · {b.city}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+        {mode === "edit" && (
+          <p className="av-muted">
+            Assign branches and quantities per physical vehicle in Fleet
+            calendar.
+          </p>
+        )}
+        <label className="av-field">
+          Features (comma separated)
+          <input
+            name="features"
+            maxLength={1500}
+            defaultValue={initialData?.features?.join(", ") || ""}
+            placeholder="Apple CarPlay, Heated seats, Parking sensors"
+          />
         </label>
-      )}
+        <CarMediaEditor
+          initialImages={initialData?.images}
+          initialSource={initialData?.imageSource}
+          onBusy={setUploading}
+        />
+      </fieldset>
 
+      <fieldset className="av-panel space-y-5">
+        <legend className="px-2">
+          Driving suitability · verify this exact vehicle
+        </legend>
+        <p className="av-muted">
+          These tags describe recommended journeys, not permission to drive on
+          every road. City driving does not mean city-only. Confirm terrain,
+          weather, rental permission and equipment before recommending a route.
+        </p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {VEHICLE_USES.map((tag) => (
+            <label key={tag.id} className="flex items-start gap-3">
+              <input
+                type="checkbox"
+                name="usageTags"
+                value={tag.id}
+                defaultChecked={initialData?.usageTags?.includes(tag.id)}
+                className="mt-1"
+              />
+              <span>
+                <strong>{tag.label}</strong>
+                <small className="av-muted block">{tag.description}</small>
+              </span>
+            </label>
+          ))}
+        </div>
+        <label className="av-field">
+          Verified ground clearance (mm)
+          <input
+            name="groundClearanceMm"
+            type="number"
+            min="50"
+            max="600"
+            defaultValue={initialData?.groundClearanceMm ?? ""}
+          />
+        </label>
+        <div className="space-y-3">
+          {[
+            {
+              name: "lowRange4x4",
+              label: "Verified 4WD with low-range gearing",
+            },
+            {
+              name: "suitableTyres",
+              label: "Tyres verified for the intended conditions",
+            },
+            {
+              name: "roughRoadApproved",
+              label:
+                "Operator approves rough-road use under the rental agreement",
+            },
+          ].map((item) => (
+            <label key={item.name} className="flex gap-3">
+              <input
+                name={item.name}
+                type="checkbox"
+                defaultChecked={Boolean(
+                  initialData?.[
+                    item.name as
+                      "lowRange4x4" | "suitableTyres" | "roughRoadApproved"
+                  ],
+                )}
+              />
+              {item.label}
+            </label>
+          ))}
+        </div>
+        <p className="av-muted">
+          AutoVerse requires all three checks and at least 205 mm verified
+          clearance for its rough-road tag. This screening rule is not a safety
+          guarantee. AWD and SUV body style alone do not qualify.
+        </p>
+      </fieldset>
       {/* Actions */}
       <div className="flex flex-col-reverse sm:flex-row sm:items-center gap-3 pt-4 border-t border-gray-100 dark:border-dark-border sm:border-t-0 sm:pt-4">
         <button
@@ -380,10 +531,16 @@ export default function CarForm({ action, initialData, mode }: CarFormProps) {
         </button>
         <button
           type="submit"
-          disabled={pending}
+          disabled={pending || uploading}
           className="w-full sm:w-auto bg-primary-blue text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed dark:shadow-lg dark:shadow-primary-blue/20"
         >
-          {pending ? "Saving..." : mode === "create" ? "Add Car" : "Update Car"}
+          {uploading
+            ? "Uploading photographs..."
+            : pending
+              ? "Saving..."
+              : mode === "create"
+                ? "Add Car"
+                : "Update Car"}
         </button>
       </div>
     </form>

@@ -21,7 +21,7 @@ export default async function ProfilePage() {
   );
 
   const totalSpent = orders
-    .filter((o) => o.status !== "CANCELLED")
+    .filter((o) => o.paymentStatus === "PAID")
     .reduce((sum, o) => sum + o.totalPrice, 0);
 
   const completedCount = pastOrders.filter(

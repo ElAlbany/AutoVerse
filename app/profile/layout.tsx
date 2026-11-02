@@ -2,7 +2,9 @@ import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import ProfileSidebar from "@/components/ProfileSidebar";
-import { syncOrderStatuses } from "@/lib/order-sync";
+import { getOrCreateUser } from "@/lib/sync-user";
+import { headers } from "next/headers";
+import { signInUrl } from "@/lib/sign-in";
 
 export default async function ProfileLayout({
   children,
@@ -10,15 +12,14 @@ export default async function ProfileLayout({
   children: React.ReactNode;
 }) {
   const { userId: clerkId } = await auth();
-  if (!clerkId) redirect("/sign-in");
+  if (!clerkId)
+    redirect(
+      signInUrl((await headers()).get("x-autoverse-path") || "/profile")
+    );
 
-  const user = await prisma.user.findUnique({
-    where: { clerkId },
-  });
+  const user = await getOrCreateUser();
 
   if (!user) redirect("/sign-in");
-
-  await syncOrderStatuses();
 
   return (
     <main className="min-h-screen bg-gray-50 dark:bg-dark-bg pt-24 lg:pt-28 pb-16 transition-colors duration-500">

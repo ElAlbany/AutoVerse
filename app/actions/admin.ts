@@ -1,294 +1,249 @@
 "use server";
-
-import { auth } from "@clerk/nextjs/server";
+import { validCarImageUrl } from "@/lib/car-media";
+import { validateVehicleUses } from "@/lib/vehicle-use";
+import { randomUUID } from "node:crypto";
+import { runAction } from "@/lib/action-result";
+import { transitionRental } from "@/lib/rental-lifecycle";
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/auth";
+import { lockCar } from "@/lib/inventory";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { sendOrderStatusEmail } from "@/lib/email";
-
-async function checkAdmin() {
-  const { userId } = await auth();
-  if (!userId) throw new Error("Not authenticated");
-
-  const user = await prisma.user.findUnique({
-    where: { clerkId: userId },
-  });
-
-  if (!user || user.role !== "ADMIN") throw new Error("Unauthorized");
-  return user;
-}
-
-/* ─────────────── Order Status ─────────────── */
-
-const VALID_TRANSITIONS: Record<string, string[]> = {
-  PENDING: ["CONFIRMED", "CANCELLED"],
-  CONFIRMED: ["ACTIVE", "CANCELLED"],
-  ACTIVE: ["COMPLETED", "CANCELLED"],
-  COMPLETED: ["CANCELLED"],
-  CANCELLED: [],
-};
 
 export async function updateOrderStatus(orderId: string, status: string) {
-  await checkAdmin();
-
-  const validStatuses = [
-    "PENDING",
-    "CONFIRMED",
-    "ACTIVE",
-    "COMPLETED",
-    "CANCELLED",
-  ];
-  if (!validStatuses.includes(status)) throw new Error("Invalid status");
-
-  const order = await prisma.order.findUnique({
-    where: { id: orderId },
-    include: { user: true, car: true },
+  return runAction(async () => {
+    const admin = await requireAdmin();
+    await transitionRental(orderId, status, admin.id);
+    revalidatePath("/admin/orders");
+    revalidatePath("/admin/fleet");
+    revalidatePath("/profile/orders");
+    revalidatePath(`/profile/orders/${orderId}`);
   });
+}
 
-  if (!order) throw new Error("Order not found");
-
-  const allowed = VALID_TRANSITIONS[order.status] || [];
-  if (status !== order.status && !allowed.includes(status)) {
-    throw new Error(`Cannot change status from ${order.status} to ${status}`);
-  }
-
-  await prisma.order.update({
-    where: { id: orderId },
-    data: { status: status as any },
-  });
-
-  const subjects: Record<string, string> = {
-    CONFIRMED: "Order Confirmed - Ready for Pickup",
-    ACTIVE: "Rental Started - Enjoy Your Ride",
-    COMPLETED: "Rental Completed - Thank You",
-    CANCELLED: "Order Cancelled",
+function carData(form: FormData) {
+  const text = (key: string, max = 200) =>
+    String(form.get(key) || "")
+      .trim()
+      .slice(0, max);
+  const num = (key: string, fallback = 0) => {
+    const raw = text(key);
+    return raw ? Number(raw) : fallback;
   };
-
-  if (subjects[status]) {
-    await sendOrderStatusEmail({
-      to: order.user.email,
-      subject: subjects[status],
-      orderId: order.id,
-      carName: `${order.car.year} ${order.car.make} ${order.car.model}`,
-      status,
-      startDate: order.startDate.toISOString(),
-      endDate: order.endDate.toISOString(),
-      totalPrice: Number(order.totalPrice),
+  const make = text("make"),
+    model = text("model"),
+    year = num("year"),
+    pricePerDay = num("pricePerDay");
+  if (
+    !make ||
+    !model ||
+    !Number.isInteger(year) ||
+    year < 1990 ||
+    year > new Date().getFullYear() + 2 ||
+    !Number.isFinite(pricePerDay) ||
+    pricePerDay <= 0 ||
+    pricePerDay > 100000
+  )
+    throw new Error(
+      "Provide a make, model, valid year and positive daily rate.",
+    );
+  const seats = num("seats"),
+    luggage = text("luggage") ? num("luggage") : null;
+  if (!Number.isInteger(seats) || seats < 1 || seats > 20)
+    throw new Error("Seats must be 1–20.");
+  if (
+    luggage !== null &&
+    (!Number.isInteger(luggage) || luggage < 0 || luggage > 20)
+  )
+    throw new Error("Luggage capacity must be 0–20.");
+  const images = text("images", 4000)
+    .split(/\r?\n/)
+    .map((v) => v.trim())
+    .filter(Boolean);
+  if (images.length > 12 || images.some((src) => !validCarImageUrl(src)))
+    throw new Error("Use up to 12 uploaded photos or HTTPS image URLs.");
+  const imageSource = text("imageSource");
+  if (!["API", "UPLOADED"].includes(imageSource))
+    throw new Error("Choose API illustrations or real photographs.");
+  if (
+    imageSource === "UPLOADED" &&
+    (!images.length ||
+      images.some(
+        (src) => src.includes("imagin.studio") || src.includes("placeholder"),
+      ))
+  )
+    throw new Error(
+      "Add at least one real vehicle photo, or select model illustrations.",
+    );
+  const metrics = {
+    city_mpg: num("city_mpg"),
+    highway_mpg: num("highway_mpg"),
+    combination_mpg: num("combination_mpg"),
+    cylinders: num("cylinders"),
+    displacement: num("displacement"),
+  };
+  if (
+    Object.values(metrics).some((v) => !Number.isFinite(v) || v < 0 || v > 1000)
+  )
+    throw new Error(
+      "Vehicle specifications must be valid non-negative numbers.",
+    );
+  const transmission = text("transmission");
+  if (!["a", "m"].includes(transmission))
+    throw new Error("Choose a valid transmission.");
+  const groundClearanceMm = text("groundClearanceMm")
+    ? num("groundClearanceMm")
+    : null;
+  if (
+    groundClearanceMm !== null &&
+    (!Number.isInteger(groundClearanceMm) ||
+      groundClearanceMm < 50 ||
+      groundClearanceMm > 600)
+  )
+    throw new Error(
+      "Ground clearance must be 50–600 mm, or blank if unverified.",
+    );
+  const capabilities = {
+    groundClearanceMm,
+    lowRange4x4: form.get("lowRange4x4") === "on",
+    suitableTyres: form.get("suitableTyres") === "on",
+    roughRoadApproved: form.get("roughRoadApproved") === "on",
+  };
+  const usageTags = validateVehicleUses(
+    form.getAll("usageTags").map(String),
+    capabilities,
+  );
+  return {
+    ...capabilities,
+    usageTags,
+    make,
+    model,
+    year,
+    pricePerDay,
+    seats,
+    luggage,
+    images,
+    imageSource,
+    features: text("features", 1500)
+      .split(",")
+      .map((v) => v.trim())
+      .filter(Boolean)
+      .slice(0, 30),
+    location: text("location") || "Main collection point",
+    fuel_type: text("fuel_type"),
+    transmission,
+    drive: text("drive"),
+    class: text("class"),
+    description: text("description", 5000) || null,
+    available: form.get("available") === "on",
+    featured: form.get("featured") === "on",
+    ...metrics,
+  };
+}
+export async function createCar(form: FormData) {
+  await requireAdmin();
+  const data = carData(form);
+  const branchId = String(form.get("branchId") || "");
+  await prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM "Branch" WHERE id = ${branchId} FOR SHARE`;
+    const branch = await tx.branch.findFirst({
+      where: { id: branchId, active: true },
     });
-  }
-
-  revalidatePath("/admin/orders");
-  revalidatePath("/profile/orders");
-}
-
-/* ─────────────── Car Images Helper ─────────────── */
-
-function generateCarImages(make: string, model: string, year: number) {
-  const angles = ["01", "05", "09", "13", "29"];
-  return angles.map((angle) => {
-    const url = new URL("https://cdn.imagin.studio/getimage");
-    url.searchParams.append("customer", "img");
-    url.searchParams.append("make", make);
-    url.searchParams.append("modelFamily", model.split(" ")[0]);
-    url.searchParams.append("zoomType", "fullscreen");
-    url.searchParams.append("modelYear", `${year}`);
-    url.searchParams.append("angle", angle);
-    return url.toString();
+    if (!branch) throw new Error("Choose an active collection branch.");
+    await tx.car.create({
+      data: {
+        ...data,
+        location: branch.name,
+        units: { create: { code: `AV-${randomUUID().slice(0, 8)}`, branchId } },
+      },
+    });
   });
-}
-
-/* ─────────────── Create Car ─────────────── */
-
-export async function createCar(formData: FormData) {
-  await checkAdmin();
-
-  const make = formData.get("make") as string;
-  const model = formData.get("model") as string;
-  const year = parseInt(formData.get("year") as string);
-  const pricePerDay = parseFloat(formData.get("pricePerDay") as string);
-  const fuel_type = formData.get("fuel_type") as string;
-  const transmission = formData.get("transmission") as string;
-  const drive = formData.get("drive") as string;
-  const city_mpg = parseInt(formData.get("city_mpg") as string);
-  const highway_mpg = parseInt(formData.get("highway_mpg") as string);
-  const combination_mpg = parseInt(formData.get("combination_mpg") as string);
-  const cylinders = parseInt(formData.get("cylinders") as string);
-  const displacement = parseFloat(formData.get("displacement") as string);
-  const class_type = formData.get("class") as string;
-  const description = formData.get("description") as string;
-  const available = formData.get("available") === "on";
-  const featured = formData.get("featured") === "on";
-
-  if (!make || !model || !year || isNaN(pricePerDay)) {
-    throw new Error("Please fill in all required fields correctly");
-  }
-
-  const images = generateCarImages(make, model, year);
-
-  await prisma.car.create({
-    data: {
-      make,
-      model,
-      year,
-      pricePerDay,
-      fuel_type,
-      transmission,
-      drive,
-      city_mpg: isNaN(city_mpg) ? 0 : city_mpg,
-      highway_mpg: isNaN(highway_mpg) ? 0 : highway_mpg,
-      combination_mpg: isNaN(combination_mpg) ? 0 : combination_mpg,
-      cylinders: isNaN(cylinders) ? 4 : cylinders,
-      displacement: isNaN(displacement) ? 2.0 : displacement,
-      class: class_type,
-      description: description || null,
-      images,
-      available,
-      featured,
-    },
-  });
-
-  revalidatePath("/admin/cars");
   revalidatePath("/");
+  revalidatePath("/admin/cars");
   redirect("/admin/cars");
 }
-
-/* ─────────────── Update Car ─────────────── */
-
-export async function updateCar(formData: FormData) {
-  await checkAdmin();
-
-  const id = formData.get("id") as string;
-  const make = formData.get("make") as string;
-  const model = formData.get("model") as string;
-  const year = parseInt(formData.get("year") as string);
-  const pricePerDay = parseFloat(formData.get("pricePerDay") as string);
-  const fuel_type = formData.get("fuel_type") as string;
-  const transmission = formData.get("transmission") as string;
-  const drive = formData.get("drive") as string;
-  const city_mpg = parseInt(formData.get("city_mpg") as string);
-  const highway_mpg = parseInt(formData.get("highway_mpg") as string);
-  const combination_mpg = parseInt(formData.get("combination_mpg") as string);
-  const cylinders = parseInt(formData.get("cylinders") as string);
-  const displacement = parseFloat(formData.get("displacement") as string);
-  const class_type = formData.get("class") as string;
-  const description = formData.get("description") as string;
-  const available = formData.get("available") === "on";
-  const featured = formData.get("featured") === "on";
-  const regenerateImages = formData.get("regenerateImages") === "on";
-
-  if (!id || !make || !model || !year || isNaN(pricePerDay)) {
-    throw new Error("Please fill in all required fields correctly");
-  }
-
-  const existingCar = await prisma.car.findUnique({ where: { id } });
-  if (!existingCar) throw new Error("Car not found");
-
-  const images =
-    regenerateImages ||
-    existingCar.make !== make ||
-    existingCar.model !== model ||
-    existingCar.year !== year
-      ? generateCarImages(make, model, year)
-      : existingCar.images;
-
-  await prisma.car.update({
-    where: { id },
-    data: {
-      make,
-      model,
-      year,
-      pricePerDay,
-      fuel_type,
-      transmission,
-      drive,
-      city_mpg: isNaN(city_mpg) ? 0 : city_mpg,
-      highway_mpg: isNaN(highway_mpg) ? 0 : highway_mpg,
-      combination_mpg: isNaN(combination_mpg) ? 0 : combination_mpg,
-      cylinders: isNaN(cylinders) ? 4 : cylinders,
-      displacement: isNaN(displacement) ? 2.0 : displacement,
-      class: class_type,
-      description: description || null,
-      images,
-      available,
-      featured,
-    },
+export async function updateCar(form: FormData) {
+  await requireAdmin();
+  const id = String(form.get("id"));
+  const data = carData(form);
+  await prisma.$transaction(async (tx) => {
+    await lockCar(tx, id);
+    if (
+      data.available &&
+      (await tx.order.count({
+        where: {
+          carId: id,
+          inventoryConflict: true,
+          status: { in: ["PENDING", "CONFIRMED", "ACTIVE"] },
+        },
+      }))
+    )
+      throw new Error(
+        "Resolve legacy assignments in Fleet before enabling this listing.",
+      );
+    await tx.car.update({ where: { id }, data });
   });
-
-  revalidatePath("/admin/cars");
   revalidatePath("/");
   revalidatePath(`/car-details/${id}`);
+  revalidatePath("/admin/cars");
   redirect("/admin/cars");
 }
-
-/* ─────────────── Delete Car ─────────────── */
-
 export async function deleteCar(id: string) {
-  await checkAdmin();
-  if (!id) throw new Error("Car ID is required");
-
-  await prisma.car.delete({ where: { id } });
-
-  revalidatePath("/admin/cars");
+  await requireAdmin();
+  await prisma.$transaction(async (tx) => {
+    await lockCar(tx, id);
+    await tx.car.update({
+      where: { id },
+      data: { archived: true, available: false },
+    });
+  });
   revalidatePath("/");
+  revalidatePath("/admin/cars");
 }
-
-/* ─────────────── Toggle Car Status ─────────────── */
-
 export async function toggleCarStatus(
   id: string,
   field: "available" | "featured",
   value: boolean,
 ) {
-  await checkAdmin();
-  if (!id || !field) throw new Error("Invalid request");
-
-  await prisma.car.update({
-    where: { id },
-    data: { [field]: value },
+  await requireAdmin();
+  if (!["available", "featured"].includes(field) || typeof value !== "boolean")
+    throw new Error("Invalid update.");
+  await prisma.$transaction(async (tx) => {
+    await lockCar(tx, id);
+    if (
+      field === "available" &&
+      value &&
+      (await tx.order.count({
+        where: {
+          carId: id,
+          inventoryConflict: true,
+          status: { in: ["PENDING", "CONFIRMED", "ACTIVE"] },
+        },
+      }))
+    )
+      throw new Error("Resolve vehicle assignments in Fleet first.");
+    await tx.car.update({ where: { id }, data: { [field]: value } });
   });
-
-  revalidatePath("/admin/cars");
   revalidatePath("/");
+  revalidatePath("/admin/cars");
   revalidatePath(`/car-details/${id}`);
 }
-
-/* ─────────────── User Management ─────────────── */
-
 export async function updateUserRole(userId: string, role: string) {
-  await checkAdmin();
-
-  const validRoles = ["USER", "ADMIN"];
-  if (!validRoles.includes(role)) throw new Error("Invalid role");
-
-  const { userId: currentClerkId } = await auth();
-  const currentUser = await prisma.user.findUnique({
-    where: { clerkId: currentClerkId! },
-  });
-  if (currentUser?.id === userId && role !== "ADMIN") {
-    throw new Error("You cannot demote yourself");
-  }
-
-  await prisma.user.update({
-    where: { id: userId },
-    data: { role },
-  });
-
+  const admin = await requireAdmin();
+  if (!["USER", "ADMIN"].includes(role)) throw new Error("Invalid role.");
+  if (admin.id === userId && role !== "ADMIN")
+    throw new Error("You cannot remove your own admin access.");
+  await prisma.user.update({ where: { id: userId }, data: { role } });
   revalidatePath("/admin/users");
 }
-
 export async function deleteUser(userId: string) {
-  await checkAdmin();
-
-  const { userId: currentClerkId } = await auth();
-  const currentUser = await prisma.user.findUnique({
-    where: { clerkId: currentClerkId! },
-  });
-  if (currentUser?.id === userId) {
-    throw new Error("You cannot delete your own account");
-  }
-
+  const admin = await requireAdmin();
+  if (admin.id === userId)
+    throw new Error("You cannot delete your own account.");
+  if (await prisma.order.count({ where: { userId } }))
+    throw new Error(
+      "This account has rental history. Use your company's retention and anonymization process instead.",
+    );
   await prisma.user.delete({ where: { id: userId } });
-
   revalidatePath("/admin/users");
-  revalidatePath("/admin");
 }

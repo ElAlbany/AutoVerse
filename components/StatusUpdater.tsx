@@ -14,8 +14,8 @@ const ALL_STATUSES = [
 const VALID_NEXT: Record<string, string[]> = {
   PENDING: ["CONFIRMED", "CANCELLED"],
   CONFIRMED: ["ACTIVE", "CANCELLED"],
-  ACTIVE: ["COMPLETED", "CANCELLED"],
-  COMPLETED: ["CANCELLED"],
+  ACTIVE: ["COMPLETED"],
+  COMPLETED: [],
   CANCELLED: [],
 };
 
@@ -34,7 +34,8 @@ export default function StatusUpdater({
 
     startTransition(async () => {
       try {
-        await updateOrderStatus(orderId, newStatus);
+        const result = await updateOrderStatus(orderId, newStatus);
+        if (!result.ok) throw new Error(result.error);
       } catch (err: any) {
         alert(err.message);
       }

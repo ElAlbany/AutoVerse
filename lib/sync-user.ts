@@ -18,11 +18,19 @@ export async function getOrCreateUser() {
 
   if (!clerkUser) return null;
 
+  const email = clerkUser.emailAddresses.find(
+    (address) => address.id === clerkUser.primaryEmailAddressId
+  )?.emailAddress;
+  if (!email)
+    throw new Error("A primary email address is required to book a rental.");
+
   // Create user in our database
-  user = await prisma.user.create({
-    data: {
+  user = await prisma.user.upsert({
+    where: { clerkId: userId },
+    update: {},
+    create: {
       clerkId: userId,
-      email: clerkUser.emailAddresses[0]?.emailAddress || "",
+      email,
       firstName: clerkUser.firstName || "",
       lastName: clerkUser.lastName || "",
     },

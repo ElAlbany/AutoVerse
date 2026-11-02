@@ -1,7 +1,10 @@
 import { createCar } from "@/app/actions/admin";
 import CarForm from "@/components/admin/CarForm";
 
-export default function NewCarPage() {
+import { publicBranches } from "@/lib/branches";
+
+export default async function NewCarPage() {
+  const branches = await publicBranches();
   return (
     <div className="space-y-6">
       <div>
@@ -14,7 +17,7 @@ export default function NewCarPage() {
       </div>
 
       <div className="bg-white dark:bg-dark-card rounded-3xl p-6 md:p-8 shadow-sm border border-gray-100 dark:border-dark-border transition-colors duration-500">
-        <CarForm action={createCar} mode="create" />
+        <CarForm action={createCar} mode="create" branches={branches} />
       </div>
     </div>
   );

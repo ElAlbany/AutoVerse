@@ -1,3 +1,4 @@
+import AdminTableScroll from "@/components/admin/AdminTableScroll";
 import { prisma } from "@/lib/prisma";
 import StatusBadge from "@/components/StatusBadge";
 import StatusUpdater from "@/components/StatusUpdater";
@@ -146,7 +147,7 @@ export default async function AdminOrdersPage({
             </div>
 
             {/* ───── Desktop table (lg and up) ───── */}
-            <div className="hidden lg:block overflow-x-auto">
+            <AdminTableScroll label="Orders table">
               <table className="w-full text-left text-sm">
                 <thead className="bg-gray-50 dark:bg-dark-surface border-b border-gray-100 dark:border-dark-border transition-colors duration-500">
                   <tr>
@@ -215,7 +216,7 @@ export default async function AdminOrdersPage({
                   ))}
                 </tbody>
               </table>
-            </div>
+            </AdminTableScroll>
           </>
         )}
       </div>

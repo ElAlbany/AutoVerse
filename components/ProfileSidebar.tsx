@@ -10,6 +10,16 @@ export default function ProfileSidebar({ isAdmin }: { isAdmin: boolean }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const navItems = [
+    {
+      href: "/compare",
+      label: "Compare cars",
+      icon: <span aria-hidden="true">▥</span>,
+    },
+    {
+      href: "/profile/favorites",
+      label: "Saved cars",
+      icon: <span aria-hidden="true">♡</span>,
+    },
     ...(isAdmin
       ? [
           {

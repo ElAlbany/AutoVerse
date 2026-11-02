@@ -11,7 +11,7 @@ export default async function AdminCarsPage({
   const params = await searchParams;
   const search = params.search?.trim().toLowerCase();
 
-  let where: any = {};
+  let where: any = { archived: false };
   if (search) {
     const words = search.split(/\s+/).filter(Boolean);
     where = {
@@ -31,7 +31,7 @@ export default async function AdminCarsPage({
   }
 
   const cars = await prisma.car.findMany({
-    where,
+    where: { ...where, archived: false },
     orderBy: { createdAt: "desc" },
   });
 
