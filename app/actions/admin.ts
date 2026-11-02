@@ -3,6 +3,7 @@ import { validCarImageUrl } from "@/lib/car-media";
 import { validateVehicleUses } from "@/lib/vehicle-use";
 import { randomUUID } from "node:crypto";
 import { RentalError, runAction } from "@/lib/action-result";
+import { changeUserRole, deleteUserProfile } from "@/lib/user-administration";
 import { transitionRental } from "@/lib/rental-lifecycle";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth";
@@ -241,23 +242,14 @@ export async function toggleCarStatus(
 export async function updateUserRole(userId: string, role: string) {
   return runAction(async () => {
     const admin = await requireAdmin();
-    if (!["USER", "ADMIN"].includes(role)) throw new RentalError("Invalid role.");
-    if (admin.id === userId && role !== "ADMIN")
-      throw new RentalError("You cannot remove your own admin access.");
-    await prisma.user.update({ where: { id: userId }, data: { role } });
+    await changeUserRole(userId, role, admin.id);
     revalidatePath("/admin/users");
   });
 }
 export async function deleteUser(userId: string) {
   return runAction(async () => {
     const admin = await requireAdmin();
-    if (admin.id === userId)
-      throw new RentalError("You cannot delete your own account.");
-    if (await prisma.order.count({ where: { userId } }))
-      throw new RentalError(
-        "This account has rental history. Use your company's retention and anonymization process instead.",
-      );
-    await prisma.user.delete({ where: { id: userId } });
+    await deleteUserProfile(userId, admin.id);
     revalidatePath("/admin/users");
   });
 }

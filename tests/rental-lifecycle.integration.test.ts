@@ -1,3 +1,4 @@
+import { changeUserRole, deleteUserProfile } from "../lib/user-administration";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
@@ -16,6 +17,7 @@ test("booking, staff return, review and checkout lifecycles", { skip: process.en
   const tag = randomUUID();
   const carId = randomUUID(), owner = randomUUID(), other = randomUUID(), admin = randomUUID();
   const branchA = randomUUID(), branchB = randomUUID(), unitA = randomUUID(), unitB = randomUUID();
+  const secondAdmin = randomUUID(), emptyProfile = randomUUID();
   const noEffects = { refund: async () => {}, expire: async () => {} };
   const now = Date.now();
   const at = (days: number) => new Date(now + days * 86400000);
@@ -135,6 +137,29 @@ test("booking, staff return, review and checkout lifecycles", { skip: process.en
       await assert.rejects(bookForUser(input(50), owner), /branch is not accepting/);
       assert.equal((await findChatInventory({ ...query, period: false })).length, 0);
     });
+    await t.test("concurrent staff access changes preserve an administrator and rental history", async () => {
+      await prisma.user.create({ data: { id: secondAdmin, clerkId: `test-${secondAdmin}`, email: `${secondAdmin}@example.test`, role: "ADMIN" } });
+      await assert.rejects(changeUserRole(other, "ADMIN", owner), /Administrator/);
+      await assert.rejects(changeUserRole(admin, "USER", admin), /own admin access/);
+      const changes = await Promise.allSettled([
+        changeUserRole(admin, "USER", secondAdmin),
+        changeUserRole(secondAdmin, "USER", admin),
+      ]);
+      assert.equal(changes.filter((result) => result.status === "fulfilled").length, 1);
+      assert.equal(await prisma.user.count({ where: { id: { in: [admin, secondAdmin] }, role: "ADMIN" } }), 1);
+      await prisma.user.updateMany({ where: { id: { in: [admin, secondAdmin] } }, data: { role: "ADMIN" } });
+      await assert.rejects(deleteUserProfile(owner, admin), /rental history/);
+      await assert.rejects(deleteUserProfile(admin, admin), /own account/);
+      await prisma.user.create({ data: { id: emptyProfile, clerkId: `test-${emptyProfile}`, email: `${emptyProfile}@example.test` } });
+      await deleteUserProfile(emptyProfile, admin);
+      assert.equal(await prisma.user.findUnique({ where: { id: emptyProfile } }), null);
+      const deletions = await Promise.allSettled([
+        deleteUserProfile(admin, secondAdmin),
+        deleteUserProfile(secondAdmin, admin),
+      ]);
+      assert.equal(deletions.filter((result) => result.status === "fulfilled").length, 1);
+      assert.equal(await prisma.user.count({ where: { id: { in: [admin, secondAdmin] }, role: "ADMIN" } }), 1);
+    });
   } finally {
     const orders = await prisma.order.findMany({ where: { carId }, select: { id: true } });
     await prisma.$transaction([
@@ -145,7 +170,7 @@ test("booking, staff return, review and checkout lifecycles", { skip: process.en
       prisma.order.deleteMany({ where: { carId } }),
       prisma.vehicleUnit.deleteMany({ where: { carId } }),
       prisma.car.delete({ where: { id: carId } }),
-      prisma.user.deleteMany({ where: { id: { in: [owner, other, admin] } } }),
+      prisma.user.deleteMany({ where: { id: { in: [owner, other, admin, secondAdmin, emptyProfile] } } }),
       prisma.branch.deleteMany({ where: { id: { in: [branchA, branchB] } } }),
       prisma.rateLimit.deleteMany({ where: { key: { in: [owner, other].map((id) => `booking:${id}`) } } }),
       prisma.webhookEvent.deleteMany({ where: { id: `evt_${tag}` } }),
