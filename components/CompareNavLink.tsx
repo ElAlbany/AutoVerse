@@ -2,18 +2,13 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Columns2 } from "lucide-react";
-import { COMPARE_KEY } from "./CompareButton";
+import { readComparison } from "@/lib/comparison";
 
 export default function CompareNavLink() {
   const [count, setCount] = useState(0);
   useEffect(() => {
     const update = () => {
-      try {
-        const value = JSON.parse(localStorage.getItem(COMPARE_KEY) || "[]");
-        setCount(Array.isArray(value) ? Math.min(value.length, 3) : 0);
-      } catch {
-        setCount(0);
-      }
+      setCount(readComparison().length);
     };
     update();
     window.addEventListener("autoverse-compare", update);

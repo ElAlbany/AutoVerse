@@ -1,15 +1,21 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { COMPARE_KEY, CompareCar } from "./CompareButton";
+import { COMPARE_KEY, readComparison, type CompareCar } from "@/lib/comparison";
 import { useLabel } from "@/lib/vehicle-use";
 import { money } from "@/lib/rental-policy";
 export default function Comparison() {
   const [cars, setCars] = useState<CompareCar[]>([]);
+  const [error, setError] = useState("");
   useEffect(() => {
-    try {
-      setCars(JSON.parse(localStorage.getItem(COMPARE_KEY) || "[]"));
-    } catch {}
+    const sync = () => setCars(readComparison());
+    sync();
+    window.addEventListener("autoverse-compare", sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener("autoverse-compare", sync);
+      window.removeEventListener("storage", sync);
+    };
   }, []);
   if (!cars.length)
     return (
@@ -29,6 +35,7 @@ export default function Comparison() {
         Saved comparison. Check the vehicle page for current prices and date
         availability.
       </p>
+      {error && <p role="alert" className="av-alert">{error}</p>}
       <table>
         <thead>
           <tr>
@@ -41,10 +48,15 @@ export default function Comparison() {
                 <button
                   className="av-text-link"
                   onClick={() => {
-                    const next = cars.filter((x) => x.id !== c.id);
-                    setCars(next);
-                    localStorage.setItem(COMPARE_KEY, JSON.stringify(next));
-                    window.dispatchEvent(new Event("autoverse-compare"));
+                    try {
+                      const next = readComparison().filter((x) => x.id !== c.id);
+                      localStorage.setItem(COMPARE_KEY, JSON.stringify(next));
+                      setCars(next);
+                      setError("");
+                      window.dispatchEvent(new Event("autoverse-compare"));
+                    } catch {
+                      setError("Your browser could not update this comparison. Check its storage settings and try again.");
+                    }
                   }}
                 >
                   Remove
