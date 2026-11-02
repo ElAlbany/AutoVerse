@@ -6,6 +6,8 @@ This repository is a development demonstration. Branch operations, image storage
 
 ## Run locally
 
+Use Node.js 24 or later.
+
 1. `npm ci`
 2. Configure ignored environment files using [.env.example](.env.example).
 3. Point Prisma at an authorized development PostgreSQL database.
@@ -45,10 +47,13 @@ Stripe events go to `POST /api/stripe/webhook`. Local forwarding requires the St
 
 - `npm run typecheck`
 - `npm test`
+- `npm run test:chat`
 - `npm run test:media`
 - `npm run build`
 - `npm audit`
 - With `RUN_DB_TESTS=1` against an authorized development database: `npm run test:inventory`
+
+GitHub Actions runs policy, chat, media, type and database checks against a fresh PostgreSQL service, including the complete migration chain. No application secrets or external payment/email credentials are required by CI.
 
 The integration suite creates isolated random fixtures, verifies concurrent stock allocation, database overlap rejection, preparation boundaries, fragmented availability, signed webhook handling, payment amount validation and replay safety, then removes only its own fixtures. It also verifies branch isolation, cancellation, return preparation and closed branches. It does not charge cards or send emails.
 
