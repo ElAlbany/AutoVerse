@@ -33,6 +33,7 @@ test(
       await prisma.car.create({
         data: {
           id: carId,
+          branchId: a,
           make: "Integration",
           model: "Branch fixture",
           year: 2026,

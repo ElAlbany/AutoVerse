@@ -130,8 +130,8 @@ export async function getFleetWorkspaceData(
       where: { AND: [relevant, range], unit: where },
     }),
     prisma.car.findMany({
-      where: { archived: false },
-      select: { id: true, make: true, model: true, year: true },
+      where: { archived: false, ...(filters.branchId ? { branchId: filters.branchId } : {}) },
+      select: { id: true, make: true, model: true, year: true, branchId: true },
       orderBy: [{ make: "asc" }, { model: "asc" }, { id: "asc" }],
     }),
     prisma.branch.findMany({

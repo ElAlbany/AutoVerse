@@ -16,8 +16,8 @@ async function main() {
     where: { id: "branch-main" },
     create: {
       id: "branch-main",
-      name: "Main collection point",
-      city: "Main collection point",
+      name: "Frankfurt International Airport",
+      city: "Frankfurt",
     },
     update: {},
   });

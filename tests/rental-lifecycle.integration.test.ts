@@ -16,6 +16,7 @@ import { findChatInventory } from "../lib/chat-inventory";
 test("booking, staff return, review and checkout lifecycles", { skip: process.env.RUN_DB_TESTS !== "1" }, async (t) => {
   const tag = randomUUID();
   const carId = randomUUID(), owner = randomUUID(), other = randomUUID(), admin = randomUUID();
+  const carB = randomUUID();
   const branchA = randomUUID(), branchB = randomUUID(), unitA = randomUUID(), unitB = randomUUID();
   const secondAdmin = randomUUID(), emptyProfile = randomUUID();
   const noEffects = { refund: async () => {}, expire: async () => {} };
@@ -25,9 +26,10 @@ test("booking, staff return, review and checkout lifecycles", { skip: process.en
   await prisma.$transaction([
     ...[owner, other, admin].map((id) => prisma.user.create({ data: { id, clerkId: `test-${id}`, email: `${id}@example.test`, role: id === admin ? "ADMIN" : "USER" } })),
     ...[branchA, branchB].map((id) => prisma.branch.create({ data: { id, name: `Lifecycle ${id}`, city: "Fixture" } })),
-    prisma.car.create({ data: { id: carId, make: "Fixture", model: tag, year: 2026, pricePerDay: 50, fuel_type: "gas", transmission: "a", drive: "fwd", city_mpg: 20, class: "Car", combination_mpg: 20, cylinders: 4, displacement: 2, highway_mpg: 25, images: [], seats: 5 } }),
+    prisma.car.create({ data: { id: carId, branchId: branchA, make: "Fixture", model: tag, year: 2026, pricePerDay: 50, fuel_type: "gas", transmission: "a", drive: "fwd", city_mpg: 20, class: "Car", combination_mpg: 20, cylinders: 4, displacement: 2, highway_mpg: 25, images: [], seats: 5 } }),
+    prisma.car.create({ data: { id: carB, branchId: branchB, make: "Fixture", model: tag, year: 2026, pricePerDay: 50, fuel_type: "gas", transmission: "a", drive: "fwd", city_mpg: 20, class: "Car", combination_mpg: 20, cylinders: 4, displacement: 2, highway_mpg: 25, images: [], seats: 5 } }),
     prisma.vehicleUnit.create({ data: { id: unitA, carId, branchId: branchA, code: `TEST-${unitA}` } }),
-    prisma.vehicleUnit.create({ data: { id: unitB, carId, branchId: branchB, code: `TEST-${unitB}` } }),
+    prisma.vehicleUnit.create({ data: { id: unitB, carId: carB, branchId: branchB, code: `TEST-${unitB}` } }),
   ]);
   try {
     await t.test("concurrent retries book once, enforce branch stock and cancellation ownership", async () => {
@@ -41,7 +43,7 @@ test("booking, staff return, review and checkout lifecycles", { skip: process.en
       await assert.rejects(bookForUser({ ...request, requestKey: randomUUID() }, other), /available/i);
       await assert.rejects(bookForUser(request, other), /different rental/);
       await assert.rejects(bookForUser({ ...request, start: at(31).toISOString() }, owner), /different rental/);
-      const elsewhere = await bookForUser({ ...request, branchId: branchB, requestKey: randomUUID() }, other);
+      const elsewhere = await bookForUser({ ...request, carId: carB, branchId: branchB, requestKey: randomUUID() }, other);
       await assert.rejects(cancelBookingForUser(order.id, other, noEffects), /not found/);
       await cancelBookingForUser(order.id, owner, noEffects);
       await cancelBookingForUser(order.id, owner, noEffects);
@@ -131,7 +133,7 @@ test("booking, staff return, review and checkout lifecycles", { skip: process.en
       assert.equal((await prisma.order.findUniqueOrThrow({ where: { id: expired.id } })).status, "CANCELLED");
       const query = { messages: [{ role: "user" as const, content: "Find a car" }], start: request.start, end: request.end, period: true, passengers: 5, branchId: branchA };
       assert.equal((await findChatInventory(query)).length, 0);
-      assert.deepEqual((await findChatInventory({ ...query, branchId: branchB })).map((car) => car.id), [carId]);
+      assert.deepEqual((await findChatInventory({ ...query, branchId: branchB })).map((car) => car.id), [carB]);
       assert.equal((await findChatInventory({ ...query, branchId: branchB, passengers: 6 })).length, 0);
       await prisma.branch.update({ where: { id: branchA }, data: { active: false } });
       await assert.rejects(bookForUser(input(50), owner), /branch is not accepting/);
@@ -161,15 +163,15 @@ test("booking, staff return, review and checkout lifecycles", { skip: process.en
       assert.equal(await prisma.user.count({ where: { id: { in: [admin, secondAdmin] }, role: "ADMIN" } }), 1);
     });
   } finally {
-    const orders = await prisma.order.findMany({ where: { carId }, select: { id: true } });
+    const orders = await prisma.order.findMany({ where: { carId: { in: [carId, carB] } }, select: { id: true } });
     await prisma.$transaction([
       prisma.notification.deleteMany({ where: { OR: orders.map(({ id }) => ({ key: { startsWith: `${id}:` } })) } }),
-      prisma.review.deleteMany({ where: { carId } }),
+      prisma.review.deleteMany({ where: { carId: { in: [carId, carB] } } }),
       prisma.vehicleReservation.deleteMany({ where: { unitId: { in: [unitA, unitB] } } }),
       prisma.orderEvent.deleteMany({ where: { orderId: { in: orders.map(({ id }) => id) } } }),
-      prisma.order.deleteMany({ where: { carId } }),
-      prisma.vehicleUnit.deleteMany({ where: { carId } }),
-      prisma.car.delete({ where: { id: carId } }),
+      prisma.order.deleteMany({ where: { carId: { in: [carId, carB] } } }),
+      prisma.vehicleUnit.deleteMany({ where: { carId: { in: [carId, carB] } } }),
+      prisma.car.deleteMany({ where: { id: { in: [carId, carB] } } }),
       prisma.user.deleteMany({ where: { id: { in: [owner, other, admin, secondAdmin, emptyProfile] } } }),
       prisma.branch.deleteMany({ where: { id: { in: [branchA, branchB] } } }),
       prisma.rateLimit.deleteMany({ where: { key: { in: [owner, other].map((id) => `booking:${id}`) } } }),

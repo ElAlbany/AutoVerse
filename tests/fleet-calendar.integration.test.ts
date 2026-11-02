@@ -31,6 +31,7 @@ test(
       await prisma.car.create({
         data: {
           id: carId,
+          branchId,
           make: `Fixture-${prefix}`,
           model: "Calendar",
           year: 2026,

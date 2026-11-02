@@ -47,7 +47,11 @@ model Car {
   seats           Int @default(5)
   luggage         Int?
   features        String[] @default([])
-  location        String   @default("Main collection point")
+  location        String   @default("Frankfurt International Airport")
+  branchId        String   @default("branch-main")
+  branch          Branch   @relation(fields: [branchId], references: [id], onDelete: Restrict)
+  // In-service fleet capacity; maintained atomically by VehicleUnit triggers.
+  quantity        Int      @default(0)
   imageSource     String @default("API")
   usageTags       String[] @default([])
   groundClearanceMm Int?
@@ -60,6 +64,8 @@ model Car {
   reviews         Review[]
   createdAt       DateTime @default(now())
 
+  @@unique([id, branchId])
+  @@index([branchId, archived, available])
   @@index([make])
   @@index([fuel_type])
   @@index([year])
@@ -140,6 +146,7 @@ model Branch {
   address String?
   active Boolean @default(true)
   createdAt DateTime @default(now())
+  cars Car[]
   units VehicleUnit[]
   orders Order[]
   @@index([active, city])

@@ -83,18 +83,9 @@ export async function bookForUser(
       const car = await tx.car.findUnique({ where: { id: input.carId } });
       if (!car || car.archived || !car.available)
         throw new RentalError("This car is not currently accepting bookings.");
-      let branchId = input.branchId;
-      if (!branchId) {
-        const choices = await tx.vehicleUnit.findMany({
-          where: { carId: car.id, enabled: true, branch: { active: true } },
-          select: { branchId: true },
-          distinct: ["branchId"],
-          take: 2,
-        });
-        if (choices.length !== 1)
-          throw new RentalError("Select a collection branch before booking.");
-        branchId = choices[0].branchId;
-      }
+      if (input.branchId && input.branchId !== car.branchId)
+        throw new RentalError("This car belongs to a different collection branch. Choose a car from the selected branch.");
+      const branchId = car.branchId;
       await tx.$queryRaw`SELECT id FROM "Branch" WHERE id = ${branchId} FOR SHARE`;
       const branch = await tx.branch.findFirst({
         where: { id: branchId, active: true },

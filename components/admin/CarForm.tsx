@@ -19,6 +19,8 @@ type CarFormProps = {
   action: (formData: FormData) => Promise<void | ActionResult>;
   initialData?: {
     id?: string;
+    branchId?: string;
+    quantity?: number;
     usageTags?: string[];
     groundClearanceMm?: number | null;
     lowRange4x4?: boolean;
@@ -49,6 +51,8 @@ type CarFormProps = {
   };
   branches?: { id: string; name: string; city: string }[];
   mode: "create" | "edit";
+  initialBranchId?: string;
+  availableNow?: number;
 };
 
 export default function CarForm({
@@ -56,6 +60,8 @@ export default function CarForm({
   initialData,
   mode,
   branches = [],
+  initialBranchId = "",
+  availableNow,
 }: CarFormProps) {
   const router = useRouter();
   const [make, setMake] = useState(
@@ -86,7 +92,10 @@ export default function CarForm({
     try {
       const formData = new FormData(e.currentTarget);
       const result = await action(formData);
-      if (result && !result.ok) { setError(result.error); setPending(false); }
+      if (result && !result.ok) {
+        setError(result.error);
+        setPending(false);
+      }
     } catch (err: any) {
       if (err.message === "NEXT_REDIRECT") return;
       setError(err.message || "Something went wrong");
@@ -105,6 +114,71 @@ export default function CarForm({
       {mode === "edit" && initialData?.id && (
         <input type="hidden" name="id" value={initialData.id} />
       )}
+
+      <fieldset className="av-panel space-y-4">
+        <legend className="px-2">Branch & stock</legend>
+        <div className="av-form-row">
+          <label className="av-field">
+            Collection branch
+            <select
+              name={mode === "create" ? "branchId" : undefined}
+              required
+              disabled={mode === "edit"}
+              defaultValue={
+                initialData?.branchId ||
+                initialBranchId ||
+                branches[0]?.id ||
+                ""
+              }
+            >
+              <option value="" disabled>
+                Choose a branch
+              </option>
+              {branches.map((branch) => (
+                <option key={branch.id} value={branch.id}>
+                  {branch.name} · {branch.city}
+                </option>
+              ))}
+            </select>
+            {mode === "edit" && (
+              <input
+                type="hidden"
+                name="branchId"
+                value={initialData?.branchId || ""}
+              />
+            )}
+          </label>
+          <label className="av-field">
+            Fleet quantity
+            <input
+              name="quantity"
+              type="number"
+              min="0"
+              max="1000"
+              step="1"
+              required
+              defaultValue={initialData?.quantity ?? 1}
+            />
+          </label>
+        </div>
+        <p className="av-muted">
+          Total in-service instances at this branch, including booked vehicles.
+          For example: quantity 3, one reserved, two available. Reducing stock
+          retires only unreserved vehicles; bookings and history are preserved.
+        </p>
+        {availableNow != null && (
+          <p className="av-muted">
+            Current fleet: {initialData?.quantity ?? 0} · Available now:{" "}
+            {availableNow}. Date-specific availability is checked separately.
+          </p>
+        )}
+        {mode === "edit" && (
+          <p className="av-muted">
+            You are editing this branch’s listing only. To offer the same model
+            elsewhere, add a new listing for that branch.
+          </p>
+        )}
+      </fieldset>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Make */}
@@ -414,25 +488,6 @@ export default function CarForm({
             />
           </label>
         </div>
-        {mode === "create" && (
-          <label className="av-field">
-            Initial physical vehicle's branch
-            <select name="branchId" required>
-              <option value="">Select a branch</option>
-              {branches.map((b) => (
-                <option value={b.id} key={b.id}>
-                  {b.name} · {b.city}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
-        {mode === "edit" && (
-          <p className="av-muted">
-            Assign branches and quantities per physical vehicle in Fleet
-            calendar.
-          </p>
-        )}
         <label className="av-field">
           Features (comma separated)
           <input
@@ -508,7 +563,9 @@ export default function CarForm({
                 defaultChecked={Boolean(
                   initialData?.[
                     item.name as
-                      "lowRange4x4" | "suitableTyres" | "roughRoadApproved"
+                      | "lowRange4x4"
+                      | "suitableTyres"
+                      | "roughRoadApproved"
                   ],
                 )}
               />

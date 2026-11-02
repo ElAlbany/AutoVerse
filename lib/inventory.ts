@@ -93,3 +93,22 @@ export async function availableUnits(
     },
   });
 }
+
+export function currentFreeUnitWhere(branchId?: string, now = new Date()): Prisma.VehicleUnitWhereInput {
+  return {
+    enabled: true,
+    branchId,
+    branch: { active: true },
+    reservations: { none: {
+      active: true,
+      OR: [
+        { order: { status: "ACTIVE" } },
+        { startDate: { lte: now }, endDate: { gt: now }, OR: [
+          { orderId: null },
+          { order: { status: { in: ["CONFIRMED", "COMPLETED"] } } },
+          { order: { status: "PENDING", OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] } },
+        ] },
+      ],
+    } },
+  };
+}

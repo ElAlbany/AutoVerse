@@ -5,7 +5,7 @@ export async function publicBranches(carId?: string) {
   return prisma.branch.findMany({
     where: {
       active: true,
-      ...(carId ? { units: { some: { carId, enabled: true } } } : {}),
+      ...(carId ? { cars: { some: { id: carId, archived: false } } } : {}),
     },
     select: { id: true, name: true, city: true },
     orderBy: [{ city: "asc" }, { name: "asc" }],

@@ -63,7 +63,7 @@ export type FleetWorkspaceData = {
   counts: { all: number; enabled: number; offline: number; scheduled: number };
   units: FleetVehicle[];
   alternatives: FleetAlternative[];
-  cars: { id: string; make: string; model: string; year: number }[];
+  cars: { id: string; make: string; model: string; year: number; branchId: string }[];
   branches: { id: string; name: string; city: string; active: boolean }[];
   attention: {
     conflicts: FleetBooking[];
