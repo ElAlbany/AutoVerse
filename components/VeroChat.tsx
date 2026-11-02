@@ -5,20 +5,12 @@ import { useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { signInUrl } from "@/lib/sign-in";
 
-type RecommendedCar = {
-  id: string;
-  name: string;
-  pricePerDay: number;
-  class: string;
-  image: string;
-};
-
-type Message = {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  recommendations?: RecommendedCar[];
-};
+import { chatHistory } from "@/lib/chat-policy";
+import {
+  loadChatSession,
+  type StoredChatMessage as Message,
+  type ChatRecommendation as RecommendedCar,
+} from "@/lib/chat-session";
 
 const WELCOME: Message = {
   id: "welcome",
@@ -69,7 +61,7 @@ function TypingDots() {
 }
 
 export default function VeroChat() {
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, isLoaded, userId } = useAuth();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
@@ -77,38 +69,61 @@ export default function VeroChat() {
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
-  const [hasLoaded, setHasLoaded] = useState(false);
+  const storageKey = `${STORAGE_KEY}:${userId || "guest"}`;
+  const [loadedKey, setLoadedKey] = useState("");
+  const [failure, setFailure] = useState<{
+    question: string;
+    message: string;
+  } | null>(null);
+  const requestRef = useRef<AbortController | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // ── Load from localStorage on mount (client-only) ───────────
   useEffect(() => {
+    if (!isLoaded) return;
+    requestRef.current?.abort();
+    requestRef.current = null;
+    setStreaming(false);
+    setIsTyping(false);
+    setFailure(null);
+    let stored = { messages: [] as Message[], draft: "" };
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const data = JSON.parse(saved);
-        const oneHour = 1000 * 60 * 60;
-        if (
-          Date.now() - data.timestamp < oneHour &&
-          Array.isArray(data.messages)
-        ) {
-          setMessages(data.messages);
-        }
+      stored = loadChatSession(localStorage.getItem(storageKey));
+    } catch {}
+    try {
+      if (userId && sessionStorage.getItem("vero-pending-draft")) {
+        stored.draft = sessionStorage
+          .getItem("vero-pending-draft")!
+          .slice(0, 3000);
+        sessionStorage.removeItem("vero-pending-draft");
       }
-    } catch {
-      // ignore corrupt storage
-    }
-    setHasLoaded(true);
-  }, []);
-
-  // ── Save to localStorage whenever messages change ─────────────
+    } catch {}
+    setMessages(stored.messages.length ? stored.messages : [WELCOME]);
+    setInput(stored.draft);
+    setLoadedKey(storageKey);
+  }, [storageKey, isLoaded, userId]);
   useEffect(() => {
-    if (!hasLoaded) return;
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({ messages, timestamp: Date.now() }),
-    );
-  }, [messages, hasLoaded]);
+    if (loadedKey !== storageKey) return;
+    try {
+      localStorage.setItem(
+        storageKey,
+        JSON.stringify({
+          messages: messages.slice(-40),
+          draft: input,
+          timestamp: Date.now(),
+        }),
+      );
+    } catch {
+      /* Chat still works when browser storage is unavailable. */
+    }
+  }, [messages, input, loadedKey, storageKey]);
+  useEffect(
+    () => () => {
+      requestRef.current?.abort();
+      requestRef.current = null;
+    },
+    [],
+  );
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -120,89 +135,94 @@ export default function VeroChat() {
     }
   }, [open]);
 
-  const sendMessage = useCallback(async () => {
-    const text = input.trim();
-    if (!text || streaming) return;
-    if (!isSignedIn) {
-      router.push(signInUrl(window.location.pathname + window.location.search));
-      return;
-    }
-
-    const userMsg: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content: text,
-    };
-
-    setMessages((prev) => [...prev, userMsg]);
-    setInput("");
-    setIsTyping(true);
-    setStreaming(true);
-
-    const history = messages
-      .filter((m) => m.id !== "welcome")
-      .concat(userMsg)
-      .map((m: Message) => ({
-        role: m.role,
-        content: m.content,
-      }));
-
-    try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: history.slice(-20),
-          branchId: new URLSearchParams(window.location.search).get("branchId"),
-          start: new URLSearchParams(window.location.search).get("start"),
-          end: new URLSearchParams(window.location.search).get("end"),
-        }),
-      });
-
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || "Failed to reach VERO");
+  const sendMessage = useCallback(
+    async (override?: string, retry = false) => {
+      const text = (override ?? input).trim();
+      if (!text || text.length > 3000 || requestRef.current || !isLoaded)
+        return;
+      if (!isSignedIn) {
+        try {
+          sessionStorage.setItem("vero-pending-draft", text);
+        } catch {}
+        router.push(
+          signInUrl(window.location.pathname + window.location.search),
+        );
+        return;
       }
-
-      const data = (await res.json()) as {
-        text: string;
-        recommendedCars: RecommendedCar[];
+      const userMsg: Message = {
+        id: crypto.randomUUID(),
+        role: "user",
+        content: text,
       };
-
-      setIsTyping(false);
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: (Date.now() + 1).toString(),
-          role: "assistant",
-          content: data.text,
-          recommendations: data.recommendedCars,
-        },
-      ]);
-    } catch (err: unknown) {
-      const error = err as { name?: string; message?: string };
-      if (error.name === "AbortError") return;
-
-      setIsTyping(false);
-      const isRateLimit =
-        error.message?.includes("429") || error.message?.includes("Rate limit");
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: (Date.now() + 1).toString(),
-          role: "assistant",
-          content: isRateLimit
-            ? "VERO has reached its current usage limit. Please try again later, or browse the collection."
-            : error.message ||
-              "VERO is temporarily unavailable. Please browse the collection.",
-        },
-      ]);
-    } finally {
-      setIsTyping(false);
-      setStreaming(false);
-    }
-  }, [input, messages, streaming, isSignedIn, router]);
+      const history = chatHistory(
+        (retry ? messages : messages.concat(userMsg)).filter(
+          (m) => m.id !== "welcome",
+        ),
+      );
+      if (!retry) setMessages((prev) => [...prev, userMsg]);
+      setInput("");
+      setFailure(null);
+      setIsTyping(true);
+      setStreaming(true);
+      const controller = new AbortController();
+      requestRef.current = controller;
+      const timer = setTimeout(() => controller.abort("timeout"), 35000);
+      try {
+        const query = new URLSearchParams(window.location.search);
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: controller.signal,
+          body: JSON.stringify({
+            messages: history,
+            branchId: query.get("branchId"),
+            start: query.get("start"),
+            end: query.get("end"),
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok)
+          throw new Error(data.error || "VERO is temporarily unavailable.");
+        if (
+          typeof data.text !== "string" ||
+          !data.text.trim() ||
+          !Array.isArray(data.recommendedCars)
+        )
+          throw new Error(
+            "VERO returned an incomplete answer. Please try again.",
+          );
+        if (!controller.signal.aborted)
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: crypto.randomUUID(),
+              role: "assistant",
+              content: data.text,
+              recommendations: data.recommendedCars as RecommendedCar[],
+            },
+          ]);
+      } catch (error) {
+        if (controller.signal.aborted && controller.signal.reason !== "timeout")
+          return;
+        setFailure({
+          question: text,
+          message: controller.signal.aborted
+            ? "VERO took too long to respond. Please retry."
+            : error instanceof Error
+              ? error.message
+              : "VERO is temporarily unavailable. Please retry.",
+        });
+      } finally {
+        clearTimeout(timer);
+        if (requestRef.current === controller) {
+          requestRef.current = null;
+          setIsTyping(false);
+          setStreaming(false);
+        }
+      }
+    },
+    [input, messages, isSignedIn, isLoaded, router],
+  );
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -212,8 +232,16 @@ export default function VeroChat() {
   };
 
   const handleReset = () => {
+    requestRef.current?.abort();
+    requestRef.current = null;
     setMessages([WELCOME]);
-    localStorage.removeItem(STORAGE_KEY);
+    setInput("");
+    setFailure(null);
+    setIsTyping(false);
+    setStreaming(false);
+    try {
+      localStorage.removeItem(storageKey);
+    } catch {}
   };
 
   const toggleMaximize = () => setIsMaximized((v) => !v);
@@ -400,7 +428,10 @@ export default function VeroChat() {
                         {msg.recommendations.map((car) => (
                           <a
                             key={car.id}
-                            href={`/rent?${new URLSearchParams({ carId: car.id, ...Object.fromEntries(Array.from(new URLSearchParams(typeof window === "undefined" ? "" : window.location.search)).filter(([key]) => ["branchId", "start", "end"].includes(key))) })}`}
+                            href={
+                              car.href ||
+                              `/rent?${new URLSearchParams({ carId: car.id })}`
+                            }
                             className="block p-2.5 rounded-xl bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border hover:border-primary-blue dark:hover:border-primary-blue transition-colors"
                           >
                             <div className="flex items-center gap-3">
@@ -442,6 +473,19 @@ export default function VeroChat() {
               </div>
             )}
 
+            {failure && (
+              <div className="av-alert" role="alert">
+                <p>{failure.message}</p>
+                <button
+                  type="button"
+                  className="av-text-link mt-2"
+                  onClick={() => sendMessage(failure.question, true)}
+                  disabled={streaming}
+                >
+                  Retry last question
+                </button>
+              </div>
+            )}
             <div ref={bottomRef} />
           </div>
 
@@ -460,7 +504,9 @@ export default function VeroChat() {
               }}
               onKeyDown={handleKeyDown}
               disabled={streaming}
-              placeholder="Ask VERO anything..."
+              maxLength={3000}
+              aria-label="Message VERO"
+              placeholder="Ask VERO about your next rental…"
               rows={1}
               className="
                 flex-1 resize-none rounded-xl px-3.5 py-2.5 text-sm
@@ -477,8 +523,8 @@ export default function VeroChat() {
             />
 
             <button
-              onClick={sendMessage}
-              disabled={!input.trim() || streaming}
+              onClick={() => sendMessage()}
+              disabled={!isLoaded || !input.trim() || streaming}
               aria-label="Send message"
               className="
                 w-10 h-10 rounded-xl flex-shrink-0
