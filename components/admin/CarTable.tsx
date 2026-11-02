@@ -79,7 +79,7 @@ export default function CarTable({ cars }: { cars: Car[] }) {
       }`}
     >
       <span
-        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+        className={`inline-block h-4 w-4 transform rounded-full bg-[#f4f2ec] transition-transform ${
           checked ? "translate-x-6" : "translate-x-1"
         }`}
       />
