@@ -1,6 +1,6 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { suggestedReturn } from "@/lib/rental-dates";
 import RentalDateFields from "./RentalDateFields";
 import { ArrowUpRight, MapPin } from "lucide-react";
@@ -17,6 +17,7 @@ export default function BookingSearch({
   branches?: { id: string; name: string; city: string }[];
 }) {
   const router = useRouter();
+  const [changingBranch, changeBranch] = useTransition();
   const [from, setFrom] = useState("");
   const [until, setUntil] = useState("");
   useEffect(() => {
@@ -46,6 +47,7 @@ export default function BookingSearch({
       }}
       className="av-search"
       aria-label="Find available cars"
+      aria-busy={changingBranch}
     >
       <label className="av-search-location">
         <span>
@@ -53,13 +55,13 @@ export default function BookingSearch({
         </span>
         <select
           name="branchId"
-          key={branchId}
-          defaultValue={branchId}
+          value={branchId}
+          disabled={changingBranch || !branches.length}
           onChange={(e) => {
             const query = new URLSearchParams(window.location.search);
             query.set("branchId", e.target.value);
             query.delete("page");
-            router.push(`/?${query}#discover`, { scroll: false });
+            changeBranch(() => router.push(`/?${query}#discover`, { scroll: false }));
           }}
           aria-label="Collection branch"
         >
@@ -71,6 +73,7 @@ export default function BookingSearch({
             </option>
           ))}
         </select>
+        {changingBranch && <small role="status">Loading branch cars…</small>}
       </label>
       <RentalDateFields
         start={from}
@@ -79,7 +82,7 @@ export default function BookingSearch({
         onEnd={setUntil}
         compact
       />
-      <button className="av-button" type="submit">
+      <button className="av-button" type="submit" disabled={changingBranch || !branches.length}>
         Find a car <ArrowUpRight size={18} />
       </button>
     </form>

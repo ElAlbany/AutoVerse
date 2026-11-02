@@ -29,12 +29,18 @@ export default function BranchDetailsView({ data }: { data: BranchDetails }) {
             {branch.address || "Add the collection address in branch settings."}
           </p>
         </div>
-        <Link
-          className="av-button av-button-small"
-          href={`/admin/cars/new?branchId=${id}`}
-        >
-          Add a car here
-        </Link>
+        {branch.active ? (
+          <Link
+            className="av-button av-button-small"
+            href={`/admin/cars/new?branchId=${id}`}
+          >
+            Add a car here
+          </Link>
+        ) : (
+          <p className="av-muted">
+            Reopen this branch before adding new models.
+          </p>
+        )}
       </div>
       <div className="av-branch-stats">
         {[
