@@ -19,6 +19,8 @@ export type ListingCard = CarProps & {
   rating?: number | null;
   reviewCount?: number;
   availableCount?: number;
+  quantity?: number;
+  availabilityPeriod?: boolean;
   tripTotal?: number;
   saved?: boolean;
   bookingQuery?: string;
@@ -95,7 +97,7 @@ export default function CarCard({ car }: { car: ListingCard }) {
             ? "Not accepting bookings"
             : car.availableCount == null
               ? "Choose dates to check availability"
-              : `${car.availableCount} available for your dates`}
+              : `${car.availableCount}${car.quantity != null ? ` of ${car.quantity}` : ""} available ${car.availabilityPeriod === false ? "now" : "for your dates"}`}
         </div>
         <div className="av-car-bottom">
           <div>
@@ -128,6 +130,7 @@ export default function CarCard({ car }: { car: ListingCard }) {
               transmission: car.transmission,
               fuel: car.fuel_type,
               usageTags: car.usageTags,
+              branchName: car.location,
             }}
           />
         )}

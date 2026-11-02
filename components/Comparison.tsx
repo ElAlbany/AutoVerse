@@ -68,6 +68,7 @@ export default function Comparison() {
         <tbody>
           {[
             ["Starting daily rate", ...cars.map((c) => money(c.price))],
+            ["Collection branch", ...cars.map((c) => c.branchName || "Check vehicle page")],
             ["Seats", ...cars.map((c) => c.seats || "Ask the team")],
             ["Luggage", ...cars.map((c) => c.luggage ?? "Ask the team")],
             [

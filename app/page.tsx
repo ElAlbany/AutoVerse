@@ -1,3 +1,4 @@
+import { selectedBranch } from "@/lib/stock-policy";
 import { VEHICLE_USES } from "@/lib/vehicle-use";
 import Link from "next/link";
 import { Prisma } from "@prisma/client";
@@ -5,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import Hero from "@/components/Hero";
 import CarCard from "@/components/CarCard";
 import BookingSearch from "@/components/BookingSearch";
-import { freeUnitWhere } from "@/lib/inventory";
+import { currentFreeUnitWhere, freeUnitWhere } from "@/lib/inventory";
 import { quoteRental, validatePeriod } from "@/lib/rental-policy";
 import { ArrowUpRight, CalendarDays, KeyRound, Route } from "lucide-react";
 import { publicBranches } from "@/lib/branches";
@@ -53,11 +54,10 @@ export default async function Home({
   if (value("fuel"))
     where.fuel_type = { equals: value("fuel"), mode: "insensitive" };
   if (value("transmission")) where.transmission = value("transmission");
-  const branchId = value("branchId");
-  if (branchId)
-    where.units = {
-      some: { branchId, enabled: true, branch: { active: true } },
-    };
+  const branches = await publicBranches();
+  const branch = selectedBranch(branches, value("branchId"));
+  const branchId = branch?.id || "";
+  where.branchId = branchId || "__no_active_branch__";
   const seats = Number(value("seats"));
   if (Number.isInteger(seats) && seats > 0) where.seats = { gte: seats };
   const min = Number(value("minPrice")),
@@ -78,7 +78,7 @@ export default async function Home({
     where.available = true;
     where.units = { some: freeUnitWhere(start, end, branchId) };
   }
-  const [cars, total, latestReviews, session, branches] = await Promise.all([
+  const [cars, total, latestReviews, session] = await Promise.all([
     prisma.car.findMany({
       where,
       orderBy:
@@ -90,25 +90,12 @@ export default async function Home({
       take: pageSize,
       skip: offset,
       include: {
-        units: {
-          where: {
-            enabled: true,
-            branch: { active: true },
-            ...(branchId ? { branchId } : {}),
-          },
-          select: { branch: { select: { name: true, city: true } } },
-          take: 50,
-        },
         _count: {
           select: {
             units: {
               where: period
                 ? freeUnitWhere(start, end, branchId)
-                : {
-                    enabled: true,
-                    branch: { active: true },
-                    ...(branchId ? { branchId } : {}),
-                  },
+                : currentFreeUnitWhere(branchId),
             },
           },
         },
@@ -116,7 +103,7 @@ export default async function Home({
     }),
     prisma.car.count({ where }),
     prisma.review.findMany({
-      where: { hidden: false, comment: { not: "" } },
+      where: { hidden: false, comment: { not: "" }, car: { branchId } },
       orderBy: { createdAt: "desc" },
       take: 3,
       include: {
@@ -125,7 +112,6 @@ export default async function Home({
       },
     }),
     auth(),
-    publicBranches(),
   ]);
   const [ratings, favorites] = await Promise.all([
     prisma.review.groupBy({
@@ -144,6 +130,7 @@ export default async function Home({
   const query = new URLSearchParams();
   for (const [key, v] of Object.entries(raw))
     if (typeof v === "string") query.set(key, v);
+  query.set("branchId", branchId);
   const bookingParams = new URLSearchParams();
   if (period) {
     bookingParams.set("start", start.toISOString());
@@ -158,7 +145,7 @@ export default async function Home({
   previous.delete("limit");
   previous.set("page", String(page - 1));
   return (
-    <main>
+    <main data-autoverse-branch={branchId}>
       <Hero
         start={value("start")}
         end={value("end")}
@@ -179,7 +166,7 @@ export default async function Home({
       <section id="discover" className="av-shell av-collection">
         <div className="av-section-heading">
           <div>
-            <p className="av-eyebrow">The AutoVerse collection</p>
+            <p className="av-eyebrow">{branch?.name || "The AutoVerse collection"}</p>
             <h2>Find your kind of drive.</h2>
           </div>
           <p>
@@ -309,7 +296,7 @@ export default async function Home({
           </span>
           <div>
             <Link href="/compare">Compare shortlist</Link>
-            {query.size > 0 && <Link href="/#discover">Clear filters</Link>}
+            {[...query].some(([key, value]) => !["branchId", "page"].includes(key) && value) && <Link href={`/?branchId=${branchId}#discover`}>Clear filters</Link>}
           </div>
         </div>
         {cars.length ? (
@@ -321,15 +308,13 @@ export default async function Home({
                   key={car.id}
                   car={{
                     ...car,
-                    location:
-                      [...new Set(car.units.map((u) => u.branch.name))].join(
-                        " · ",
-                      ) || "No active collection branch",
+                    location: branch?.name || car.location,
                     pricePerDay: Number(car.pricePerDay),
                     rating: rating?._avg.rating,
                     reviewCount: rating?._count.id || 0,
                     saved: favorites.some((f) => f.carId === car.id),
-                    availableCount: period ? car._count.units : undefined,
+                    availableCount: car._count.units,
+                    availabilityPeriod: period,
                     tripTotal: period
                       ? quoteRental(Number(car.pricePerDay), start, end).total
                       : undefined,
@@ -343,10 +328,9 @@ export default async function Home({
           <div className="av-panel av-empty">
             <h3>A different route, perhaps?</h3>
             <p>
-              No cars match this combination. Try another date, a wider budget,
-              or fewer filters.
+              No cars match at {branch?.name || "this branch"}. Choose another branch, another date, or fewer filters.
             </p>
-            <Link href="/#discover" className="av-button">
+            <Link href={`/?branchId=${branchId}#discover`} className="av-button">
               Reset your search
             </Link>
           </div>

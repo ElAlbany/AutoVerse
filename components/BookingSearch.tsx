@@ -53,10 +53,17 @@ export default function BookingSearch({
         </span>
         <select
           name="branchId"
+          key={branchId}
           defaultValue={branchId}
+          onChange={(e) => {
+            const query = new URLSearchParams(window.location.search);
+            query.set("branchId", e.target.value);
+            query.delete("page");
+            router.push(`/?${query}#discover`, { scroll: false });
+          }}
           aria-label="Collection branch"
         >
-          <option value="">All collection branches</option>
+          {!branches.length && <option value="">No open branches</option>}
           {branches.map((branch) => (
             <option key={branch.id} value={branch.id}>
               {branch.name}
