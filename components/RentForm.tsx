@@ -9,7 +9,7 @@ import { suggestedReturn } from "@/lib/rental-dates";
 import RentalDateFields from "./RentalDateFields";
 import { ArrowUpRight, ShieldCheck } from "lucide-react";
 
-type Quote = { days: number; total: number };
+type Quote = { days: number; total: number; dailyCents: number; totalCents: number };
 export default function RentForm({
   car,
   paymentEnabled = false,
@@ -36,6 +36,8 @@ export default function RentForm({
   const [end, setEnd] = useState("");
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(false);
+  const [refresh, setRefresh] = useState(0);
+  const [bookingError, setBookingError] = useState("");
   const [error, setError] = useState("");
   const [quote, setQuote] = useState<Quote | null>(null);
   const [quoteFor, setQuoteFor] = useState("");
@@ -57,6 +59,7 @@ export default function RentForm({
     setEnd(suggestedReturn(local(initialStart), local(initialEnd)));
   }, [initialStart, initialEnd]);
   useEffect(() => {
+    setBookingError("");
     setRequestKey(crypto.randomUUID());
     setAccepted(false);
   }, [start, end, branchId]);
@@ -101,7 +104,7 @@ export default function RentForm({
       clearTimeout(timer);
       controller.abort();
     };
-  }, [start, end, car.id, branchId, signature]);
+  }, [start, end, car.id, branchId, signature, refresh]);
   const late = start && !canCancel(new Date(start));
   return (
     <form
@@ -121,6 +124,7 @@ export default function RentForm({
         }
         setLoading(true);
         setError("");
+        setBookingError("");
         try {
           const result = await createOrder({
             carId: car.id,
@@ -129,15 +133,17 @@ export default function RentForm({
             end: new Date(end).toISOString(),
             requestKey,
             payment: paymentEnabled,
+            expectedTotalCents: quote.totalCents,
           });
           if (!result.ok) throw new Error(result.error);
           window.location.assign(result.url);
         } catch (e) {
-          setError(
-            e instanceof Error
-              ? e.message
-              : "Booking could not be completed. Please try again.",
+          setBookingError(
+            e instanceof Error ? e.message : "Booking could not be completed. Please try again.",
           );
+          setAccepted(false);
+          setQuoteFor("");
+          setRefresh((value) => value + 1);
           setLoading(false);
         }
       }}
@@ -188,7 +194,7 @@ export default function RentForm({
         <div className="av-quote">
           <div>
             <span>
-              {money(car.pricePerDay)} × {quote.days} rental{" "}
+              {money(quote.dailyCents / 100)} × {quote.days} rental{" "}
               {quote.days === 1 ? "day" : "days"}
             </span>
             <span>{money(quote.total)}</span>
@@ -238,9 +244,9 @@ export default function RentForm({
           , including the cancellation cutoff and collection requirements.
         </span>
       </label>
-      {error && (
+      {(bookingError || error) && (
         <p className="av-alert" role="alert">
-          {error}
+          {bookingError || error}
         </p>
       )}
       <button

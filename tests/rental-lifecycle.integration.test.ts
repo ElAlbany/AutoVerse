@@ -19,7 +19,7 @@ test("booking, staff return, review and checkout lifecycles", { skip: process.en
   const noEffects = { refund: async () => {}, expire: async () => {} };
   const now = Date.now();
   const at = (days: number) => new Date(now + days * 86400000);
-  const input = (days: number, branchId = branchA) => ({ carId, branchId, start: at(days).toISOString(), end: at(days + 1).toISOString(), requestKey: randomUUID(), payment: false });
+  const input = (days: number, branchId = branchA) => ({ carId, branchId, start: at(days).toISOString(), end: at(days + 1).toISOString(), requestKey: randomUUID(), payment: false, expectedTotalCents: 5000 });
   await prisma.$transaction([
     ...[owner, other, admin].map((id) => prisma.user.create({ data: { id, clerkId: `test-${id}`, email: `${id}@example.test`, role: id === admin ? "ADMIN" : "USER" } })),
     ...[branchA, branchB].map((id) => prisma.branch.create({ data: { id, name: `Lifecycle ${id}`, city: "Fixture" } })),
@@ -106,6 +106,20 @@ test("booking, staff return, review and checkout lifecycles", { skip: process.en
       assert.equal(settled.status, "CANCELLED");
       assert.equal(settled.reservation?.active, false);
       assert.equal(await prisma.orderEvent.count({ where: { orderId: checkoutOrder } }), count);
+    });
+
+    await t.test("a changed rate needs fresh consent while an existing booking retains its agreed quote", async () => {
+      const request = input(60);
+      await prisma.car.update({ where: { id: carId }, data: { pricePerDay: 60 } });
+      await assert.rejects(bookForUser(request, owner), /rate has changed/);
+      assert.equal(await prisma.order.count({ where: { requestKey: request.requestKey } }), 0);
+      const accepted = { ...request, expectedTotalCents: 6000 };
+      const booked = await bookForUser(accepted, owner);
+      await prisma.car.update({ where: { id: carId }, data: { pricePerDay: 70 } });
+      assert.equal((await bookForUser(accepted, owner)).orderId, booked.orderId);
+      assert.equal(Number((await prisma.order.findUniqueOrThrow({ where: { id: booked.orderId } })).totalPrice), 60);
+      await cancelBookingForUser(booked.orderId, owner, noEffects);
+      await prisma.car.update({ where: { id: carId }, data: { pricePerDay: 50 } });
     });
 
     await t.test("expired holds release inventory and chatbot respects branch, seats and dates", async () => {
