@@ -28,9 +28,16 @@ export async function saveBranch(form: FormData) {
       active: form.get("active") === "on",
     };
     // UPDATE takes an exclusive row lock; allocation takes a shared branch lock.
-    if (id) await prisma.branch.update({ where: { id }, data });
+    if (id) await prisma.$transaction(async (tx) => {
+      // Match booking/stock lock order: listings first, then their branch.
+      await tx.$queryRaw`SELECT id FROM "Car" WHERE "branchId" = ${id} ORDER BY id FOR UPDATE`;
+      await tx.branch.update({ where: { id }, data });
+      await tx.car.updateMany({ where: { branchId: id }, data: { location: name } });
+    });
     else await prisma.branch.create({ data });
+    if (id) revalidatePath(`/admin/branches/${id}`);
     revalidatePath("/admin/branches");
+    revalidatePath("/admin/cars");
     revalidatePath("/admin/fleet");
     revalidatePath("/");
   });
